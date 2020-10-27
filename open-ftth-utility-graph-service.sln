@@ -1,0 +1,68 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService", "OpenFTTH.UtilityGraphService\OpenFTTH.UtilityGraphService.csproj", "{4518BBE3-03C3-48AC-B6F7-5F4619D339DD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService.Model", "OpenFTTH.UtilityGraphService.Model\OpenFTTH.UtilityGraphService.Model.csproj", "{E38414AE-C15D-4A39-970F-8B8C300539C8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService.Business", "OpenFTTH.UtilityGraphService.Business\OpenFTTH.UtilityGraphService.Business.csproj", "{68B4C04B-3A38-4177-B10C-4A1E00B9693E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService.Business.Tests", "OpenFTTH.UtilityGraphService.Business.Tests\OpenFTTH.UtilityGraphService.Business.Tests.csproj", "{01CADB18-5703-4C51-9ADF-18BA80853FA2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_core", "_core", "{088E916A-E5EC-4E69-A0F5-4807A9C1F3EB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "business", "business", "{05BCFEC1-FF36-49FF-A29C-B90A8A1EF805}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService.EventSourcing", "OpenFTTH.UtilityGraphService.EventSourcing\OpenFTTH.UtilityGraphService.EventSourcing.csproj", "{BC6412FA-99FE-4289-B584-7D8304029955}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "query", "query", "{9B7E44AC-18B9-4688-8067-CD5886C9B6F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenFTTH.UtilityGraphService.Query", "OpenFTTH.UtilityGraphService.Query\OpenFTTH.UtilityGraphService.Query.csproj", "{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4518BBE3-03C3-48AC-B6F7-5F4619D339DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4518BBE3-03C3-48AC-B6F7-5F4619D339DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4518BBE3-03C3-48AC-B6F7-5F4619D339DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4518BBE3-03C3-48AC-B6F7-5F4619D339DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E38414AE-C15D-4A39-970F-8B8C300539C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E38414AE-C15D-4A39-970F-8B8C300539C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E38414AE-C15D-4A39-970F-8B8C300539C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E38414AE-C15D-4A39-970F-8B8C300539C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68B4C04B-3A38-4177-B10C-4A1E00B9693E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68B4C04B-3A38-4177-B10C-4A1E00B9693E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68B4C04B-3A38-4177-B10C-4A1E00B9693E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68B4C04B-3A38-4177-B10C-4A1E00B9693E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01CADB18-5703-4C51-9ADF-18BA80853FA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01CADB18-5703-4C51-9ADF-18BA80853FA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01CADB18-5703-4C51-9ADF-18BA80853FA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01CADB18-5703-4C51-9ADF-18BA80853FA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC6412FA-99FE-4289-B584-7D8304029955}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC6412FA-99FE-4289-B584-7D8304029955}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC6412FA-99FE-4289-B584-7D8304029955}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC6412FA-99FE-4289-B584-7D8304029955}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E38414AE-C15D-4A39-970F-8B8C300539C8} = {05BCFEC1-FF36-49FF-A29C-B90A8A1EF805}
+		{68B4C04B-3A38-4177-B10C-4A1E00B9693E} = {05BCFEC1-FF36-49FF-A29C-B90A8A1EF805}
+		{01CADB18-5703-4C51-9ADF-18BA80853FA2} = {05BCFEC1-FF36-49FF-A29C-B90A8A1EF805}
+		{BC6412FA-99FE-4289-B584-7D8304029955} = {088E916A-E5EC-4E69-A0F5-4807A9C1F3EB}
+		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054} = {9B7E44AC-18B9-4688-8067-CD5886C9B6F0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CFE55104-E352-40B8-AD12-2C29C85AD0F1}
+	EndGlobalSection
+EndGlobal

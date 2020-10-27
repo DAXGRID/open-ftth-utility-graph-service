@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Span\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="2.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenFTTH.UtilityGraphService.EventSourcing\OpenFTTH.UtilityGraphService.EventSourcing.csproj" />
+    <ProjectReference Include="..\OpenFTTH.UtilityGraphService.Query\OpenFTTH.UtilityGraphService.Query.csproj" />
+  </ItemGroup>
+
+</Project>
