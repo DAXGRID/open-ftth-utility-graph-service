@@ -6,5 +6,6 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork.Events
 {
     public class NodeEquipmentPlaced
     {
+
     }
 }

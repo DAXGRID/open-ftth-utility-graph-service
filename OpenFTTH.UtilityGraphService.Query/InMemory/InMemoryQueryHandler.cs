@@ -13,11 +13,10 @@ namespace OpenFTTH.UtilityGraphService.Query.InMemory
     public class InMemoryQueryHandler : IUtilityGraphQueries
     {
         private ILoggerFactory _loggerFactory;
+        private readonly INetworkState _networkState;
         private readonly ILogger<InMemoryQueryHandler> _logger;
 
-        private InMemoryNetworkState _state = new InMemoryNetworkState();
-
-        public InMemoryQueryHandler(ILoggerFactory loggerFactory)
+        public InMemoryQueryHandler(ILoggerFactory loggerFactory, INetworkState networkState)
         {
             if (null == loggerFactory)
             {
@@ -27,38 +26,28 @@ namespace OpenFTTH.UtilityGraphService.Query.InMemory
             _loggerFactory = loggerFactory;
 
             _logger = loggerFactory.CreateLogger<InMemoryQueryHandler>();
-        }
 
-
-        /// <summary>
-        /// Use this method to seed the in memory state with route network data
-        /// </summary>
-        public void Seed(List<RouteNetworkEditOperationOccuredEvent> editOperationEvents)
-        {
-            var routeNetworkEventHandler = new RouteNetworkEventHandler(_loggerFactory, _state);
-
-            foreach (var editOperationEvent in editOperationEvents)
-                routeNetworkEventHandler.HandleEvent(editOperationEvent);
+            _networkState = networkState;
         }
 
         public Maybe<INodeEquipment> GetNodeEquipment(Guid nodeEquipmentId)
         {
-            var obj = _state.GetObject(nodeEquipmentId);
-
-            if (obj != null && obj is INodeEquipment)
-                return Maybe<INodeEquipment>.From((INodeEquipment)obj);
-
-            return Maybe<INodeEquipment>.None;
+            return GetObject<INodeEquipment>(nodeEquipmentId);
         }
 
         public Maybe<IRouteNode> GetRouteNode(Guid routeNodeId)
         {
-            var obj = _state.GetObject(routeNodeId);
+            return GetObject<IRouteNode>(routeNodeId);
+        }
 
-            if (obj != null && obj is IRouteNode)
-                return Maybe<IRouteNode>.From((IRouteNode)obj);
+        public Maybe<Type> GetObject<Type>(Guid objectId)
+        {
+            var obj = _networkState.GetObject(objectId);
 
-            return Maybe<IRouteNode>.None;
+            if (obj != null && obj is Type)
+                return Maybe<Type>.From((Type)obj);
+
+            return Maybe<Type>.None;
         }
     }
 }

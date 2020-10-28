@@ -1,5 +1,10 @@
 ﻿using DAX.ObjectVersioning.Core;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using OpenFTTH.Events.RouteNetwork;
+using OpenFTTH.UtilityGraphService.Query.RouteNetworkEventHandling;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,24 +16,54 @@ namespace OpenFTTH.UtilityGraphService.Query.InMemory
     /// </summary>
     public class InMemoryNetworkState : INetworkState
     {
+        private ILoggerFactory _loggerFactory;
+        private readonly ILogger<InMemoryQueryHandler> _logger;
+
         private InMemoryObjectManager _objectManager = new InMemoryObjectManager();
         
         private bool _loadMode = true;
-
         private ITransaction? _loadModeTransaction;
-
         private ITransaction? _cmdTransaction;
-
         private DateTime __lastEventRecievedTimestamp = DateTime.UtcNow;
-        
         private long _numberOfObjectsLoaded = 0;
+        
 
         public InMemoryObjectManager ObjectManager => _objectManager;
         public DateTime LastEventRecievedTimestamp => __lastEventRecievedTimestamp;
         public long NumberOfObjectsLoaded => _numberOfObjectsLoaded;
 
-        public InMemoryNetworkState()
+        public InMemoryNetworkState(ILoggerFactory loggerFactory)
         {
+            if (null == loggerFactory)
+            {
+                throw new ArgumentNullException("loggerFactory cannot be null");
+            }
+
+            _loggerFactory = loggerFactory;
+
+            _logger = loggerFactory.CreateLogger<InMemoryQueryHandler>();
+        }
+
+        /// <summary>
+        /// Use this method to seed the in memory state with route network data
+        /// </summary>
+        public void SeedRouteNetworkEvents(string json)
+        {
+            JsonConvert.DefaultSettings = (() =>
+            {
+                var settings = new JsonSerializerSettings();
+                settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                settings.Converters.Add(new StringEnumConverter());
+                settings.TypeNameHandling = TypeNameHandling.Auto;
+                return settings;
+            });
+
+            var editOperationEvents = JsonConvert.DeserializeObject<List<RouteNetworkEditOperationOccuredEvent>>(json);
+
+            var routeNetworkEventHandler = new RouteNetworkEventHandler(_loggerFactory, this);
+
+            foreach (var editOperationEvent in editOperationEvents)
+                routeNetworkEventHandler.HandleEvent(editOperationEvent);
         }
 
         public ITransaction GetTransaction()
