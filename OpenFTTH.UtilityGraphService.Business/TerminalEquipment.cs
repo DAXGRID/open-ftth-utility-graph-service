@@ -8,28 +8,27 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenFTTH.UtilityGraphService.Business.Node
+namespace OpenFTTH.UtilityGraphService.Business
 {
-    public class NodeEquipment : AggregateBase
+    public class TerminalEquipment : AggregateBase
     {
-
-        public NodeEquipment(
+        public TerminalEquipment(
             IUtilityGraphQueries queryApi, 
             Guid routeNodeId, 
-            Guid nodeEquipmentId, 
-            Guid specificationId, 
-            Guid? parentEquipmentContainerId = null)
+            Guid terminalEquipmentId, 
+            Guid equipmentSpecificationId,
+            Guid? equipmentProductAssetModelId = null,
+            Guid? parentEquipmentId = null)
         {
-
             // Check that route node exists
             if (queryApi.GetRouteNode(routeNodeId).HasNoValue)
                 throw new ArgumentException($"Route node with id: {routeNodeId} do not exists.");
 
             // Check that a node equipment with the specified id do not already exists
-            if (queryApi.GetNodeEquipment(nodeEquipmentId).HasValue)
-                throw new ArgumentException($"A node equipment with id: {nodeEquipmentId} already exists.");
+            if (queryApi.GetTerminalEquipment(terminalEquipmentId).HasValue)
+                throw new ArgumentException($"A terminal equipment with id: {terminalEquipmentId} already exists.");
 
-            RaiseEvent(new NodeEquipmentPlaced(), false);
+            RaiseEvent(new TerminalEquipmentPlaced(), false);
         }
     }
 }

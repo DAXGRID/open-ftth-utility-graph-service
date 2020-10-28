@@ -30,9 +30,9 @@ namespace OpenFTTH.UtilityGraphService.Query.InMemory
             _networkState = networkState;
         }
 
-        public Maybe<INodeEquipment> GetNodeEquipment(Guid nodeEquipmentId)
+        public Maybe<ITerminalEquipment> GetTerminalEquipment(Guid terminalEquipmentId)
         {
-            return GetObject<INodeEquipment>(nodeEquipmentId);
+            return GetObject<ITerminalEquipment>(terminalEquipmentId);
         }
 
         public Maybe<IRouteNode> GetRouteNode(Guid routeNodeId)

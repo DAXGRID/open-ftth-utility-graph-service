@@ -9,6 +9,6 @@ namespace OpenFTTH.UtilityGraphService.Query
     {
         Maybe<IRouteNode> GetRouteNode(Guid routeNodeId);
 
-        Maybe<INodeEquipment> GetNodeEquipment(Guid nodeEquipmentId);
+        Maybe<ITerminalEquipment> GetTerminalEquipment(Guid terminalEquipmentId);
     }
 }

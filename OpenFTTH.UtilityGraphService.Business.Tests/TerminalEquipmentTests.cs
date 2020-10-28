@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using OpenFTTH.Events.RouteNetwork;
-using OpenFTTH.UtilityGraphService.Business.Node;
 using OpenFTTH.UtilityGraphService.Model.UtilityNetwork.Events;
 using OpenFTTH.UtilityGraphService.Query.InMemory;
 using System;
@@ -10,10 +9,10 @@ using Xunit;
 
 namespace OpenFTTH.UtilityGraphService.Business.Tests
 {
-    public class NodeEquipmentTests
+    public class TerminalEquipmentTests
     {
         [Fact]
-        public void CreateNodeEquipment_InRouteNodeThatDontExists_ShouldThrowArgumentException()
+        public void CreateTerminalEquipment_InRouteNodeThatDontExists_ShouldThrowArgumentException()
         {
             ILoggerFactory loggerFactory = new Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory();
 
@@ -21,7 +20,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
 
             var queryApi = new InMemoryQueryHandler(loggerFactory, networkState);
 
-            Assert.Throws<ArgumentException>(() => new NodeEquipment(queryApi, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
+            Assert.Throws<ArgumentException>(() => new TerminalEquipment(queryApi, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
         }
 
         [Theory]
@@ -35,22 +34,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
             {""workTaskMrid"":""54800ae5-13a5-4b03-8626-a63b66a25568"",""userName"":""jespe"",""routeNetworkCommands"":[{""cmdType"":""NewRouteSegmentDigitized"",""cmdId"":""d880c7fb-02c2-4ac3-8434-c490a6a99e4f"",""routeNetworkEvents"":[{""$type"":""OpenFTTH.Events.RouteNetwork.RouteNodeAdded, OpenFTTH.Events"",""nodeId"":""bafe3b26-dad1-43f9-8120-9c21c155bc43"",""geometry"":""[557186.0762978606,6224187.125002002]"",""routeNodeInfo"":null,""namingInfo"":null,""lifecyleInfo"":null,""mappingInfo"":null,""safetyInfo"":null,""eventSequenceNumber"":0,""eventType"":""RouteNodeAdded"",""eventId"":""a34fbf9e-9921-4117-adef-dd7245f36a3f"",""eventTimestamp"":""2020-10-28T10:44:43.5162069Z"",""applicationName"":""GDB_INTEGRATOR"",""applicationInfo"":null},{""$type"":""OpenFTTH.Events.RouteNetwork.RouteSegmentAdded, OpenFTTH.Events"",""segmentId"":""9990734c-38c4-4739-810a-ba5432492b25"",""fromNodeId"":""6be9abac-619a-42d4-8207-510a83d769cc"",""toNodeId"":""bafe3b26-dad1-43f9-8120-9c21c155bc43"",""geometry"":""[[557185.3754148477,6224206.351999512],[557186.0762978606,6224187.125002002]]"",""routeSegmentInfo"":{""kind"":""Underground"",""width"":null,""height"":null},""namingInfo"":null,""lifecyleInfo"":{""deploymentState"":""InService"",""installationDate"":null,""removalDate"":null},""mappingInfo"":{""method"":""Schematic"",""verticalAccuracy"":null,""horizontalAccuracy"":null,""surveyDate"":null,""sourceInfo"":null},""safetyInfo"":{""classification"":""Ikke farlig"",""remark"":null},""eventSequenceNumber"":0,""eventType"":""RouteSegmentAdded"",""eventId"":""943e7d78-8753-4db0-9a8a-d2c61f5b8f46"",""eventTimestamp"":""2020-10-28T10:44:43.5170385Z"",""applicationName"":"""",""applicationInfo"":""""}]}],""eventSequenceNumber"":4,""eventType"":""RouteNetworkEditOperationOccuredEvent"",""eventId"":""9662c420-76b3-42f4-b859-65a234e819e3"",""eventTimestamp"":""2020-10-28T10:44:43.5176681Z"",""applicationName"":""GDB_INTEGRATOR"",""applicationInfo"":""""}
             ]
         ")]
-        public void CreateNodeEquipment_InRouteNodeThatExists_ShouldEmitNodeEquipmentPlacedEvent(string routeNetworkJson)
+        public void CreateValidTerminalEquipment_ShouldEmitTerminalEquipmentPlacedEvent(string routeNetworkJson)
         {
             ILoggerFactory loggerFactory = new Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory();
 
-            var routeNodeWithCentralOfficeMrid = Guid.Parse("6be9abac-619a-42d4-8207-510a83d769cc");
+            var routeNodeMrid = Guid.Parse("6be9abac-619a-42d4-8207-510a83d769cc");
 
             var networkState = new InMemoryNetworkState(loggerFactory);
             networkState.SeedRouteNetworkEvents(routeNetworkJson);
 
             var queryApi = new InMemoryQueryHandler(loggerFactory, networkState);
 
-            var node = new NodeEquipment(queryApi, routeNodeWithCentralOfficeMrid, Guid.NewGuid(), Guid.NewGuid());
+            var node = new TerminalEquipment(queryApi, routeNodeMrid, Guid.NewGuid(), Guid.NewGuid());
 
-            Assert.Contains(node.GetUncommittedEvents(), o => o is NodeEquipmentPlaced);
-             
+            Assert.Contains(node.GetUncommittedEvents(), o => o is TerminalEquipmentPlaced);
         }
+
+
 
 
     }

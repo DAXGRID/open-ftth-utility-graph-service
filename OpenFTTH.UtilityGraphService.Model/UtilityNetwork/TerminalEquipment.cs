@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
 {
-    public class NodeEquipment : INodeEquipment
+    public class TerminalEquipment : ITerminalEquipment
     {
 
     }
