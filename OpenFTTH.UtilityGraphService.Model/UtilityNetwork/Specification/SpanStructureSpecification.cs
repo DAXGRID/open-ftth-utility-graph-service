@@ -7,15 +7,15 @@ namespace OpenFTTH.UtilityGraphService.Model.Specification
     /// <summary>
     /// Used as part of a span equipment specification to specify how spans (conduits, fibers etc.) are arranged in a hierarchical containment structure inside an equipment type.
     /// </summary>
-    public struct SpanStructure
+    public struct SpanStructureSpecification
     {
         readonly string _spanClassType;
         readonly bool _isPathwayForOtherEquipment;
         readonly string? _name;
         readonly string? _color;
-        readonly SpanStructure[]? _children;
+        readonly SpanStructureSpecification[]? _children;
 
-        public SpanStructure(string spanClassType, bool pathwayForOtherEquipment, string? name = null, string? color = null, SpanStructure[]? childSpanStructures = null)
+        public SpanStructureSpecification(string spanClassType, bool pathwayForOtherEquipment, string? name = null, string? color = null, SpanStructureSpecification[]? childSpanStructures = null)
         {
             _spanClassType = spanClassType;
             _isPathwayForOtherEquipment = pathwayForOtherEquipment;
@@ -47,6 +47,6 @@ namespace OpenFTTH.UtilityGraphService.Model.Specification
         /// <summary>
         /// Child span structures.
         /// </summary>
-        public SpanStructure[] Children => _children == null ? new SpanStructure[0] : _children;
+        public SpanStructureSpecification[] Children => _children == null ? new SpanStructureSpecification[0] : _children;
     }
 }

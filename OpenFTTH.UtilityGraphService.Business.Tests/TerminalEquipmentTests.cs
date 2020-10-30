@@ -20,7 +20,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
 
             var queryApi = new InMemoryQueryHandler(loggerFactory, networkState);
 
-            Assert.Throws<ArgumentException>(() => new TerminalEquipment(queryApi, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
+            Assert.Throws<ArgumentException>(() => new TerminalEquipmentAggregate(queryApi, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
         }
 
         [Theory]
@@ -45,7 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
 
             var queryApi = new InMemoryQueryHandler(loggerFactory, networkState);
 
-            var node = new TerminalEquipment(queryApi, routeNodeMrid, Guid.NewGuid(), Guid.NewGuid());
+            var node = new TerminalEquipmentAggregate(queryApi, routeNodeMrid, Guid.NewGuid(), Guid.NewGuid());
 
             Assert.Contains(node.GetUncommittedEvents(), o => o is TerminalEquipmentPlaced);
         }

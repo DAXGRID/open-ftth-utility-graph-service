@@ -13,9 +13,9 @@ namespace OpenFTTH.UtilityGraphService.Model.Specification
         readonly Guid _mRID;
         readonly string _name;
         readonly string _version;
-        readonly SpanStructure _structure;
+        readonly SpanStructureSpecification _structure;
 
-        public SpanEquipmentSpecification(Guid mRID, string name, string version, SpanStructure structure)
+        public SpanEquipmentSpecification(Guid mRID, string name, string version, SpanStructureSpecification structure)
         {
             _mRID = mRID;
             _name = name;

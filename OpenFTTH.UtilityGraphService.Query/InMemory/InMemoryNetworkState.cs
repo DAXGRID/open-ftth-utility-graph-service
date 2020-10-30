@@ -45,7 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Query.InMemory
         }
 
         /// <summary>
-        /// Use this method to seed the in memory state with route network data
+        /// Use this method to seed the in memory state with route network json data
         /// </summary>
         public void SeedRouteNetworkEvents(string json)
         {

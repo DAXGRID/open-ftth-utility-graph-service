@@ -10,9 +10,9 @@ using System.Text;
 
 namespace OpenFTTH.UtilityGraphService.Business
 {
-    public class TerminalEquipment : AggregateBase
+    public class TerminalEquipmentAggregate : AggregateBase
     {
-        public TerminalEquipment(
+        public TerminalEquipmentAggregate(
             IUtilityGraphQueries queryApi, 
             Guid routeNodeId, 
             Guid terminalEquipmentId, 
