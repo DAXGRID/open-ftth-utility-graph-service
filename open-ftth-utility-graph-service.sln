@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphServic
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "query", "query", "{9B7E44AC-18B9-4688-8067-CD5886C9B6F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenFTTH.UtilityGraphService.Query", "OpenFTTH.UtilityGraphService.Query\OpenFTTH.UtilityGraphService.Query.csproj", "{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService.QueryImpl", "OpenFTTH.UtilityGraphService.Query\OpenFTTH.UtilityGraphService.QueryImpl.csproj", "{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenFTTH.UtilityGraphService.QueryModel", "OpenFTTH.UtilityGraphService.Query.Model\OpenFTTH.UtilityGraphService.QueryModel.csproj", "{3FF812C2-1F2C-4847-A489-69828F105E53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FF812C2-1F2C-4847-A489-69828F105E53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FF812C2-1F2C-4847-A489-69828F105E53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FF812C2-1F2C-4847-A489-69828F105E53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FF812C2-1F2C-4847-A489-69828F105E53}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +67,7 @@ Global
 		{01CADB18-5703-4C51-9ADF-18BA80853FA2} = {05BCFEC1-FF36-49FF-A29C-B90A8A1EF805}
 		{BC6412FA-99FE-4289-B584-7D8304029955} = {088E916A-E5EC-4E69-A0F5-4807A9C1F3EB}
 		{2DEB19A1-8986-4DCE-B40F-D7BFFAF73054} = {9B7E44AC-18B9-4688-8067-CD5886C9B6F0}
+		{3FF812C2-1F2C-4847-A489-69828F105E53} = {9B7E44AC-18B9-4688-8067-CD5886C9B6F0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CFE55104-E352-40B8-AD12-2C29C85AD0F1}

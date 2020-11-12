@@ -6,7 +6,7 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
 {
     public class SpanSegment
     {
-        public SpanEquipment Parent { get; set; }
+        public SpanEquipment? Parent { get; set; }
         public Int16 SpanStructureIndex { get; set; }
         public Int16 SpanSegmentIndex { get; set; }
         public Int16 FromRouteNodeIndex { get; set; }

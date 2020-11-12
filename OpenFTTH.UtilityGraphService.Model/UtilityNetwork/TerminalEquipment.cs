@@ -11,10 +11,14 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
     /// </summary>
     public class TerminalEquipment : ITerminalEquipment, ITerminalEquipmentStructure
     {
-        private List<ITerminalEquipmentStructure> _childStructures;
+        private IReadOnlyList<ITerminalEquipmentStructure>? _childStructures = null;
 
-        private Dictionary<Int16, ITerminalEquipmentStructure> _structureIndex = new Dictionary<short, ITerminalEquipmentStructure>();
-        public IReadOnlyList<ITerminalEquipmentStructure> ChildStructures => _childStructures;
+        private readonly Dictionary<Int16, ITerminalEquipmentStructure> _structureIndex = new Dictionary<short, ITerminalEquipmentStructure>();
+        public IReadOnlyList<ITerminalEquipmentStructure>? ChildStructures {
+            get { return _childStructures; }
+            init { _childStructures = value; }
+        }
+
 
         /// <summary>
         /// Get structure with the given index key

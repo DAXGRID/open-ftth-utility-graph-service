@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using OpenFTTH.UtilityGraphService.Query.RouteNetworkEventHandling;
 using OpenFTTH.Events.RouteNetwork;
+using OpenFTTH.UtilityGraphService.QueryModel;
 
 namespace OpenFTTH.UtilityGraphService.Query.InMemory
 {
@@ -48,6 +49,11 @@ namespace OpenFTTH.UtilityGraphService.Query.InMemory
                 return Maybe<Type>.From((Type)obj);
 
             return Maybe<Type>.None;
+        }
+
+        public Maybe<RouteNetworkQueryResult> RouteNetworkQuery(RouteNetworkQueryRequest routeNetworkQueryRequest)
+        {
+            throw new NotImplementedException();
         }
     }
 }

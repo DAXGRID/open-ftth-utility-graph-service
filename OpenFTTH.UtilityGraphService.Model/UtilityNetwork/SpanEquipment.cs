@@ -7,13 +7,15 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
     /// <summary>
     /// The whole thing should be treated as an immutable structure.
     /// </summary>
-    public class SpanEquipment
+    public record SpanEquipment
     {
-        private IWalkOfInterest walkOfInterest;
-        private IRouteNode[] _routeNodeIndex;
+        public Guid Id { get; init; }
+        public string? Name { get; init; }
+        public List<SpanStructure>? SpanStructures{ get; init; }
 
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public List<SpanStructure> SpanStructures{ get; set; }
+        public SpanEquipment(Guid id)
+        {
+            Id = id;
+        }
     }
 }

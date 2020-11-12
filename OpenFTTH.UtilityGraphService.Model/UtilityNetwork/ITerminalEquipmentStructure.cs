@@ -6,6 +6,6 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
 {
     public interface ITerminalEquipmentStructure
     {
-        IReadOnlyList<ITerminalEquipmentStructure> ChildStructures { get; }
+        IReadOnlyList<ITerminalEquipmentStructure>? ChildStructures { get; }
     }
 }

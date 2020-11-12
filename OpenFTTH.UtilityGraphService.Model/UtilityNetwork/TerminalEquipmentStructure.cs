@@ -10,7 +10,7 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
     /// </summary>
     public struct TerminalEquipmentStructure : ITerminalEquipmentStructure
     {
-        private ITerminalEquipmentStructure _parentStructure;
+        //private ITerminalEquipmentStructure _parentStructure;
 
         public IReadOnlyList<ITerminalEquipmentStructure> ChildStructures { get; }
 
