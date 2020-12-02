@@ -1,5 +1,4 @@
-﻿using OpenFTTH.UtilityGraphService.Model.RouteNetwork;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork

@@ -1,10 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OpenFTTH.UtilityGraphService.Query.InMemory;
-using OpenFTTH.UtilityGraphService.QueryModel;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace OpenFTTH.UtilityGraphService.Business.Tests

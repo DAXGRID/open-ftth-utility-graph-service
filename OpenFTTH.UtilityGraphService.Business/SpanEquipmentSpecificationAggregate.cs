@@ -1,4 +1,4 @@
-﻿using OpenFTTH.UtilityGraphService.EventSourcing;
+﻿using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.Model.Specification;
 using OpenFTTH.UtilityGraphService.Query;
 using System;

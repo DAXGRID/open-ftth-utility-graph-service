@@ -1,5 +1,5 @@
 ﻿using CSharpFunctionalExtensions;
-using OpenFTTH.UtilityGraphService.Model.RouteNetwork;
+using OpenFTTH.UtilityGraphService.Business.Model.RouteNetwork;
 using OpenFTTH.UtilityGraphService.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.QueryModel;
 using System;

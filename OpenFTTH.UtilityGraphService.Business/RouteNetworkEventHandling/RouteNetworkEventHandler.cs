@@ -2,13 +2,9 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenFTTH.Events.RouteNetwork;
-using OpenFTTH.UtilityGraphService.Model.RouteNetwork;
-using OpenFTTH.UtilityGraphService.Query.InMemory;
+using OpenFTTH.UtilityGraphService.Business.Model.RouteNetwork;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Query.RouteNetworkEventHandling
 {

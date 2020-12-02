@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenFTTH.UtilityGraphService.Model.RouteNetwork
+namespace OpenFTTH.UtilityGraphService.Business.Model.RouteNetwork
 {
     public class RouteNode : GraphNode, IRouteNode
     {

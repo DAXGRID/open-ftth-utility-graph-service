@@ -1,13 +1,9 @@
 ﻿using CSharpFunctionalExtensions;
-using OpenFTTH.UtilityGraphService.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.Model.RouteNetwork;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
-using OpenFTTH.UtilityGraphService.Query.RouteNetworkEventHandling;
-using OpenFTTH.Events.RouteNetwork;
+using OpenFTTH.UtilityGraphService.Business.Model.RouteNetwork;
+using OpenFTTH.UtilityGraphService.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.QueryModel;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Query.InMemory
 {

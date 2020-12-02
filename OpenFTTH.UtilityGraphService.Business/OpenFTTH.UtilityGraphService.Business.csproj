@@ -7,15 +7,16 @@
 
   <ItemGroup>
     <PackageReference Include="CSharpFunctionalExtensions" Version="2.12.0" />
+    <PackageReference Include="DAX.ObjectVersioning.Graph" Version="1.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+    <PackageReference Include="NetTopologySuite" Version="2.1.0" />
+    <PackageReference Include="NetTopologySuite.IO.GeoJSON" Version="2.0.4" />
+    <PackageReference Include="OpenFTTH.Events" Version="2.1.2" />
+    <PackageReference Include="OpenFTTH.EventSourcing" Version="0.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenFTTH.UtilityGraphService.EventSourcing\OpenFTTH.UtilityGraphService.EventSourcing.csproj" />
-    <ProjectReference Include="..\OpenFTTH.UtilityGraphService.Query\OpenFTTH.UtilityGraphService.QueryImpl.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Asset\" />
+    <ProjectReference Include="..\OpenFTTH.UtilityGraphService.API\OpenFTTH.UtilityGraphService.API.csproj" />
   </ItemGroup>
 
 </Project>
