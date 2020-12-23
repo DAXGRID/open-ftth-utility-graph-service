@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using OpenFTTH.UtilityGraphService.Query.InMemory;
 using Xunit;
 
 namespace OpenFTTH.UtilityGraphService.Business.Tests
@@ -35,10 +34,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
         {
             ILoggerFactory loggerFactory = new Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory();
 
+            /*
             var networkState = new InMemoryNetworkState(loggerFactory);
             networkState.SeedRouteNetworkEvents(KongefoldenTestRouteNetworkJson);
 
             var queryApi = new InMemoryQueryHandler(loggerFactory, networkState);
+            */
         }
 
     }

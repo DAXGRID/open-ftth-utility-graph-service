@@ -1,16 +1,13 @@
 using Microsoft.Extensions.Logging;
-using OpenFTTH.Events.RouteNetwork;
 using OpenFTTH.UtilityGraphService.Model.UtilityNetwork.Events;
-using OpenFTTH.UtilityGraphService.Query.InMemory;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace OpenFTTH.UtilityGraphService.Business.Tests
 {
     public class TerminalEquipmentTests
     {
+        /*
         [Fact]
         public void CreateTerminalEquipment_InRouteNodeThatDontExists_ShouldThrowArgumentException()
         {
@@ -51,7 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
         }
 
 
-
+        */
 
     }
 }
