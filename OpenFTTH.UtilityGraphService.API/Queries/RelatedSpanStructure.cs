@@ -1,4 +1,5 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
     /// </summary>
     public record RelatedSpanStructure : SpanStructure
     {
-        public RelatedSpanStructure(Guid id, Guid specificationId) : base(id, specificationId)
+        public RelatedSpanStructure(Guid id, Guid specificationId, SpanSegment[] spanSegments) : base(id, specificationId, spanSegments)
         {
         }
     }

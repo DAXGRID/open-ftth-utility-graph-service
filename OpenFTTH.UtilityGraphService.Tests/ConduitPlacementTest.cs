@@ -41,6 +41,5 @@ namespace OpenFTTH.UtilityGraphService.Business.Tests
             var queryApi = new InMemoryQueryHandler(loggerFactory, networkState);
             */
         }
-
     }
 }
