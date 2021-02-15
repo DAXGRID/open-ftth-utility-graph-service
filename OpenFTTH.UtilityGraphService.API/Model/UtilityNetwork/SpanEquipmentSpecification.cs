@@ -18,12 +18,12 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         /// <param name="category">What kind of category: Conduit, Fiber Cable etc.</param>
         /// <param name="name">Short human readable name of the specification - i.e. Ø50 12x10</param>
         /// <param name="version">Since specifications are immutable, a version must always be provided</param>
-        public SpanEquipmentSpecification(Guid id, string category, string name, SpanStructureTemplate rootStuctureTemplate)
+        public SpanEquipmentSpecification(Guid id, string category, string name, SpanStructureTemplate rootSpanStructureTemplate)
         {
             this.Id = id;
             this.Category = category;
             this.Name = name;
-            this.RootTemplate = rootStuctureTemplate;
+            this.RootTemplate = rootSpanStructureTemplate;
         }
     }
 }

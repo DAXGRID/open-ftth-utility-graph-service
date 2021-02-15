@@ -1,5 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Util;
@@ -11,18 +12,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.QueryHandling
     public class GetSpanEquipmentSpecificationsQueryHandler
         : IQueryHandler<GetSpanEquipmentSpecifications, Result<LookupCollection<SpanEquipmentSpecification>>>
     {
-        private readonly SpanEquipmentSpecificationsProjection _spanEquipmentSpecificationsProjection;
+        private readonly IEventStore _eventStore;        
 
-        public GetSpanEquipmentSpecificationsQueryHandler(SpanEquipmentSpecificationsProjection spanEquipmentSpecificationsProjection)
+        public GetSpanEquipmentSpecificationsQueryHandler(IEventStore eventStore)
         {
-            _spanEquipmentSpecificationsProjection = spanEquipmentSpecificationsProjection;
+            _eventStore = eventStore;
         }
 
         public Task<Result<LookupCollection<SpanEquipmentSpecification>>> HandleAsync(GetSpanEquipmentSpecifications query)
         {
+            var spanEquipmentSpecificationsProjection = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>();
+
             return Task.FromResult(
                 Result.Success<LookupCollection<SpanEquipmentSpecification>>(
-                    _spanEquipmentSpecificationsProjection.Specifications
+                    spanEquipmentSpecificationsProjection.Specifications
                 )
             );
         }

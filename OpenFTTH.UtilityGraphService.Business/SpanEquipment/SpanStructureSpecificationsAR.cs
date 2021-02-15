@@ -35,19 +35,17 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
         public void AddSpecification(SpanStructureSpecification spanStructureSpecification)
         {
             if (_spanStructureSpecifications.ContainsKey(spanStructureSpecification.Id))
-                throw new ArgumentException($"Span structure already exists with id: {spanStructureSpecification.Id}");
+                throw new ArgumentException($"A span structure specification with id: {spanStructureSpecification.Id} already exists.");
 
-            SpanStructureSpecificationAdded @event = new SpanStructureSpecificationAdded(spanStructureSpecification);
-            RaiseEvent(@event);
+            RaiseEvent(new SpanStructureSpecificationAdded(spanStructureSpecification));
         }
 
         public void DeprecatedSpecification(Guid specificationId)
         {
             if (!_spanStructureSpecifications.ContainsKey(specificationId))
-                throw new ArgumentException($"No span structure specification found with id: {specificationId}");
+                throw new ArgumentException($"Cannot find span structure specification with id: {specificationId}");
 
-            SpanStructureSpecificationDeprecated @event = new SpanStructureSpecificationDeprecated(specificationId);
-            RaiseEvent(@event);
+            RaiseEvent(new SpanStructureSpecificationDeprecated(specificationId));
         }
     }
 }

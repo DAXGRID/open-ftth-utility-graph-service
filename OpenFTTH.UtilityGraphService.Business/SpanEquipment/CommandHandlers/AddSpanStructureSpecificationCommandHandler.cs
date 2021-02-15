@@ -2,6 +2,7 @@
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using System;
 using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
@@ -19,7 +20,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
         {
             var aggreate = _eventStore.Aggregates.Load<SpanStructureSpecificationsAR>(SpanStructureSpecificationsAR.UUID);
 
-            aggreate.AddSpecification(command.Specification);
+            try
+            {
+                aggreate.AddSpecification(command.Specification);
+            }
+            catch (ArgumentException ex)
+            {
+                return Task.FromResult(Result.Failure(ex.Message));
+            }
 
             _eventStore.Aggregates.Store(aggreate);
 
