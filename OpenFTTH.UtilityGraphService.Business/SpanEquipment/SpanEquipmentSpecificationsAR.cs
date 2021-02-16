@@ -82,16 +82,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
 
             while (childsToCheck.Length != 0)
             {
+                List<SpanStructureTemplate> nextLevelChildsToCheck = new List<SpanStructureTemplate>();
+
                 foreach (var childTemplate in childsToCheck)
                 {
                     if (childTemplate.Level != expectedChildLevel)
-                        throw new ArgumentException($"Expected level: {childTemplate.Level} in template referencing span structure specification: {childTemplate.SpanStructureSpecificationId}");
+                        throw new ArgumentException($"Expected level: {expectedChildLevel} in template referencing span structure specification: {childTemplate.SpanStructureSpecificationId}");
 
                     if (levelPositionUsed.Contains((childTemplate.Level, childTemplate.Position)))
                         throw new ArgumentException($"Level {childTemplate.Level} Position {childTemplate.Position} in template referencing span structure specification: {childTemplate.SpanStructureSpecificationId} is used more than once. Must be unique.");
 
                     levelPositionUsed.Add((childTemplate.Level, childTemplate.Position));
+
+                    nextLevelChildsToCheck.AddRange(childTemplate.ChildTemplates);
                 }
+
+                childsToCheck = nextLevelChildsToCheck.ToArray();                
 
                 expectedChildLevel++;
             }

@@ -59,6 +59,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.SpanEquipment
             var spanEquipmentSpecification = new SpanEquipmentSpecification(Guid.NewGuid(), "Conduit", "Ø50 2x12",
                 new SpanStructureTemplate(outerConduitSpanStructureSpec1.Id, 1, 1,
                     new SpanStructureTemplate[] {
+                        new SpanStructureTemplate(innerConduitSpanStructureSpec1.Id, 2, 1, Array.Empty<SpanStructureTemplate>()),
+                        new SpanStructureTemplate(innerConduitSpanStructureSpec2.Id, 2, 2, Array.Empty<SpanStructureTemplate>())
                     }
                 )
             )
