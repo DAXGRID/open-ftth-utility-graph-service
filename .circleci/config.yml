@@ -145,7 +145,7 @@ workflows:
       - publish-nuget:
           context: nuget
           requires:
-            - test-app
+            - docker-publish-image
           filters:
             tags:
               only: /^v.*/
