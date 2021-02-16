@@ -16,8 +16,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
         private NamingInfo? NamingInfo { get; }
         private MarkingInfo? MarkingInfo { get; }
 
-        private SpanStructure? rootSpanStructure = null;
-
         public SpanEquipmentAR(Guid id, Guid walkOfInterestId, SpanEquipmentSpecificationsAR spanEquipmentSpecification, NamingInfo? namingInfo)
         {
             this.Id = id;

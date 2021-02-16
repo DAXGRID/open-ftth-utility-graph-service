@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.API.Model
 {
@@ -15,5 +11,11 @@ namespace OpenFTTH.UtilityGraphService.API.Model
         /// Others do not. Therefore the property is nullable.
         /// </summary>
         public string? Name { get; }
+
+
+        /// <summary>
+        /// AKA long name
+        /// </summary>
+        public string? Description { get; }
     }
 }

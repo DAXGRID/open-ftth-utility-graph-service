@@ -7,6 +7,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid Id { get;}
         public string Name { get; }
         public bool Deprecated { get; init; }
+        public string? Description { get; init; }
 
         public Manufacturer(Guid id, string name)
         {

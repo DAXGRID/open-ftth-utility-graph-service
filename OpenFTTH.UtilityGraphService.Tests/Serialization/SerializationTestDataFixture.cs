@@ -27,7 +27,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.Fixtures
 
                 var queryResult = new GetRelatedEquipmentQueryResult(queriedRouteNetworkElement);
 
-                SpanEquipmentSpecification spec = new SpanEquipmentSpecification(Guid.NewGuid(), "Conduit", "Ø50 10x10",null);
+                SpanEquipmentSpecification spec = new SpanEquipmentSpecification(Guid.NewGuid(), "Conduit", "Ø50 10x10", new SpanStructureTemplate(Guid.NewGuid(), 1, 1, Array.Empty<SpanStructureTemplate>()));
 
                 queryResult.SpanEquipmentSpecifications = new SpanEquipmentSpecification[] { spec };
 

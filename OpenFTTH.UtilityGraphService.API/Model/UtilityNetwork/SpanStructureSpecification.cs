@@ -14,6 +14,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public int? InnerDiameter { get; init; }
         public int? OuterDiameter { get; init; }
         public bool Deprecated { get; init; }
+        public string? Description { get; init; }
 
         public SpanStructureSpecification(Guid id, string spanClassType, string name, string color)
         {

@@ -12,6 +12,8 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 
         public string? Description { get; init; }
 
+        public Guid[]? ManufacturerRefs { get; init; }
+
         /// <summary>
         /// </summary>
         /// <param name="id">The specification id</param>

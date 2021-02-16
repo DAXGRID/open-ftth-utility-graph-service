@@ -31,7 +31,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.LookupCollection
         {
             public Guid Id { get; set; }
 
-            public string Name { get; set; }
+            public string? Name { get; set; }
+
+            public string? Description { get; init; }
         }
 
 

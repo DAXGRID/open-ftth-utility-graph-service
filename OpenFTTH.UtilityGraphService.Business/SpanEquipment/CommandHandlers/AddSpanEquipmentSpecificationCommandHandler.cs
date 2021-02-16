@@ -23,9 +23,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
 
             var spanStructureSpecifications = _eventStore.Projections.Get<SpanStructureSpecificationsProjection>().Specifications;
 
+            var manufacturer = _eventStore.Projections.Get<ManufacturerProjection>().Manufacturer;
+
             try
             {
-                aggreate.AddSpecification(command.Specification, spanStructureSpecifications);
+                aggreate.AddSpecification(command.Specification, spanStructureSpecifications, manufacturer);
             }
             catch (ArgumentException ex)
             {

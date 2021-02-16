@@ -30,12 +30,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
             _spanEquipmentSpecifications.Add(@event.Specification);
         }
 
-        public void AddSpecification(SpanEquipmentSpecification spanEquipmentSpecification, LookupCollection<SpanStructureSpecification> spanStructureSpecifications)
+        public void AddSpecification(SpanEquipmentSpecification spanEquipmentSpecification, LookupCollection<SpanStructureSpecification> spanStructureSpecifications, LookupCollection<Manufacturer> manufacturer)
         {
             if (_spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecification.Id))
                 throw new ArgumentException($"A span equipment specification with id: {spanEquipmentSpecification.Id} already exists");
 
             ValidateSpanStructureSpecificationReferences(spanEquipmentSpecification, spanStructureSpecifications);
+            ValidateManufacturerReferences(spanEquipmentSpecification, manufacturer);
             ValidateSpanStructureLevelAndPosition(spanEquipmentSpecification, spanStructureSpecifications);
 
             RaiseEvent(new SpanEquipmentSpecificationAdded(spanEquipmentSpecification));
@@ -48,6 +49,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
             {
                 if (!spanStructureSpecifications.ContainsKey(spanStructureTemplate.SpanStructureSpecificationId))
                     throw new ArgumentException($"Cannot find span structure specification with id: {spanStructureTemplate.SpanStructureSpecificationId}");
+            }
+        }
+
+        private static void ValidateManufacturerReferences(SpanEquipmentSpecification spanEquipmentSpecification, LookupCollection<Manufacturer> manufacturer)
+        {
+            // Check that all manufacturer exists if provided
+            if (spanEquipmentSpecification.ManufacturerRefs != null)
+            {
+                foreach (var manufacturerId in spanEquipmentSpecification.ManufacturerRefs)
+                {
+                    if (!manufacturer.ContainsKey(manufacturerId))
+                        throw new ArgumentException($"Cannot find manufaturer with id: {manufacturerId}");
+                }
             }
         }
 

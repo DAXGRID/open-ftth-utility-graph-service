@@ -12,15 +12,13 @@ namespace OpenFTTH.UtilityGraphService.Model.UtilityNetwork
     {
         private readonly TerminalEquipment _terminalEquipment;
         private readonly Int16 _parentStructureIndex;
+        public string? Description { get; init; }
 
         public TerminalEquipmentNode(Guid mRID, TerminalEquipment terminalEquipment, Int16 parentStructureIndex) : base(mRID)
         {
             _terminalEquipment = terminalEquipment;
             _parentStructureIndex = parentStructureIndex;
         }
-
-        public Guid Id 
-            => base.Id;
 
         public string Name 
             => throw new NotImplementedException();

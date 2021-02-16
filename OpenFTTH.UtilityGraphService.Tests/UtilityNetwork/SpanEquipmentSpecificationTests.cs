@@ -27,6 +27,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.SpanEquipment
         [Fact]
         public async void AddValidMultiLevelSpanEquipmentSpecification_ShouldSucceed()
         {
+            // Create manufacturer
+            var manufacturer = new Manufacturer(Guid.NewGuid(), "Super Manufacturer");
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manufacturer));
+
+
             // Setup some span structure specifications to be used in the span equipment specification
             var outerConduitSpanStructureSpec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø50", "Orange")
             {
@@ -48,14 +53,19 @@ namespace OpenFTTH.UtilityGraphService.Tests.SpanEquipment
                 InnerDiameter = 10
             };
             await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(innerConduitSpanStructureSpec2));
-
+                       
 
             // Setup a span equipment specification with 2 levels
             var spanEquipmentSpecification = new SpanEquipmentSpecification(Guid.NewGuid(), "Conduit", "Ø50 2x12",
                 new SpanStructureTemplate(outerConduitSpanStructureSpec1.Id, 1, 1,
                     new SpanStructureTemplate[] {
                     }
-                ));
+                )
+            )
+            {
+                Description = "Ø50 2x12/10",
+                ManufacturerRefs = new Guid[] { manufacturer.Id }
+            };
 
             // Act
             var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));

@@ -4,17 +4,15 @@ namespace OpenFTTH.UtilityGraphService.API.Model.Asset
 { 
     public class Manufacturer : IManufacturer
     {
-        readonly Guid _mRID;
-        readonly string _name;
+        public Guid Id { get; }
+        public string Name { get; }
+        public bool Deprecated { get; init; }
+        public string? Description { get; init; }
 
-        public Manufacturer(Guid mRID, string name)
+        public Manufacturer(Guid id, string name)
         {
-            _mRID = mRID;
-            _name = name;
+            Id = id;
+            Name = name;
         }
-
-        public Guid Id => _mRID;
-
-        public string Name => _name;
     }
 }

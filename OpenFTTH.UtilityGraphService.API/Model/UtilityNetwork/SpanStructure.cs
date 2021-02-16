@@ -13,6 +13,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public SpanSegment[] SpanSegments { get; }
 
         public string? Name => this.GetType().Name;
+        public string? Description => null;
 
         public SpanStructure(Guid id, Guid specificationId, SpanSegment[] spanSegments)
         {
