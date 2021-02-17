@@ -1,6 +1,6 @@
 ﻿using OpenFTTH.EventSourcing;
+using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Util;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipment.Events;
 using System;
 using System.Collections.Generic;

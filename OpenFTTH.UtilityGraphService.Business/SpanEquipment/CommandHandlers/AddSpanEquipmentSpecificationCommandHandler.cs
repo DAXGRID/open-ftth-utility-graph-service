@@ -19,7 +19,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
 
         public Task<Result> HandleAsync(AddSpanEquipmentSpecification command)
         {
-            var aggreate = _eventStore.Aggregates.Load<SpanEquipmentSpecificationsAR>(SpanEquipmentSpecificationsAR.UUID);
+            var aggreate = _eventStore.Aggregates.Load<SpanEquipmentSpecifications>(SpanEquipmentSpecifications.UUID);
 
             var spanStructureSpecifications = _eventStore.Projections.Get<SpanStructureSpecificationsProjection>().Specifications;
 

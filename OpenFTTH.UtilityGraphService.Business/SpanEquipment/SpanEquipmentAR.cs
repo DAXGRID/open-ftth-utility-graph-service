@@ -12,13 +12,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
     /// </summary>
     public class SpanEquipmentAR : AggregateBase
     {
-        private Guid? ProductAssetModelRef { get; }
         private NamingInfo? NamingInfo { get; }
         private MarkingInfo? MarkingInfo { get; }
 
-        public SpanEquipmentAR(Guid id, Guid walkOfInterestId, SpanEquipmentSpecificationsAR spanEquipmentSpecification, NamingInfo? namingInfo)
+        public SpanEquipmentAR(Guid spanEquipmentId, Guid walkOfInterestId, Guid startNodeOfInterestId, Guid endNodeOfInterestId, SpanEquipmentSpecification spanEquipmentSpecification, NamingInfo? namingInfo, MarkingInfo? markingInfo)
         {
-            this.Id = id;
+            this.Id = spanEquipmentId;
+
             this.NamingInfo = namingInfo;
         }
     }

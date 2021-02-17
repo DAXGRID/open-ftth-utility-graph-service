@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenFTTH.Core;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 {

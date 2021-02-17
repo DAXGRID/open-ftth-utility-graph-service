@@ -2,10 +2,10 @@
 using FluentAssertions;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
-using OpenFTTH.UtilityGraphService.API.Util;
 using System;
 using Xunit;
 

@@ -1,19 +1,19 @@
 ﻿using OpenFTTH.EventSourcing;
+using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Util;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipment.Events;
 using System;
 using System.Collections.Generic;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
 {
-    public class SpanEquipmentSpecificationsAR : AggregateBase
+    public class SpanEquipmentSpecifications : AggregateBase
     {
         public static readonly Guid UUID = Guid.Parse("989d9062-9149-46a4-b318-d5ba5d734ab9");
 
         private LookupCollection<SpanEquipmentSpecification> _spanEquipmentSpecifications = new LookupCollection<SpanEquipmentSpecification>();
 
-        public SpanEquipmentSpecificationsAR()
+        public SpanEquipmentSpecifications()
         {
             Id = UUID;
             Register<SpanEquipmentSpecificationAdded>(Apply);
