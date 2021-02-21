@@ -1,10 +1,10 @@
 ﻿using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipment.Events;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 {
     /// <summary>
     /// Aggregate holding span structure specifications

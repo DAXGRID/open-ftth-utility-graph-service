@@ -2,11 +2,11 @@
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipment.Projections;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using System;
 using System.Threading.Tasks;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class AddSpanEquipmentSpecificationCommandHandler : ICommandHandler<AddSpanEquipmentSpecification, Result>
     {

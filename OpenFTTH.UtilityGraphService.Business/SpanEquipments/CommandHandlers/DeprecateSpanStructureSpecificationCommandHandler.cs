@@ -4,7 +4,7 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using System.Threading.Tasks;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class DeprecateSpanStructureSpecificationCommandHandler : ICommandHandler<DeprecateSpanStructureSpecification, Result>
     {

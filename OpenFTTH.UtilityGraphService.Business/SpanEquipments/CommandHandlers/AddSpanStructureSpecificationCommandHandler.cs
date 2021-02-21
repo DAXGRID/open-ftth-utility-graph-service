@@ -5,24 +5,24 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using System;
 using System.Threading.Tasks;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.CommandHandlers
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
-    public class AddManufacturerCommandHandler : ICommandHandler<AddManufacturer, Result>
+    public class AddSpanStructureSpecificationCommandHandler : ICommandHandler<AddSpanStructureSpecification, Result>
     {
         private readonly IEventStore _eventStore;
 
-        public AddManufacturerCommandHandler(IEventStore eventStore)
+        public AddSpanStructureSpecificationCommandHandler(IEventStore eventStore)
         {
             _eventStore = eventStore;
         }
 
-        public Task<Result> HandleAsync(AddManufacturer command)
+        public Task<Result> HandleAsync(AddSpanStructureSpecification command)
         {
-            var aggreate = _eventStore.Aggregates.Load<ManufacturerAR>(ManufacturerAR.UUID);
+            var aggreate = _eventStore.Aggregates.Load<SpanStructureSpecificationsAR>(SpanStructureSpecificationsAR.UUID);
 
             try
             {
-                aggreate.AddManufacturer(command.Manufacturer);
+                aggreate.AddSpecification(command.Specification);
             }
             catch (ArgumentException ex)
             {

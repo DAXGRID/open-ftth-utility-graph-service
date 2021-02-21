@@ -1,25 +1,25 @@
-﻿using System;
+﻿using OpenFTTH.Events.Core.Infos;
+using System;
+using System.Collections.Immutable;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 {
-    public abstract record SpanEquipment 
+    public record SpanEquipment 
     {
         public Guid Id { get; }
-        
-        public string? Name { get; init; }
-
         public Guid SpecificationId { get; }
+        public WalkInfo WalkInfo { get; }
+        public ImmutableArray<SpanStructure> SpanStructures { get; }
 
-        public bool IsComposite { get; }
+        public NamingInfo? NamingInfo { get; init; }
+        public MarkingInfo? MarkingInfo { get; init; }
 
-        public SpanEquipment(Guid id, Guid specificationId)
+        public SpanEquipment(Guid id, Guid specificationId, WalkInfo walkInfo, SpanStructure[] spanStructures)
         {
             this.Id = id;
             this.SpecificationId = specificationId;
+            this.WalkInfo = walkInfo;
+            this.SpanStructures = ImmutableArray.Create(spanStructures);
         }
-
-        public abstract SpanEquipmentSpecification Specification { get; }
-
-        public abstract SpanStructure RootStructure { get; }
     }
 }

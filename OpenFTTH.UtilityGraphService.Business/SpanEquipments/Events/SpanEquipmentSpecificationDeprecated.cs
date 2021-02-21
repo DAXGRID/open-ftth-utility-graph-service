@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.Events
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
     public record SpanEquipmentSpecificationDeprecated
     {

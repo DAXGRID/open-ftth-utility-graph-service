@@ -1,12 +1,12 @@
 ﻿using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipment.Events;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 {
     public class ManufacturerAR : AggregateBase
     {

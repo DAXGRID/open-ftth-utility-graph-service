@@ -14,14 +14,9 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 
         internal SpanEquipmentSpecification? _specification;
 
-        public RelatedSpanEquipment(Guid id, Guid specificationId, RelatedSpanStructure rootStructure) : base(id, specificationId)
+        public RelatedSpanEquipment(Guid id, Guid specificationId, RelatedSpanStructure rootStructure, WalkInfo walkInfo, SpanStructure[] spanStructures) : base(id, specificationId, walkInfo, spanStructures)
         {
             this._rootStructure = rootStructure;
         }
-
-        public override RelatedSpanStructure RootStructure => _rootStructure;
-
-        [IgnoreDataMember]
-        public override SpanEquipmentSpecification Specification => _specification ?? new SpanEquipmentSpecification(Guid.NewGuid(), "run PopulateReferences IQueryResult", "notset", null);
     }
 }

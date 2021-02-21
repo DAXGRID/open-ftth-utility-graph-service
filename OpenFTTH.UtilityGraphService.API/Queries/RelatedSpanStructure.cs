@@ -13,7 +13,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
     /// </summary>
     public record RelatedSpanStructure : SpanStructure
     {
-        public RelatedSpanStructure(Guid id, Guid specificationId, SpanSegment[] spanSegments) : base(id, specificationId, spanSegments)
+        public RelatedSpanStructure(Guid id, Guid specificationId, UInt16 level, UInt16 parentPosition, UInt16 position, SpanSegment[] spanSegments) : base(id, specificationId, level, parentPosition, position, spanSegments)
         {
         }
     }

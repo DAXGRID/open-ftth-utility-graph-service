@@ -1,4 +1,5 @@
-﻿using OpenFTTH.UtilityGraphService.API.Model.RouteNetwork;
+﻿using OpenFTTH.Events.Core.Infos;
+using OpenFTTH.UtilityGraphService.API.Model.RouteNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
@@ -31,13 +32,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.Fixtures
 
                 queryResult.SpanEquipmentSpecifications = new SpanEquipmentSpecification[] { spec };
 
-                RelatedSpanStructure rootStructure = new RelatedSpanStructure(Guid.NewGuid(), spec.Id, Array.Empty<SpanSegment>());
+                RelatedSpanStructure rootStructure = new RelatedSpanStructure(Guid.NewGuid(), spec.Id, 1,1,1,Array.Empty<SpanSegment>());
 
                 queryResult.RelatedSpanEquipment = new RelatedSpanEquipment[]
                 {
-                        new RelatedSpanEquipment(Guid.NewGuid(), spec.Id, rootStructure)
+                        new RelatedSpanEquipment(Guid.NewGuid(), spec.Id, rootStructure, new WalkInfo(Guid.NewGuid(), Array.Empty<Guid>()), Array.Empty<SpanStructure>())
                         {
-                            Name = "My Span Equipment"
+                            NamingInfo = new NamingInfo("My Span Equipment", "Hej")
                         }
                 };
 

@@ -1,9 +1,9 @@
 ﻿using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipment.Events;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipment.Projections
+namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
 {
     public class SpanEquipmentSpecificationsProjection : ProjectionBase
     {
