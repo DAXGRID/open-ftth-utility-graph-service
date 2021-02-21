@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.RouteNetwork
 {
-    public class RouteNetworkElement
+    public class RouteNetworkElementInfo
     {
         public string? Name { get; set; }
     }

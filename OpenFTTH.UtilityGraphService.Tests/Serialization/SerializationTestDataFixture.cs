@@ -1,4 +1,5 @@
 ﻿using OpenFTTH.Events.Core.Infos;
+using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.UtilityGraphService.API.Model.RouteNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
@@ -24,7 +25,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.Fixtures
         {
             get
             {
-                var queriedRouteNetworkElement = new RouteNetworkElement() { Name = "Hest" };
+                var queriedRouteNetworkElement = new RouteNetworkElementInfo() { Name = "Hest" };
 
                 var queryResult = new GetRelatedEquipmentQueryResult(queriedRouteNetworkElement);
 
@@ -36,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.Fixtures
 
                 queryResult.RelatedSpanEquipment = new RelatedSpanEquipment[]
                 {
-                        new RelatedSpanEquipment(Guid.NewGuid(), spec.Id, rootStructure, new WalkInfo(Guid.NewGuid(), Array.Empty<Guid>()), Array.Empty<SpanStructure>())
+                        new RelatedSpanEquipment(Guid.NewGuid(), spec.Id, rootStructure, new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList()), Array.Empty<SpanStructure>())
                         {
                             NamingInfo = new NamingInfo("My Span Equipment", "Hej")
                         }

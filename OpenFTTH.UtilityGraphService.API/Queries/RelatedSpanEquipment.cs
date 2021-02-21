@@ -1,4 +1,5 @@
-﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+﻿using OpenFTTH.RouteNetwork.API.Model;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 using System.Runtime.Serialization;
 
@@ -14,7 +15,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 
         internal SpanEquipmentSpecification? _specification;
 
-        public RelatedSpanEquipment(Guid id, Guid specificationId, RelatedSpanStructure rootStructure, WalkInfo walkInfo, SpanStructure[] spanStructures) : base(id, specificationId, walkInfo, spanStructures)
+        public RelatedSpanEquipment(Guid id, Guid specificationId, RelatedSpanStructure rootStructure, RouteNetworkInterest walkOfInterest, SpanStructure[] spanStructures) : base(id, specificationId, walkOfInterest, spanStructures)
         {
             this._rootStructure = rootStructure;
         }

@@ -11,18 +11,18 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
     /// </summary>
     public class GetRelatedEquipmentQueryResult
     {
-        private readonly RouteNetworkElement _queriedRouteNetworkElement;
+        private readonly RouteNetworkElementInfo _queriedRouteNetworkElement;
 
         private SpanEquipmentSpecification[]? _spanEquipmentSpecifications;
 
         private RelatedSpanEquipment[]? _relatedSpanEquipment;
 
-        public GetRelatedEquipmentQueryResult(RouteNetworkElement queriedRouteNetworkElement)
+        public GetRelatedEquipmentQueryResult(RouteNetworkElementInfo queriedRouteNetworkElement)
         {
             _queriedRouteNetworkElement = queriedRouteNetworkElement;
         }
 
-        public RouteNetworkElement QueriedRouteNetworkElement => _queriedRouteNetworkElement;
+        public RouteNetworkElementInfo QueriedRouteNetworkElement => _queriedRouteNetworkElement;
 
         public RelatedSpanEquipment[] RelatedSpanEquipment
         {

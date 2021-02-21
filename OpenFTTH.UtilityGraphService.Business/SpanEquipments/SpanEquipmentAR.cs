@@ -14,8 +14,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
     /// </summary>
     public class SpanEquipmentAR : AggregateBase
     {
-        private NamingInfo? NamingInfo { get; }
-        private MarkingInfo? MarkingInfo { get; }
+        private SpanEquipment? _spanEquipment;
 
         public SpanEquipmentAR()
         {
@@ -31,7 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         private void Apply(SpanEquipmentPlacedInRouteNetwork obj)
         {
-            throw new NotImplementedException();
+            _spanEquipment = obj.Equipment;
         }
 
        
