@@ -6,11 +6,11 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     public class SpanStructureTemplate
     {
         public Guid SpanStructureSpecificationId { get; }
-        public int Level { get; }
-        public int Position { get; }
+        public UInt16 Level { get; }
+        public UInt16 Position { get; }
         public SpanStructureTemplate[] ChildTemplates { get; }
 
-        public SpanStructureTemplate(Guid spanStructureSpecificationId, int level, int position, SpanStructureTemplate[] childTemplates)
+        public SpanStructureTemplate(Guid spanStructureSpecificationId, UInt16 level, UInt16 position, SpanStructureTemplate[] childTemplates)
         {
             SpanStructureSpecificationId = spanStructureSpecificationId;
             Level = level;

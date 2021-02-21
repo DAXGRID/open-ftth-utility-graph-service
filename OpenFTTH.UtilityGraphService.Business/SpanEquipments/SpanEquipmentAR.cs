@@ -1,9 +1,14 @@
-﻿using CSharpFunctionalExtensions;
+﻿using FluentResults;
 using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.RouteNetwork.API.Model;
+using OpenFTTH.Util;
+using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 {
@@ -21,18 +26,79 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentPlacedInRouteNetwork>(Apply);
         }
 
-        public Result PlaceSpanEquipmentInRouteNetwork(Guid spanEquipmentId, SpanEquipmentSpecification spanEquipmentSpecification, NamingInfo? namingInfo, MarkingInfo? markingInfo)
+        public Result PlaceSpanEquipmentInRouteNetwork(
+            LookupCollection<SpanEquipment> spanEquipments,
+            LookupCollection<SpanEquipmentSpecification> spanEquipmentSpecifications,
+            Guid spanEquipmentId, 
+            Guid spanEquipmentSpecificationId,
+            RouteNetworkInterest interest,
+            NamingInfo? namingInfo, 
+            MarkingInfo? markingInfo)
         {
             this.Id = spanEquipmentId;
 
-            return Result.Success();
+            if (spanEquipmentId == Guid.Empty)
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_ID_CANNOT_BE_EMPTY, "Span equipment id cannot be empty. A unique id must be provided by client."));
+
+            if (spanEquipments.ContainsKey(spanEquipmentId))
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_ALREADY_EXISTS, $"A span equipment with id: {spanEquipmentId} already exists."));
+
+            if (interest.Kind != RouteNetworkInterestKindEnum.WalkOfInterest)
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_INTEREST_KIND_MUST_BE_WALK_OF_INTEREST, "Interest kind must be WalkOfInterest."));
+
+            if (!spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecificationId))
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_SPECIFICATION_ID_NOT_FOUND, $"Cannot find span equipment specification with id: {spanEquipmentSpecificationId}"));
+
+            var spanEquipment = CreateSpanEquipmentFromSpecification(spanEquipmentId, spanEquipmentSpecifications[spanEquipmentSpecificationId], interest, namingInfo, markingInfo);
+
+            RaiseEvent(new SpanEquipmentPlacedInRouteNetwork(spanEquipment));
+
+            return Result.Ok();
+        }
+
+        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, RouteNetworkInterest interest, NamingInfo? namingInfo, MarkingInfo? markingInfo)
+        {
+            List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
+
+            // Create root structure
+            spanStructuresToInclude.Add(
+                new SpanStructure(
+                    id: Guid.NewGuid(), 
+                    specificationId: specification.RootTemplate.SpanStructureSpecificationId, 
+                    level: 1, 
+                    parentPosition: 0, 
+                    position: 1, 
+                    spanSegments: new SpanSegment[] { new SpanSegment() }
+                )
+            );
+
+            // Add level 2 structures
+            foreach (var template in specification.RootTemplate.GetAllSpanStructureTemplatesRecursive().Where(t => t.Level == 2))
+            {
+                spanStructuresToInclude.Add(
+                    new SpanStructure(
+                        id: Guid.NewGuid(),
+                        specificationId: template.SpanStructureSpecificationId,
+                        level: template.Level,
+                        parentPosition: 1,
+                        position: template.Position,
+                        spanSegments: new SpanSegment[] { new SpanSegment() }
+                    )
+                );
+            }
+
+            var spanEquipment = new SpanEquipment(spanEquipmentId, specification.Id, interest, spanStructuresToInclude.ToArray())
+            {
+                NamingInfo = namingInfo,
+                MarkingInfo = markingInfo
+            };
+
+            return spanEquipment;
         }
 
         private void Apply(SpanEquipmentPlacedInRouteNetwork obj)
         {
             _spanEquipment = obj.Equipment;
         }
-
-       
     }
 }

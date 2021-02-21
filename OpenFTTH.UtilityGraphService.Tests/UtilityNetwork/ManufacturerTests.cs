@@ -33,13 +33,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Act
             await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
-            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu2));
 
             var manufacturerQueryResult = await _queryDispatcher.HandleAsync<GetManufacturer, Result<LookupCollection<Manufacturer>>>(new GetManufacturer());
 
             // Assert
             manufacturerQueryResult.Value[manu1.Id].Should().BeEquivalentTo(manu1);
-            manufacturerQueryResult.Value[manu1.Id].Should().BeEquivalentTo(manu1);
+            manufacturerQueryResult.Value[manu2.Id].Should().BeEquivalentTo(manu2);
         }
 
         [Fact]
