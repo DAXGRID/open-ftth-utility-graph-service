@@ -4,29 +4,35 @@ using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
+using System.Collections.Concurrent;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
 {
     public class SpanEquipmentsProjection : ProjectionBase
     {
-        private readonly LookupCollection<SpanEquipment> _spanEquipments = new LookupCollection<SpanEquipment>();
+        private readonly LookupCollection<SpanEquipment> _spanEquipmentByEquipmentId = new LookupCollection<SpanEquipment>();
+        private readonly ConcurrentDictionary<Guid,SpanEquipment> _spanEquipmentByInterestId = new ConcurrentDictionary<Guid,SpanEquipment>();
 
-        public LookupCollection<SpanEquipment> SpanEquipments => _spanEquipments;
+        public LookupCollection<SpanEquipment> SpanEquipments => _spanEquipmentByEquipmentId;
 
         public SpanEquipmentsProjection()
         {
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
         }
 
-        public Result<SpanEquipment> GetEquipment(Guid spanEquipmentId)
+        public Result<SpanEquipment> GetEquipment(Guid spanEquipmentOrInterestId)
         {
-            if (_spanEquipments.TryGetValue(spanEquipmentId, out SpanEquipment? spanEquipment))
+            if (_spanEquipmentByEquipmentId.TryGetValue(spanEquipmentOrInterestId, out SpanEquipment? spanEquipmentByEquipmentId))
             {
-                return Result.Ok<SpanEquipment>(spanEquipment);
+                return Result.Ok<SpanEquipment>(spanEquipmentByEquipmentId);
+            }
+            else if (_spanEquipmentByInterestId.TryGetValue(spanEquipmentOrInterestId, out SpanEquipment? spanEquipmentByInterestId))
+            {
+                return Result.Ok<SpanEquipment>(spanEquipmentByInterestId);
             }
             else
             {
-                return Result.Fail<SpanEquipment>($"No span equipment with id: {spanEquipmentId} found");
+                return Result.Fail<SpanEquipment>($"No span equipment with id or interest id: {spanEquipmentOrInterestId} found");
             }
         }
 
@@ -35,7 +41,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
             switch (eventEnvelope.Data)
             {
                 case (SpanEquipmentPlacedInRouteNetwork @event):
-                    _spanEquipments.Add(@event.Equipment);
+                    _spanEquipmentByEquipmentId.Add(@event.Equipment);
+                    _spanEquipmentByInterestId.TryAdd(@event.Equipment.WalkOfInterest.Id, @event.Equipment);
                     break;
             }
         }

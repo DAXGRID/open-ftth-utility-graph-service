@@ -1,7 +1,9 @@
 ﻿using CSharpFunctionalExtensions;
 using OpenFTTH.CQRS;
+using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
 
 namespace OpenFTTH.UtilityGraphService.Tests.TestData
@@ -9,10 +11,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
     public class ConduitSpecificationsTestDataGenerator
     {
         private ICommandDispatcher _commandDispatcher;
+        private IQueryDispatcher _queryDispatcher;
 
-        public ConduitSpecificationsTestDataGenerator(ICommandDispatcher commandDispatcher)
+        public ConduitSpecificationsTestDataGenerator(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _commandDispatcher = commandDispatcher;
+            _queryDispatcher = queryDispatcher;
         }
 
         public Guid Manu_GMPlast = Guid.Parse("47e87d16-a1f0-488a-8c3e-cb3a4f3e8926");
@@ -47,6 +51,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
         
         public ConduitSpecificationsTestDataGenerator Run()
         {
+            var manufacturerQueryResult = _queryDispatcher.HandleAsync<GetManufacturer, Result<LookupCollection<Manufacturer>>>(new GetManufacturer()).Result;
+
+            if (manufacturerQueryResult.Value.ContainsKey(Manu_GMPlast))
+                return this;
+
+
             // Manufacturer
             AddManufacturer(new Manufacturer(Manu_GMPlast, "GM Plast"));
             AddManufacturer(new Manufacturer(Manu_Emtelle, "Emtelle"));

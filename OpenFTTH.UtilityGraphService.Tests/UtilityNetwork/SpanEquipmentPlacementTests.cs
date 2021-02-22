@@ -27,7 +27,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         public async void TestPlaceSimpleValidSpanEquipment_ShouldSucceed()
         {
             // Setup
-            var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher).Run();
+            var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
 
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 
@@ -55,6 +55,30 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].MarkingInfo.Should().BeEquivalentTo(placeSpanEquipmentCommand.MarkingInfo);
 
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures.Length.Should().Be(4);
+        }
+
+        [Fact]
+        public async void TestQuerySpanEquipmentByInterestId_ShouldSucceed()
+        {
+            // Setup
+            var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
+
+            var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
+
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), conduitSpecs.Multi_Ø32_3x10, walkOfInterest);
+
+            // Act
+            var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);
+
+            var spanEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new InterestIdList() { walkOfInterest.Id })
+            );
+
+            // Assert
+            placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
+            spanEquipmentQueryResult.IsSuccess.Should().BeTrue();
+
+            spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].Id.Should().Be(placeSpanEquipmentCommand.SpanEquipmentId);
         }
     }
 }

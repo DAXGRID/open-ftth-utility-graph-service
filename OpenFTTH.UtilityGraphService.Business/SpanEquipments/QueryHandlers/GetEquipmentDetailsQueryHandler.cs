@@ -25,26 +25,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
         public Task<Result<GetEquipmentDetailsResult>> HandleAsync(GetEquipmentDetails query)
         {
             // Get route elements
-            if (query.EquipmentIdsToQuery.Count > 0 && query.InterestIdsToQuery.Count == 0)
+            if (query.EquipmentIdsToQuery.Count > 0 || query.InterestIdsToQuery.Count > 0)
             {
-                return QueryByEquipmentIds(query);
-            }
-            else if (query.InterestIdsToQuery.Count > 0 && query.EquipmentIdsToQuery.Count == 0)
-            {
-                throw new ApplicationException("Not Implemented");
+                return QueryByEquipmentOrInterestIds(query);
             }
             else
             {
-                if (query.InterestIdsToQuery.Count > 0 && query.EquipmentIdsToQuery.Count > 0)
-                    return Task.FromResult(Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_CANT_QUERY_BY_INTEREST_AND_EQUIPMENT_ID_AT_THE_SAME_TIME, "Invalid query. Cannot query by equipment ids and interest ids at the same time.")));
-                else if (query.InterestIdsToQuery.Count == 0 && query.EquipmentIdsToQuery.Count == 0)
+                if (query.InterestIdsToQuery.Count == 0 && query.EquipmentIdsToQuery.Count == 0)
                     return Task.FromResult(Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_NO_INTEREST_OR_EQUPMENT_IDS_SPECIFIED, "Invalid query. Neither route network element ids or interest ids specified. Therefore nothing to query.")));
                 else
                     throw new ApplicationException("Unexpected combination of query arguments in GetRouteNetworkDetails query:\r\n" + JsonConvert.SerializeObject(query));
             }
         }
 
-        private Task<Result<GetEquipmentDetailsResult>> QueryByEquipmentIds(GetEquipmentDetails query)
+        private Task<Result<GetEquipmentDetailsResult>> QueryByEquipmentOrInterestIds(GetEquipmentDetails query)
         {
             List<SpanEquipment> spanEquipmentsToReturn = new List<SpanEquipment>();
 
@@ -54,10 +48,24 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             {
                 var spanEquipmentLookpResult = spanEquipmentProjection.GetEquipment(equipmentId);
 
+                // Here we return a error result, because we're dealing with invalid equipment ids provided by the client
+                if (spanEquipmentLookpResult.IsFailed)
+                    return Task.FromResult(
+                        Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Error looking up equipment by equipment id: {equipmentId}")).
+                        WithError(spanEquipmentLookpResult.Errors.First())
+                    );
+
+                spanEquipmentsToReturn.Add(spanEquipmentLookpResult.Value);
+            }
+
+            foreach (var interestId in query.InterestIdsToQuery)
+            {
+                var spanEquipmentLookpResult = spanEquipmentProjection.GetEquipment(interestId);
+
                 // Here we return a error result, because we're dealing with invalid interest ids provided by the client
                 if (spanEquipmentLookpResult.IsFailed)
                     return Task.FromResult(
-                        Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_ID, $"Error looking up equipment by id: {equipmentId}")).
+                        Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_INTEREST_ID, $"Error looking up equipment by interest id: {interestId}")).
                         WithError(spanEquipmentLookpResult.Errors.First())
                     );
 
