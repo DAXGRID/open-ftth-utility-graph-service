@@ -13,9 +13,10 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public RouteNetworkInterest WalkOfInterest { get; }
         public ImmutableArray<SpanStructure> SpanStructures { get; }
 
+        public Guid? ManufacturerId { get; init; }
         public NamingInfo? NamingInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
-
+        
         public string? Name => NamingInfo?.Name;
         public string? Description => NamingInfo?.Description;
 

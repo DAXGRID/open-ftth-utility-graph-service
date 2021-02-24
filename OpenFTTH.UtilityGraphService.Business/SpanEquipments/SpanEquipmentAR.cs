@@ -32,6 +32,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Guid spanEquipmentId, 
             Guid spanEquipmentSpecificationId,
             RouteNetworkInterest interest,
+            Guid? manufacturerId,
             NamingInfo? namingInfo, 
             MarkingInfo? markingInfo)
         {
@@ -49,14 +50,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (!spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecificationId))
                 return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_SPECIFICATION_ID_NOT_FOUND, $"Cannot find span equipment specification with id: {spanEquipmentSpecificationId}"));
 
-            var spanEquipment = CreateSpanEquipmentFromSpecification(spanEquipmentId, spanEquipmentSpecifications[spanEquipmentSpecificationId], interest, namingInfo, markingInfo);
+            var spanEquipment = CreateSpanEquipmentFromSpecification(spanEquipmentId, spanEquipmentSpecifications[spanEquipmentSpecificationId], interest, manufacturerId, namingInfo, markingInfo);
 
             RaiseEvent(new SpanEquipmentPlacedInRouteNetwork(spanEquipment));
 
             return Result.Ok();
         }
 
-        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, RouteNetworkInterest interest, NamingInfo? namingInfo, MarkingInfo? markingInfo)
+        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, RouteNetworkInterest interest, Guid? manufactuereId, NamingInfo? namingInfo, MarkingInfo? markingInfo)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
 
@@ -89,6 +90,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             var spanEquipment = new SpanEquipment(spanEquipmentId, specification.Id, interest, spanStructuresToInclude.ToArray())
             {
+                ManufacturerId = manufactuereId,
                 NamingInfo = namingInfo,
                 MarkingInfo = markingInfo
             };
