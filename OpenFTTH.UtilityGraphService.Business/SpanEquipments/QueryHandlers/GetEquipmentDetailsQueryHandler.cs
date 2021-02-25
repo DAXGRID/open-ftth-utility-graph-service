@@ -40,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
         private Task<Result<GetEquipmentDetailsResult>> QueryByEquipmentOrInterestIds(GetEquipmentDetails query)
         {
-            List<SpanEquipment> spanEquipmentsToReturn = new List<SpanEquipment>();
+            List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn = new List<SpanEquipmentWithRelatedInfo>();
 
             var spanEquipmentProjection = _eventStore.Projections.Get<SpanEquipmentsProjection>();
 
@@ -55,7 +55,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                         WithError(spanEquipmentLookpResult.Errors.First())
                     );
 
-                spanEquipmentsToReturn.Add(spanEquipmentLookpResult.Value);
+                spanEquipmentsToReturn.Add(new SpanEquipmentWithRelatedInfo(spanEquipmentLookpResult.Value));
             }
 
             foreach (var interestId in query.InterestIdsToQuery)
@@ -69,7 +69,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                         WithError(spanEquipmentLookpResult.Errors.First())
                     );
 
-                spanEquipmentsToReturn.Add(spanEquipmentLookpResult.Value);
+                spanEquipmentsToReturn.Add(new SpanEquipmentWithRelatedInfo(spanEquipmentLookpResult.Value));
             }
 
             var result = new GetEquipmentDetailsResult(spanEquipmentsToReturn.ToArray());
@@ -78,7 +78,5 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                 Result.Ok<GetEquipmentDetailsResult>(result)
             );
         }
-
-
     }
 }
