@@ -69,7 +69,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     level: 1, 
                     parentPosition: 0, 
                     position: 1, 
-                    spanSegments: new SpanSegment[] { new SpanSegment() }
+                    spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 1) }
                 )
             );
 
@@ -83,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                         level: template.Level,
                         parentPosition: 1,
                         position: template.Position,
-                        spanSegments: new SpanSegment[] { new SpanSegment() }
+                        spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 1) }
                     )
                 );
             }
