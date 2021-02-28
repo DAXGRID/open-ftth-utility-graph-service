@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DAX.EventProcessing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.EventSourcing.InMem;
@@ -11,6 +13,10 @@ namespace OpenFTTH.UtilityGraphService.Tests
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            // Event producer
+            services.AddSingleton<IExternalEventProducer, FakeExternalEventProducer>();
+
+            // ES and CQRS stuff
             services.AddSingleton<IEventStore, InMemEventStore>();
 
             services.AddSingleton<IQueryDispatcher, QueryDispatcher>();

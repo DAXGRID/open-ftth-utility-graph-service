@@ -9,18 +9,23 @@ using OpenFTTH.UtilityGraphService.Tests.TestData;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.Events.Core.Infos;
+using DAX.EventProcessing;
+using System.Linq;
+using OpenFTTH.Events.UtilityNetwork;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     public class SpanEquipmentPlacementTests
     {
-        private ICommandDispatcher _commandDispatcher;
-        private IQueryDispatcher _queryDispatcher;
+        private readonly ICommandDispatcher _commandDispatcher;
+        private readonly IQueryDispatcher _queryDispatcher;
+        private readonly FakeExternalEventProducer _externalEventProducer;
 
-        public SpanEquipmentPlacementTests(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public SpanEquipmentPlacementTests(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
+            _externalEventProducer = (FakeExternalEventProducer)externalEventProducer;
         }
 
         [Fact]
@@ -57,6 +62,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].ManufacturerId.Should().Be(placeSpanEquipmentCommand.ManufacturerId);
 
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures.Length.Should().Be(4);
+
+            // We check if there's an event in the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            utilityNetworkNotifications.Any(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == placeSpanEquipmentCommand.SpanEquipmentId))).Should().BeTrue();
         }
 
         [Fact]
