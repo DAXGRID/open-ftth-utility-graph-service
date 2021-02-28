@@ -15,7 +15,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 
         internal SpanEquipmentSpecification? _specification;
 
-        public RelatedSpanEquipment(Guid id, Guid specificationId, RelatedSpanStructure rootStructure, RouteNetworkInterest walkOfInterest, SpanStructure[] spanStructures) : base(id, specificationId, walkOfInterest, spanStructures)
+        public RelatedSpanEquipment(Guid id, Guid specificationId, RelatedSpanStructure rootStructure, Guid walkOfInterestId, Guid[] nodesOfInterestIds, SpanStructure[] spanStructures) : base(id, specificationId, walkOfInterestId, nodesOfInterestIds, spanStructures)
         {
             this._rootStructure = rootStructure;
         }

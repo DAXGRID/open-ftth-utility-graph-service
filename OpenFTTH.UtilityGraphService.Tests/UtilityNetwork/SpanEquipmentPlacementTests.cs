@@ -12,6 +12,8 @@ using OpenFTTH.Events.Core.Infos;
 using DAX.EventProcessing;
 using System.Linq;
 using OpenFTTH.Events.UtilityNetwork;
+using OpenFTTH.RouteNetwork.API.Commands;
+using OpenFTTH.TestData;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
@@ -34,9 +36,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Setup
             var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
 
-            var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
+            var walkOfInterestId = Guid.NewGuid();
+            var registerWalkOfInterestCommand = new RegisterWalkOfInterest(walkOfInterestId, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
+            var registerWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterWalkOfInterest, Result<RouteNetworkInterest>>(registerWalkOfInterestCommand).Result;
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), conduitSpecs.Multi_Ø32_3x10, walkOfInterest)
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), conduitSpecs.Multi_Ø32_3x10, registerWalkOfInterestCommandResult.Value)
             {
                 NamingInfo = new NamingInfo("Hans", "Grethe"),
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
@@ -56,7 +60,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].Id.Should().Be(placeSpanEquipmentCommand.SpanEquipmentId);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpecificationId.Should().Be(placeSpanEquipmentCommand.SpanEquipmentSpecificationId);
-            spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].WalkOfInterest.Should().BeEquivalentTo(placeSpanEquipmentCommand.Interest);
+            spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].WalkOfInterestId.Should().Be(placeSpanEquipmentCommand.Interest.Id);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].NamingInfo.Should().BeEquivalentTo(placeSpanEquipmentCommand.NamingInfo);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].MarkingInfo.Should().BeEquivalentTo(placeSpanEquipmentCommand.MarkingInfo);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].ManufacturerId.Should().Be(placeSpanEquipmentCommand.ManufacturerId);
@@ -65,7 +69,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // We check if there's an event in the notification.utility-network topic having an idlist containing the span equipment id we just created
             var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
-            utilityNetworkNotifications.Any(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == placeSpanEquipmentCommand.SpanEquipmentId))).Should().BeTrue();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == placeSpanEquipmentCommand.SpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CO_1);
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.S1);
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.HH_1);
         }
 
         [Fact]

@@ -10,7 +10,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     {
         public Guid Id { get; }
         public Guid SpecificationId { get; }
-        public RouteNetworkInterest WalkOfInterest { get; }
+        //public RouteNetworkInterest WalkOfInterest { get; }
+        public Guid WalkOfInterestId { get; }
+        public Guid[] NodesOfInterestIds { get; }
         public ImmutableArray<SpanStructure> SpanStructures { get; }
 
         public Guid? ManufacturerId { get; init; }
@@ -20,11 +22,12 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public string? Name => NamingInfo?.Name;
         public string? Description => NamingInfo?.Description;
 
-        public SpanEquipment(Guid id, Guid specificationId, RouteNetworkInterest walkOfInterest, SpanStructure[] spanStructures)
+        public SpanEquipment(Guid id, Guid specificationId, Guid walkOfInterestId, Guid[] nodesOfInterestIds, SpanStructure[] spanStructures)
         {
             this.Id = id;
             this.SpecificationId = specificationId;
-            this.WalkOfInterest = walkOfInterest;
+            this.WalkOfInterestId = walkOfInterestId;
+            this.NodesOfInterestIds = nodesOfInterestIds;
             this.SpanStructures = ImmutableArray.Create(spanStructures);
         }
     }

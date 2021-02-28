@@ -50,14 +50,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (!spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecificationId))
                 return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_SPECIFICATION_ID_NOT_FOUND, $"Cannot find span equipment specification with id: {spanEquipmentSpecificationId}"));
 
-            var spanEquipment = CreateSpanEquipmentFromSpecification(spanEquipmentId, spanEquipmentSpecifications[spanEquipmentSpecificationId], interest, manufacturerId, namingInfo, markingInfo);
+            var spanEquipment = CreateSpanEquipmentFromSpecification(spanEquipmentId, spanEquipmentSpecifications[spanEquipmentSpecificationId], interest.Id, Array.Empty<Guid>(), manufacturerId, namingInfo, markingInfo);
 
             RaiseEvent(new SpanEquipmentPlacedInRouteNetwork(spanEquipment));
 
             return Result.Ok();
         }
 
-        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, RouteNetworkInterest interest, Guid? manufactuereId, NamingInfo? namingInfo, MarkingInfo? markingInfo)
+        public Result CutSpanSegments(Guid routeNodeId, Guid[] spanSegmentsToCut)
+        {
+            return null;
+        }
+
+        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufactuereId, NamingInfo? namingInfo, MarkingInfo? markingInfo)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
 
@@ -88,7 +93,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 );
             }
 
-            var spanEquipment = new SpanEquipment(spanEquipmentId, specification.Id, interest, spanStructuresToInclude.ToArray())
+            var spanEquipment = new SpanEquipment(spanEquipmentId, specification.Id, walkOfInterestId, nodesOfInterestIds, spanStructuresToInclude.ToArray())
             {
                 ManufacturerId = manufactuereId,
                 NamingInfo = namingInfo,

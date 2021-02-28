@@ -4,6 +4,7 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.API.Queries
 {
+    /*
     /// <summary>
     /// Used to represent span equipment information related to a specific route network element as part 
     /// of the GetEquipmentRelatedToRouteElementQueryResult data structure.
@@ -17,4 +18,5 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
             this.RelationKind = relationKind;
         }
     }
+    */
 }

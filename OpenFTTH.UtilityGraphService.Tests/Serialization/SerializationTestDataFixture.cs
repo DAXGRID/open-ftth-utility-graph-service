@@ -37,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.Fixtures
 
                 queryResult.RelatedSpanEquipment = new RelatedSpanEquipment[]
                 {
-                        new RelatedSpanEquipment(Guid.NewGuid(), spec.Id, rootStructure, new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList()), Array.Empty<SpanStructure>())
+                        new RelatedSpanEquipment(Guid.NewGuid(), spec.Id, rootStructure, Guid.NewGuid(), Array.Empty<Guid>(), Array.Empty<SpanStructure>())
                         {
                             NamingInfo = new NamingInfo("My Span Equipment", "Hej")
                         }
