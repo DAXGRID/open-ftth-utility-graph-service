@@ -4,6 +4,7 @@ using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
+using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using System;
 using System.Collections.Generic;
@@ -42,7 +43,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
         {
             List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn = new List<SpanEquipmentWithRelatedInfo>();
 
-            var spanEquipmentProjection = _eventStore.Projections.Get<SpanEquipmentsProjection>();
+            var spanEquipmentProjection = _eventStore.Projections.Get<UtilityGraphProjection>();
 
             foreach (var equipmentId in query.EquipmentIdsToQuery)
             {

@@ -5,6 +5,7 @@ using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using System;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(PlaceSpanEquipmentInRouteNetwork command)
         {
-            var spanEquipments = _eventStore.Projections.Get<SpanEquipmentsProjection>().SpanEquipments;
+            var spanEquipments = _eventStore.Projections.Get<UtilityGraphProjection>().SpanEquipments;
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
             var spanEquipmentAR = new SpanEquipmentAR();
