@@ -160,7 +160,5 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
             newSpanEquipment.SpanStructures[0].SpanSegments[2].ToNodeOfInterestIndex.Should().Be(1);
         }
 
-
-
     }
 }

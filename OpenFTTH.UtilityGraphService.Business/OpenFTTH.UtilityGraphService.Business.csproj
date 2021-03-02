@@ -25,7 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="NodeContainer\" />
+    <Folder Include="NodeContainers\QueryHandlers\" />
+    <Folder Include="NodeContainers\Projections\" />
   </ItemGroup>
 
 </Project>
