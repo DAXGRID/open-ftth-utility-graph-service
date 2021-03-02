@@ -3,7 +3,7 @@ using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
+namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections
 {
     public class NodeContainerSpecificationsProjection : ProjectionBase
     {

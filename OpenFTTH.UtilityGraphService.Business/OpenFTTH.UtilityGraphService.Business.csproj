@@ -24,9 +24,4 @@
     <ProjectReference Include="..\OpenFTTH.UtilityGraphService.API\OpenFTTH.UtilityGraphService.API.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="NodeContainers\QueryHandlers\" />
-    <Folder Include="NodeContainers\Projections\" />
-  </ItemGroup>
-
 </Project>

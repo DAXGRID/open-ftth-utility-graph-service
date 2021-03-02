@@ -4,10 +4,10 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using System.Threading.Tasks;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
+namespace OpenFTTH.UtilityGraphService.Business.NodeEquipments.QueryHandling
 {
     public class GetNodeContainerSpecificationsQueryHandler
         : IQueryHandler<GetNodeContainerSpecifications, Result<LookupCollection<NodeContainerSpecification>>>
