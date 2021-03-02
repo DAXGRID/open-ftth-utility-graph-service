@@ -50,7 +50,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (!spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecificationId))
                 return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_SPECIFICATION_ID_NOT_FOUND, $"Cannot find span equipment specification with id: {spanEquipmentSpecificationId}"));
 
-            var spanEquipment = CreateSpanEquipmentFromSpecification(spanEquipmentId, spanEquipmentSpecifications[spanEquipmentSpecificationId], interest.Id, Array.Empty<Guid>(), manufacturerId, namingInfo, markingInfo);
+            var spanEquipment = CreateSpanEquipmentFromSpecification(
+                spanEquipmentId: spanEquipmentId, 
+                specification: spanEquipmentSpecifications[spanEquipmentSpecificationId], 
+                walkOfInterestId: interest.Id, 
+                nodesOfInterestIds: new Guid[] { interest.RouteNetworkElementRefs.First(), interest.RouteNetworkElementRefs.Last() }, 
+                manufacturerId: manufacturerId, 
+                namingInfo: namingInfo, 
+                markingInfo: markingInfo
+             );
 
             RaiseEvent(new SpanEquipmentPlacedInRouteNetwork(spanEquipment));
 
@@ -62,7 +70,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return null;
         }
 
-        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufactuereId, NamingInfo? namingInfo, MarkingInfo? markingInfo)
+        private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, MarkingInfo? markingInfo)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
 
@@ -74,7 +82,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     level: 1, 
                     parentPosition: 0, 
                     position: 1, 
-                    spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 1) }
+                    spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, 1) }
                 )
             );
 
@@ -88,14 +96,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                         level: template.Level,
                         parentPosition: 1,
                         position: template.Position,
-                        spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 1) }
+                        spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, 1) }
                     )
                 );
             }
 
             var spanEquipment = new SpanEquipment(spanEquipmentId, specification.Id, walkOfInterestId, nodesOfInterestIds, spanStructuresToInclude.ToArray())
             {
-                ManufacturerId = manufactuereId,
+                ManufacturerId = manufacturerId,
                 NamingInfo = namingInfo,
                 MarkingInfo = markingInfo
             };

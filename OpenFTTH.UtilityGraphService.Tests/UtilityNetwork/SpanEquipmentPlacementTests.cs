@@ -31,7 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestPlaceSimpleValidSpanEquipment_ShouldSucceed()
+        public async void TestPlaceValidSpanEquipment_ShouldSucceed()
         {
             // Setup
             var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
@@ -67,7 +67,18 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures.Length.Should().Be(4);
 
-            // We check if there's an event in the notification.utility-network topic having an idlist containing the span equipment id we just created
+            // Check that span segments are correctly populated
+            for (int structureIndex = 0; structureIndex < spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures.Length; structureIndex++)
+            {
+                spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures[structureIndex].SpanSegments.Length.Should().Be(1);
+                spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures[structureIndex].SpanSegments[0].FromTerminalId.Should().BeEmpty();
+                spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures[structureIndex].SpanSegments[0].ToTerminalId.Should().BeEmpty();
+                spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures[structureIndex].SpanSegments[0].FromNodeOfInterestIndex.Should().Be(0);
+                spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures[structureIndex].SpanSegments[0].ToNodeOfInterestIndex.Should().Be(1);
+                spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpanStructures[structureIndex].SpanSegments[0].Id.Should().NotBeEmpty();
+            }
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
             var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
             var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == placeSpanEquipmentCommand.SpanEquipmentId)));
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CO_1);
@@ -100,7 +111,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestPlaceTwoSpanEquipmentWithSameId_ShouldFail()
+        public async void TestPlaceTwoSpanEquipmentWithSameId_SecondOneShouldFail()
         {
             // Setup
             var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
@@ -113,12 +124,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);
             var placeSpanEquipmentResult2 = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);
 
-
             // Assert
             placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
             placeSpanEquipmentResult2.IsSuccess.Should().BeFalse();
-
-
         }
     }
 }

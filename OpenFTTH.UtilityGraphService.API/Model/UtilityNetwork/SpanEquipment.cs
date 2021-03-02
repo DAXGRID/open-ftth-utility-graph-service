@@ -12,8 +12,8 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid SpecificationId { get; }
         //public RouteNetworkInterest WalkOfInterest { get; }
         public Guid WalkOfInterestId { get; }
-        public Guid[] NodesOfInterestIds { get; }
-        public ImmutableArray<SpanStructure> SpanStructures { get; }
+        public Guid[] NodesOfInterestIds { get; init; }
+        public ImmutableArray<SpanStructure> SpanStructures { get; init; }
 
         public Guid? ManufacturerId { get; init; }
         public NamingInfo? NamingInfo { get; init; }
