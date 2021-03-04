@@ -12,7 +12,7 @@ namespace OpenFTTH.TestData
     public class TestSpecifications
     {
         private static bool _specificationsCreated = false;
-        private static object _myLock = new object();
+        private static readonly object _myLock = new object();
 
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
@@ -135,9 +135,9 @@ namespace OpenFTTH.TestData
                 ManufacturerRefs = new Guid[] { Manu_Fiberpowertech }
             });
 
-            AddSpecification(new NodeContainerSpecification(Well_Fiberpowertech_37_EK_378_400x800, "ManHole", "EK 378 400x800")
+            AddSpecification(new NodeContainerSpecification(Well_Fiberpowertech_37_EK_328_800x800, "ManHole", "EK 328 800x800")
             {
-                Description = "37-EK 378 400x800mm",
+                Description = "37-EK 328 800x800mm",
                 ManufacturerRefs = new Guid[] { Manu_Fiberpowertech }
             });
 
@@ -148,7 +148,7 @@ namespace OpenFTTH.TestData
                 ManufacturerRefs = new Guid[] { Manu_Emtelle }
             });
 
-            AddSpecification(new NodeContainerSpecification(Conduit_Closure_Emtelle_Branch_Box, "ConduitClosure", "Straight 50mm")
+            AddSpecification(new NodeContainerSpecification(Conduit_Closure_Emtelle_Straight_In_line, "ConduitClosure", "Straight 50mm")
             {
                 Description = "50mm Straight In-line Elongated Enclosure",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle }

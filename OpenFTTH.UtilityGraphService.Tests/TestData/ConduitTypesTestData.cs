@@ -8,12 +8,12 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.Tests.TestData
 {
-    public class ConduitSpecificationsTestDataGenerator
+    public class xxxConduitSpecificationsTestDataGenerator
     {
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
 
-        public ConduitSpecificationsTestDataGenerator(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public xxxConduitSpecificationsTestDataGenerator(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
@@ -49,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
         public Guid Multi_Ø50_5x10_12_7_BlueYellow = Guid.Parse("dc83bdd3-142b-49ff-8a80-d8d7e1d794b3");
         public Guid Multi_Ø50_5x10_12_7_GreenWhite = Guid.Parse("2fe1a566-6477-4f24-b7df-e242bd6c7d7d");
         
-        public ConduitSpecificationsTestDataGenerator Run()
+        public xxxConduitSpecificationsTestDataGenerator Run()
         {
             var manufacturerQueryResult = _queryDispatcher.HandleAsync<GetManufacturer, Result<LookupCollection<Manufacturer>>>(new GetManufacturer()).Result;
 

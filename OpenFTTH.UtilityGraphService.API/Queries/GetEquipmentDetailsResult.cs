@@ -5,11 +5,11 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 {
     public record GetEquipmentDetailsResult
     {
-        public LookupCollection<SpanEquipmentWithRelatedInfo> SpanEquipment { get; }
+        public LookupCollection<SpanEquipmentWithRelatedInfo>? SpanEquipment { get; init; }
+        public LookupCollection<NodeContainer>? NodeContainers { get; init; }
 
-        public GetEquipmentDetailsResult(SpanEquipmentWithRelatedInfo[] spanEquipment)
+        public GetEquipmentDetailsResult()
         {
-            SpanEquipment = new LookupCollection<SpanEquipmentWithRelatedInfo>(spanEquipment);
         }
     }
 }

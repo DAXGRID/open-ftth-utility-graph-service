@@ -26,7 +26,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         public void AddSpecification(NodeContainerSpecification nodeContainerSpecifiation, LookupCollection<Manufacturer> manufacturer)
         {
             if (_nodeContainerSpecifications.ContainsKey(nodeContainerSpecifiation.Id))
-                throw new ArgumentException($"A node container with id: {nodeContainerSpecifiation.Id} already exists");
+                throw new ArgumentException($"A node container specification with id: {nodeContainerSpecifiation.Id} already exists");
 
             RaiseEvent(new NodeContainerSpecificationAdded(nodeContainerSpecifiation));
         }

@@ -34,13 +34,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         public async void TestPlaceValidSpanEquipment_ShouldSucceed()
         {
             // Setup
-            var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var walkOfInterestId = Guid.NewGuid();
             var registerWalkOfInterestCommand = new RegisterWalkOfInterest(walkOfInterestId, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
             var registerWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterWalkOfInterest, Result<RouteNetworkInterest>>(registerWalkOfInterestCommand).Result;
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), conduitSpecs.Multi_Ø32_3x10, registerWalkOfInterestCommandResult.Value)
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, registerWalkOfInterestCommandResult.Value)
             {
                 NamingInfo = new NamingInfo("Hans", "Grethe"),
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
@@ -57,6 +57,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
             spanEquipmentQueryResult.IsSuccess.Should().BeTrue();
+            spanEquipmentQueryResult.Value.Should().NotBeNull();
+            spanEquipmentQueryResult.Value.SpanEquipment.Should().NotBeNull();
 
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].Id.Should().Be(placeSpanEquipmentCommand.SpanEquipmentId);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpecificationId.Should().Be(placeSpanEquipmentCommand.SpanEquipmentSpecificationId);
@@ -90,11 +92,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         public async void TestQuerySpanEquipmentByInterestId_ShouldSucceed()
         {
             // Setup
-            var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), conduitSpecs.Multi_Ø32_3x10, walkOfInterest);
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);
 
             // Act
             var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);
@@ -114,11 +116,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         public async void TestPlaceTwoSpanEquipmentWithSameId_SecondOneShouldFail()
         {
             // Setup
-            var conduitSpecs = new ConduitSpecificationsTestDataGenerator(_commandDispatcher, _queryDispatcher).Run();
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), conduitSpecs.Multi_Ø32_3x10, walkOfInterest);
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);
 
             // Act
             var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);

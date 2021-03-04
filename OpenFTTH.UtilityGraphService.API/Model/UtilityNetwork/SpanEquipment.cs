@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 {
-    public record SpanEquipment : IIdentifiedObject
+    public record SpanEquipment : IEquipment
     {
         public Guid Id { get; }
         public Guid SpecificationId { get; }

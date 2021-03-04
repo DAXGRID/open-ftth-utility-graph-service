@@ -1,7 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
+using OpenFTTH.Core;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
+using OpenFTTH.UtilityGraphService.API.Model;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
@@ -13,28 +15,41 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
     {
         private readonly LookupCollection<SpanEquipment> _spanEquipmentByEquipmentId = new LookupCollection<SpanEquipment>();
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new ConcurrentDictionary<Guid, SpanEquipment>();
+        private readonly LookupCollection<NodeContainer> _nodeContainerByEquipmentId = new LookupCollection<NodeContainer>();
+        private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new ConcurrentDictionary<Guid, NodeContainer>();
         private readonly UtilityGraph _utilityGraph = new UtilityGraph();
 
         public LookupCollection<SpanEquipment> SpanEquipments => _spanEquipmentByEquipmentId;
 
+        public LookupCollection<NodeContainer> NodeContainers => _nodeContainerByEquipmentId;
+
         public UtilityGraphProjection(IExternalEventProducer externalEventProducer)
         {
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
+            ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
         }
 
-        public Result<SpanEquipment> GetEquipment(Guid spanEquipmentOrInterestId)
+        public Result<IEquipment> GetEquipment(Guid equipmentOrInterestId)
         {
-            if (_spanEquipmentByEquipmentId.TryGetValue(spanEquipmentOrInterestId, out SpanEquipment? spanEquipmentByEquipmentId))
+            if (_spanEquipmentByEquipmentId.TryGetValue(equipmentOrInterestId, out SpanEquipment? spanEquipmentByEquipmentId))
             {
-                return Result.Ok<SpanEquipment>(spanEquipmentByEquipmentId);
+                return Result.Ok<IEquipment>(spanEquipmentByEquipmentId);
             }
-            else if (_spanEquipmentByInterestId.TryGetValue(spanEquipmentOrInterestId, out SpanEquipment? spanEquipmentByInterestId))
+            else if (_spanEquipmentByInterestId.TryGetValue(equipmentOrInterestId, out SpanEquipment? spanEquipmentByInterestId))
             {
-                return Result.Ok<SpanEquipment>(spanEquipmentByInterestId);
+                return Result.Ok<IEquipment>(spanEquipmentByInterestId);
+            }
+            else if (_nodeContainerByEquipmentId.TryGetValue(equipmentOrInterestId, out NodeContainer? nodeContainerByEquipmentId))
+            {
+                return Result.Ok<IEquipment>(nodeContainerByEquipmentId);
+            }
+            else if (_nodeContainerByInterestId.TryGetValue(equipmentOrInterestId, out NodeContainer? nodeContainerByInterestId))
+            {
+                return Result.Ok<IEquipment>(nodeContainerByInterestId);
             }
             else
             {
-                return Result.Fail<SpanEquipment>($"No span equipment with id or interest id: {spanEquipmentOrInterestId} found");
+                return Result.Fail<IEquipment>($"No span equipment with id or interest id: {equipmentOrInterestId} found");
             }
         }
 
@@ -44,6 +59,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 case (SpanEquipmentPlacedInRouteNetwork @event):
                     StoreVirginSpanEquipment(@event.Equipment);
+                    break;
+
+                case (NodeContainerPlacedInRouteNetwork @event):
+                    StoreVirginContainerEquipment(@event.Container);
                     break;
             }
         }
@@ -61,5 +80,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 _utilityGraph.AddDisconnectedSegment(spanEquipment, structureIndex);
             }
         }
+
+        private void StoreVirginContainerEquipment(NodeContainer nodeContainer)
+        {
+            // Store the new span equipment in memory
+            _nodeContainerByEquipmentId.Add(nodeContainer);
+            _nodeContainerByInterestId.TryAdd(nodeContainer.InterestId, nodeContainer);
+        }
+
     }
 }

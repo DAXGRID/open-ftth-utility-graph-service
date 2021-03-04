@@ -17,16 +17,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
     /// </summary>
     public class NodeContainerAR : AggregateBase
     {
-        private SpanEquipment? _spanEquipment;
+        private NodeContainer? _container;
 
         public NodeContainerAR()
         {
-            Register<SpanEquipmentPlacedInRouteNetwork>(Apply);
+            Register<NodeContainerPlacedInRouteNetwork>(Apply);
         }
 
-        public Result PlaceNodeConstainerInRouteNetworkNode(
-            LookupCollection<SpanEquipment> nodeContainers,
-            LookupCollection<SpanEquipmentSpecification> nodeContainerSpecifications,
+        public Result PlaceNodeContainerInRouteNetworkNode(
+            LookupCollection<NodeContainer> nodeContainers,
+            LookupCollection<NodeContainerSpecification> nodeContainerSpecifications,
             Guid nodeContainerId, 
             Guid nodeContainerSpecificationId,
             RouteNetworkInterest nodeOfInterest,
@@ -38,12 +38,30 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (nodeContainerId == Guid.Empty)
                 return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_ID_CANNOT_BE_EMPTY, "Node container id cannot be empty. A unique id must be provided by client."));
 
+            if (nodeContainers.ContainsKey(nodeContainerId))
+                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_ID_ALREADY_EXISTS, $"A node container with id: {nodeContainerId} already exists."));
+
+            if (nodeOfInterest.Kind != RouteNetworkInterestKindEnum.NodeOfInterest)
+                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_INTEREST_KIND_MUST_BE_NODE_OF_INTEREST, "Interest kind must be NodeOfInterest. You can only put node container into route nodes!"));
+
+            if (!nodeContainerSpecifications.ContainsKey(nodeContainerSpecificationId))
+                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_SPECIFICATION_ID_NOT_FOUND, $"Cannot find node container specification with id: {nodeContainerSpecificationId}"));
+
+            var nodeContainer = new NodeContainer(nodeContainerId, nodeContainerSpecificationId, nodeOfInterest.Id)
+            {
+                ManufacturerId = manufacturerId
+            };
+
+            var nodeContainerPlaceInRouteNetworkEvent = new NodeContainerPlacedInRouteNetwork(nodeContainer);
+
+            RaiseEvent(nodeContainerPlaceInRouteNetworkEvent);
+
             return Result.Ok();
         }
       
-        private void Apply(SpanEquipmentPlacedInRouteNetwork obj)
+        private void Apply(NodeContainerPlacedInRouteNetwork obj)
         {
-            _spanEquipment = obj.Equipment;
+            _container = obj.Container;
         }
     }
 }
