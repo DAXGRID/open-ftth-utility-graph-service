@@ -1,4 +1,5 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Linq;
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 {
     /// <summary>
-    /// Functions that apply events to a span equipment immutable object and return a copy of the new state
+    /// Functions that apply events to a span equipment immutable object and return a new copy
     /// </summary>
     public static class SpanEquipmentProjectionFunctions
     {
@@ -76,6 +77,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             return existingSpanEquipment with {
                 NodesOfInterestIds = newNodeOfInterestIdList.ToArray(),
                 SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+            };
+        }
+
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAffixedToContainer spanEquipmentAffixedToContainer)
+        {
+            var newListOfAffixes = new List<SpanEquipmentNodeContainerAffix>();
+
+            if (existingSpanEquipment.NodeContainerAffixes != null)
+            {
+                foreach (var existingAffix in existingSpanEquipment.NodeContainerAffixes)
+                    newListOfAffixes.Add(existingAffix);
+            }
+
+            newListOfAffixes.Add(spanEquipmentAffixedToContainer.Affix);
+
+            return existingSpanEquipment with { 
+                NodeContainerAffixes = ImmutableArray.Create(newListOfAffixes.ToArray()) 
             };
         }
 

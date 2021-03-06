@@ -1,5 +1,4 @@
-﻿using OpenFTTH.Core;
-using OpenFTTH.Events.Core.Infos;
+﻿using OpenFTTH.Events.Core.Infos;
 using System;
 using System.Collections.Immutable;
 
@@ -29,6 +28,30 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             this.WalkOfInterestId = walkOfInterestId;
             this.NodesOfInterestIds = nodesOfInterestIds;
             this.SpanStructures = ImmutableArray.Create(spanStructures);
+        }
+
+        public bool TryGetSpanSegment(Guid spanSegmentId, out SpanSegmentWithIndexInfo spanSegmentwithIndexInfo)
+        {
+            for (UInt16 structureIndex = 0; structureIndex < SpanStructures.Length; structureIndex++)
+            {
+                var spanSegments = SpanStructures[structureIndex].SpanSegments;
+
+                for (UInt16 segmentIndex = 0; segmentIndex < spanSegments.Length; segmentIndex++)
+                {
+                    var spanSegment = spanSegments[segmentIndex];
+                    if (spanSegment.Id == spanSegmentId)
+                    {
+                        spanSegmentwithIndexInfo = new SpanSegmentWithIndexInfo(spanSegment, structureIndex, segmentIndex);
+                        return true;
+                    }
+                }
+            }
+
+            #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+            spanSegmentwithIndexInfo = default;
+            #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+
+            return false;
         }
     }
 }

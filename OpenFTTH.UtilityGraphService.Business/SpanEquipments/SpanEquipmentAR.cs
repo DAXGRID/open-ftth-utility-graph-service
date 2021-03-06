@@ -5,6 +5,8 @@ using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Generic;
@@ -24,6 +26,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         public SpanEquipmentAR()
         {
             Register<SpanEquipmentPlacedInRouteNetwork>(Apply);
+            Register<SpanEquipmentAffixedToContainer>(Apply);
         }
 
         public Result PlaceSpanEquipmentInRouteNetwork(
@@ -65,9 +68,40 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
+        public Result AffixToNodeContainer(
+            RouteNetworkInterest spanEquipmentInterest,
+            Guid nodeContainerRouteNodeId,
+            Guid nodeContainerId,
+            Guid spanSegmentId,
+            NodeContainerSideEnum nodeContainerIngoingSide)
+        {
+            if (!spanEquipmentInterest.RouteNetworkElementRefs.Contains(nodeContainerRouteNodeId))
+            {
+                return Result.Fail(new AffixSpanEquipmentToNodeContainerError(
+                        AffixSpanEquipmentToNodeContainerErrorCodes.SPAN_EQUIPMENT_AND_NODE_CONTAINER_IS_NOT_COLOCATED,
+                        $"The walk of span equipment with id: {this.Id} do not include the route network element with id: {nodeContainerRouteNodeId} where the node container with id: {nodeContainerId} is located.")
+                    );
+            }
+
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (!_spanEquipment.TryGetSpanSegment(spanSegmentId, out var spanSegmentWithIndexInfo))
+                throw new ApplicationException($"Cannot find any span segment with id: {spanSegmentId} inside span equipment with id: {this.Id}");
+
+            var affix = new SpanEquipmentNodeContainerAffix(
+                nodeContainerId: nodeContainerId,
+                nodeContainerIngoingSide: nodeContainerIngoingSide
+            );
+
+            RaiseEvent(new SpanEquipmentAffixedToContainer(this.Id, affix));
+
+            return Result.Ok();
+        }
+
         public Result CutSpanSegments(Guid routeNodeId, Guid[] spanSegmentsToCut)
         {
-            return null;
+            return Result.Fail("Not implemented");
         }
 
         private SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, MarkingInfo? markingInfo)
@@ -111,9 +145,17 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return spanEquipment;
         }
 
-        private void Apply(SpanEquipmentPlacedInRouteNetwork obj)
+        private void Apply(SpanEquipmentPlacedInRouteNetwork @event)
         {
-            _spanEquipment = obj.Equipment;
+            _spanEquipment = @event.Equipment;
+        }
+
+        private void Apply(SpanEquipmentAffixedToContainer @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
     }
 }

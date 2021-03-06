@@ -60,7 +60,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentQueryResult.Value.Should().NotBeNull();
             spanEquipmentQueryResult.Value.SpanEquipment.Should().NotBeNull();
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].Id.Should().Be(placeSpanEquipmentCommand.SpanEquipmentId);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].SpecificationId.Should().Be(placeSpanEquipmentCommand.SpanEquipmentSpecificationId);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].WalkOfInterestId.Should().Be(placeSpanEquipmentCommand.Interest.Id);
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].NamingInfo.Should().BeEquivalentTo(placeSpanEquipmentCommand.NamingInfo);
@@ -109,7 +111,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
             spanEquipmentQueryResult.IsSuccess.Should().BeTrue();
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             spanEquipmentQueryResult.Value.SpanEquipment[placeSpanEquipmentCommand.SpanEquipmentId].Id.Should().Be(placeSpanEquipmentCommand.SpanEquipmentId);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
         [Fact]

@@ -4,17 +4,13 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 {
     public record SpanEquipmentNodeContainerAffix
     {
-        public int NodeOfInterestIndex { get; }
         public Guid NodeContainerId { get; }
-        public NodeContainerSideEnum IngoingSide { get; }
-        public NodeContainerSideEnum? OutgoingSide { get; init; }
+        public NodeContainerSideEnum NodeContainerIngoingSide { get; }
 
-        public SpanEquipmentNodeContainerAffix(int nodeOfInterestIndex, Guid nodeContainerId, NodeContainerSideEnum ingoingSide, NodeContainerSideEnum? outgoingSide = null)
+        public SpanEquipmentNodeContainerAffix(Guid nodeContainerId, NodeContainerSideEnum nodeContainerIngoingSide)
         {
-            NodeOfInterestIndex = nodeOfInterestIndex;
             NodeContainerId = nodeContainerId;
-            IngoingSide = ingoingSide;
-            OutgoingSide = outgoingSide;
+            NodeContainerIngoingSide = nodeContainerIngoingSide;
         }
     }
 }

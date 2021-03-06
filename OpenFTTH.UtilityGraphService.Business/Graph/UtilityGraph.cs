@@ -1,10 +1,7 @@
-﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+﻿using FluentResults;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
@@ -15,6 +12,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public UtilityGraph()
         {
             
+        }
+
+        public bool TryGetGraphElement<T>(Guid id, out T utilityGraphElement) where T : IUtilityGraphElement
+        {
+            if (_graphElementsById.TryGetValue(id, out var graphElement))
+            {
+                if (graphElement is T)
+                {
+                    utilityGraphElement = (T)graphElement;
+                    return true;
+                }
+            }
+
+            #pragma warning disable CS8601 // Possible null reference assignment.
+            utilityGraphElement = default(T);
+            #pragma warning restore CS8601 // Possible null reference assignment.
+
+            return false;
         }
 
         public void AddDisconnectedSegment(SpanEquipment spanEquipment, UInt16 structureIndex)

@@ -1,19 +1,16 @@
-﻿using OpenFTTH.CQRS;
-using Xunit;
+﻿using DAX.EventProcessing;
 using FluentAssertions;
 using FluentResults;
-using OpenFTTH.RouteNetwork.API.Model;
-using System;
-using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.Tests.TestData;
-using OpenFTTH.UtilityGraphService.API.Queries;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.Events.Core.Infos;
-using DAX.EventProcessing;
-using System.Linq;
-using OpenFTTH.Events.UtilityNetwork;
+using OpenFTTH.CQRS;
 using OpenFTTH.RouteNetwork.API.Commands;
+using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.TestData;
+using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Queries;
+using System;
+using Xunit;
+
+#nullable disable
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
@@ -34,7 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact]
         public async void TestPlaceValidNodeContainer_ShouldSucceed()
         {
-            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+            new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var nodeOfInterestId = Guid.NewGuid();
             var registerNodeOfInterestCommand = new RegisterNodeOfInterest(nodeOfInterestId, TestRouteNetwork.CC_1);
@@ -64,3 +61,5 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
     }
 }
+
+#nullable enable

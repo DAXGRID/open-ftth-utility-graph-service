@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
+using OpenFTTH.UtilityGraphService.API.Model;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
@@ -55,21 +56,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                 Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, spanEquipmentsByIdResult.Errors.First().Message));
 
 
-            // Fetch span equipments by interest id
+            // Fetch equipment by interest id
             foreach (var interestId in query.InterestIdsToQuery)
             {
-                var equipmentLookupResult = _utilityGraph.GetEquipment(interestId);
-
-                // Here we return a error result, because we're dealing with invalid interest ids provided by the client
-                if (equipmentLookupResult.IsFailed)
+                if (!_utilityGraph.TryGetEquipment<IEquipment>(interestId, out IEquipment equipment))
+                {
                     return Task.FromResult(
-                        Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_INTEREST_ID, spanEquipmentsByIdResult.Errors.First().Message))
-                    ); 
+                        Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_INTEREST_ID, $"Cannot find equipment with interest id: {interestId}"))
+                    );
+                }
 
-                if (equipmentLookupResult.Value is SpanEquipment spanEquipment)
+                if (equipment is SpanEquipment spanEquipment)
                     spanEquipmentsToReturn.Add(new SpanEquipmentWithRelatedInfo(spanEquipment));
 
-                if (equipmentLookupResult.Value is NodeContainer nodeContainer)
+                if (equipment is NodeContainer nodeContainer)
                     nodeContainersToReturn.Add(nodeContainer);
             }
 
@@ -89,13 +89,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
             foreach (var equipmentId in equipmentIdsToFetch)
             {
-                var spanEquipmentLookpResult = _utilityGraph.GetEquipment(equipmentId);
+                if (!_utilityGraph.TryGetEquipment<SpanEquipment>(equipmentId, out var spanEquipment))
+                    return Result.Fail(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Cannot find equipment with equipment id: {equipmentId}"));
 
-                // Here we return a error result, because we're dealing with invalid equipment ids provided by the client
-                if (spanEquipmentLookpResult.IsFailed)
-                    return Result.Fail(spanEquipmentLookpResult.Errors.First());
-
-                result.Add(new SpanEquipmentWithRelatedInfo((SpanEquipment)spanEquipmentLookpResult.Value));
+                result.Add(new SpanEquipmentWithRelatedInfo(spanEquipment));
             }
 
             return Result.Ok<List<SpanEquipmentWithRelatedInfo>>(result);
