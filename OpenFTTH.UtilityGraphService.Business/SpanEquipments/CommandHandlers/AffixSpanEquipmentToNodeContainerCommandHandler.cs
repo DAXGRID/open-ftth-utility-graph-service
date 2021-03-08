@@ -64,9 +64,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!interestQueryResult.Value.Interests.TryGetValue(nodeContainer.InterestId, out _))
                 throw new ApplicationException($"No interest information were unexpectedly returned querying node container with id: {nodeContainer.Id} interest id: {nodeContainer.InterestId}");
 
+            var nodeContainers = _eventStore.Projections.Get<UtilityGraphProjection>().NodeContainers;
+
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanSegmentGraphElement.SpanEquipment.Id);
 
             var affixResult = spanEquipmentAR.AffixToNodeContainer(
+                nodeContainers: nodeContainers,
                 spanEquipmentInterest: interestQueryResult.Value.Interests[spanSegmentGraphElement.SpanEquipment.WalkOfInterestId],
                 nodeContainerRouteNodeId: interestQueryResult.Value.Interests[nodeContainer.InterestId].RouteNetworkElementRefs[0],
                 nodeContainerId : command.NodeContainerId,
@@ -74,9 +77,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 nodeContainerIngoingSide: command.NodeContainerIngoingSide
             );
 
-            _eventStore.Aggregates.Store(spanEquipmentAR);
+            if (affixResult.IsSuccess)
+            {
+                _eventStore.Aggregates.Store(spanEquipmentAR);
+            }
 
-            return Task.FromResult(Result.Ok());
+            return Task.FromResult(affixResult);
         }
 
         private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid[] affectedRouteNetworkElementIds)

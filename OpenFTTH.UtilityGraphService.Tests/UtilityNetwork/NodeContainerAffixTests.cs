@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
+using System.Linq;
 using Xunit;
 
 #nullable disable
@@ -35,7 +36,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact]
         public async void TestAffixConduitToContainer_ShouldSucceed()
         {
-            var nodeContainerId = PlaceNodeContainerInHH_2();
+            var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_2);
 
             var testConduits = new TestConduits(_commandDispatcher, _queryDispatcher).Run();
 
@@ -57,20 +58,45 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             equipmentQueryResult.IsSuccess.Should().BeTrue();
 
-            equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.Length.Should().Be(1);
-            equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes[0].NodeContainerId.Should().Be(nodeContainerId);
-            equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes[0].NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.Vest);
+            equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.First(n => n.NodeContainerId == nodeContainerId).NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.Vest);
+        }
+
+
+        [Fact]
+        public async void TestAffixConduitToContainerTwoTimes_ShouldFaild()
+        {
+            var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_1);
+
+            var testConduits = new TestConduits(_commandDispatcher, _queryDispatcher).Run();
+
+            var testConduitId = TestConduits.MultiConduit_5x10_HH_1_to_HH_10;
+
+            var testConduit = _eventStore.Projections.Get<UtilityGraphProjection>().SpanEquipments[testConduitId];
+
+            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
+                spanSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
+                nodeContainerId: nodeContainerId,
+                nodeContainerIngoingSide: NodeContainerSideEnum.Vest
+            );
+
+            var affixResult1 = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToNodeContainer, Result>(affixConduitToContainerCommand);
+            var affixResult2 = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToNodeContainer, Result>(affixConduitToContainerCommand);
+
+
+            affixResult1.IsSuccess.Should().BeTrue();
+            affixResult2.IsSuccess.Should().BeFalse();
+            ((AffixSpanEquipmentToNodeContainerError)affixResult2.Errors.First()).Code.Should().Be(AffixSpanEquipmentToNodeContainerErrorCodes.SPAN_EQUIPMENT_ALREADY_AFFIXED_TO_NODE_CONTAINER);
 
         }
 
 
-        private Guid PlaceNodeContainerInHH_2()
+        private Guid PlaceNodeContainer(Guid routeNodeId)
         {
             var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var nodeContainerId = Guid.NewGuid();
             var nodeOfInterestId = Guid.NewGuid();
-            var registerNodeOfInterestCommand = new RegisterNodeOfInterest(nodeOfInterestId, TestRouteNetwork.HH_2);
+            var registerNodeOfInterestCommand = new RegisterNodeOfInterest(nodeOfInterestId, routeNodeId);
             var registerNodeOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand).Result;
 
             var placeNodeContainerCommand = new PlaceNodeContainerInRouteNetwork(nodeContainerId, TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult.Value)

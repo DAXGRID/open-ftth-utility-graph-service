@@ -8,6 +8,7 @@ using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
+using System.Linq;
 using Xunit;
 
 #nullable disable
@@ -91,6 +92,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             firstNodeContainerResult.IsSuccess.Should().BeTrue();
             secondNodeContainerResult.IsSuccess.Should().BeFalse();
+
+            ((PlaceNodeContainerInRouteNetworkError)secondNodeContainerResult.Errors.First()).Code.Should().Be(PlaceNodeContainerInRouteNetworkErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE);
+
 
         }
 

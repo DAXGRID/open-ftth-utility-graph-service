@@ -69,6 +69,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         public Result AffixToNodeContainer(
+            LookupCollection<NodeContainer> nodeContainers,
             RouteNetworkInterest spanEquipmentInterest,
             Guid nodeContainerRouteNodeId,
             Guid nodeContainerId,
@@ -86,6 +87,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
+            if (CheckIfAlreadyAffixedToNodeContainerInRouteNode(nodeContainers, nodeContainerRouteNodeId))
+            {
+                return Result.Fail(new AffixSpanEquipmentToNodeContainerError(
+                        AffixSpanEquipmentToNodeContainerErrorCodes.SPAN_EQUIPMENT_ALREADY_AFFIXED_TO_NODE_CONTAINER,
+                        $"The span equipment with id: {this.Id} is already affixed to the node container place the route node with id: {nodeContainerRouteNodeId}")
+                    );
+            }
+
             if (!_spanEquipment.TryGetSpanSegment(spanSegmentId, out var spanSegmentWithIndexInfo))
                 throw new ApplicationException($"Cannot find any span segment with id: {spanSegmentId} inside span equipment with id: {this.Id}");
 
@@ -97,6 +106,23 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(new SpanEquipmentAffixedToContainer(this.Id, affix));
 
             return Result.Ok();
+        }
+
+        private bool CheckIfAlreadyAffixedToNodeContainerInRouteNode(LookupCollection<NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (_spanEquipment.NodeContainerAffixes == null)
+                return false;
+
+            foreach (var affix in _spanEquipment.NodeContainerAffixes)
+            {
+                if (nodeContainers[affix.NodeContainerId].RouteNodeId == nodeContainerRouteNodeId)
+                    return true;
+            }
+
+            return false;
         }
 
         public Result CutSpanSegments(Guid routeNodeId, Guid[] spanSegmentsToCut)
