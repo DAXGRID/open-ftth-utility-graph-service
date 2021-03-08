@@ -2,7 +2,7 @@
 {
     public enum NodeContainerSideEnum
     {
-        Vest,
+        West,
         North,
         East,
         South

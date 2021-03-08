@@ -47,7 +47,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
                 spanSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
-                nodeContainerIngoingSide: NodeContainerSideEnum.Vest
+                nodeContainerIngoingSide: NodeContainerSideEnum.West
             );
 
             var affixResult = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToNodeContainer, Result>(affixConduitToContainerCommand);
@@ -58,7 +58,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             equipmentQueryResult.IsSuccess.Should().BeTrue();
 
-            equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.First(n => n.NodeContainerId == nodeContainerId).NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.Vest);
+            equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.First(n => n.NodeContainerId == nodeContainerId).NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.West);
         }
 
 
@@ -76,7 +76,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
                 spanSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
-                nodeContainerIngoingSide: NodeContainerSideEnum.Vest
+                nodeContainerIngoingSide: NodeContainerSideEnum.West
             );
 
             var affixResult1 = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToNodeContainer, Result>(affixConduitToContainerCommand);
