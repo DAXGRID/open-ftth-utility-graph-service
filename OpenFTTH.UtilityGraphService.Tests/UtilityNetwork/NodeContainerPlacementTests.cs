@@ -59,6 +59,41 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentQueryResult.Value.NodeContainers[placeNodeContainerCommand.NodeContainerId].InterestId.Should().Be(nodeOfInterestId);
 
         }
+
+        [Fact]
+        public async void TestPlacingMultipleNodeContainerInSameNode_ShouldFail()
+        {
+            new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+
+            // First node container
+            var registerNodeOfInterestCommand1 = new RegisterNodeOfInterest(Guid.NewGuid(), TestRouteNetwork.HH_11);
+            var registerNodeOfInterestCommandResult1 = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand1).Result;
+
+            var placeNodeContainerCommand1 = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult1.Value)
+            {
+                ManufacturerId = TestSpecifications.Manu_Emtelle
+            };
+
+            var firstNodeContainerResult = await _commandDispatcher.HandleAsync<PlaceNodeContainerInRouteNetwork, Result>(placeNodeContainerCommand1);
+
+            // First node container
+            var registerNodeOfInterestCommand2 = new RegisterNodeOfInterest(Guid.NewGuid(), TestRouteNetwork.HH_11);
+            var registerNodeOfInterestCommandResult2 = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand2).Result;
+
+            var placeNodeContainerCommand2 = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult2.Value)
+            {
+                ManufacturerId = TestSpecifications.Manu_Emtelle
+            };
+
+            var secondNodeContainerResult = await _commandDispatcher.HandleAsync<PlaceNodeContainerInRouteNetwork, Result>(placeNodeContainerCommand2);
+
+
+            // Assert
+            firstNodeContainerResult.IsSuccess.Should().BeTrue();
+            secondNodeContainerResult.IsSuccess.Should().BeFalse();
+
+        }
+
     }
 }
 

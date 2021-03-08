@@ -7,17 +7,19 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     {
         public Guid Id { get; }
         public Guid SpecificationId { get; }
-        public Guid InterestId { get; init; }
+        public Guid InterestId { get;  }
+        public Guid RouteNodeId { get;  }
         public Guid? ManufacturerId { get; init; }
 
         public string? Name => null;
         public string? Description => null;
 
-        public NodeContainer(Guid id, Guid specificationId, Guid interestId)
+        public NodeContainer(Guid id, Guid specificationId, Guid interestId, Guid routeNodeId)
         {
             Id = id;
             SpecificationId = specificationId;
             InterestId = interestId;
+            RouteNodeId = routeNodeId;
         }
     }
 }

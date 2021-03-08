@@ -47,7 +47,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (!nodeContainerSpecifications.ContainsKey(nodeContainerSpecificationId))
                 return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_SPECIFICATION_ID_NOT_FOUND, $"Cannot find node container specification with id: {nodeContainerSpecificationId}"));
 
-            var nodeContainer = new NodeContainer(nodeContainerId, nodeContainerSpecificationId, nodeOfInterest.Id)
+            if (nodeContainers.Any(n => n.RouteNodeId == nodeOfInterest.RouteNetworkElementRefs[0]))
+                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE, $"A node container already exist in the route node with id: {nodeOfInterest.RouteNetworkElementRefs[0]} Only one node container is allowed per route node.")); 
+
+            var nodeContainer = new NodeContainer(nodeContainerId, nodeContainerSpecificationId, nodeOfInterest.Id, nodeOfInterest.RouteNetworkElementRefs[0])
             {
                 ManufacturerId = manufacturerId
             };

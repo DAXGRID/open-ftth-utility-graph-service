@@ -13,9 +13,10 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using Xunit;
 
+#nullable disable
+
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-#nullable disable
     public class NodeContainerAffixTests
     {
         private readonly IEventStore _eventStore;
@@ -81,7 +82,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             return nodeContainerId;
         }
-
-        #nullable enable
     }
 }
+
+#nullable enable
