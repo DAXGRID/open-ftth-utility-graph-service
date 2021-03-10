@@ -274,7 +274,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 Guid nodeOfInterestId = _spanEquipment.NodesOfInterestIds[nodeOfInterestIndex];
 
                 if (!idsBeforeCut.Contains(nodeOfInterestId))
-                    return (ushort)(nodeOfInterestIndex + 1);
+                    return nodeOfInterestIndex;
             }
 
             throw new ApplicationException($"Error processing cut command. Cannot calculate the node of interest index where to cut. Span equipment: {this.Id} or command has an invalid state. Cut route node id: {routeNodeId} Span equipment walk of interest: {string.Join(",", walkOfInterest.RouteNetworkElementRefs)}");

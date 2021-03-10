@@ -64,7 +64,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cutResult.IsSuccess.Should().BeTrue();
 
             var spanEquipmentAfterCut = equipmentQueryResult.Value.SpanEquipment[sutSpanEquipment];
-    
+
+            spanEquipmentAfterCut.NodesOfInterestIds.Length.Should().Be(3);
+            spanEquipmentAfterCut.NodesOfInterestIds[0].Should().Be(spanEquipment.NodesOfInterestIds[0]);
+            spanEquipmentAfterCut.NodesOfInterestIds[1].Should().Be(TestRouteNetwork.CC_1);
+            spanEquipmentAfterCut.NodesOfInterestIds[2].Should().Be(spanEquipment.NodesOfInterestIds[1]);
+
             // Outer conduit
             spanEquipmentAfterCut.SpanStructures[0].SpanSegments.Length.Should().Be(2);
 
@@ -155,7 +160,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                spanSegmentsToCut: new Guid[] {
                     spanEquipment2.SpanStructures[0].SpanSegments[0].Id
                }
-           );
+            );
 
             var cutResult2 = await _commandDispatcher.HandleAsync<CutSpanSegmentsAtRouteNode, Result>(cutCmd2);
 
