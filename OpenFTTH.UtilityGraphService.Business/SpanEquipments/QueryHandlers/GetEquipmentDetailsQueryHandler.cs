@@ -19,12 +19,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
         IQueryHandler<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>
     {
         private readonly IEventStore _eventStore;
-        private readonly UtilityGraphProjection _utilityGraph;
+        private readonly UtilityNetworkProjection _utilityGraph;
 
         public GetEquipmentDetailsQueryHandler(IEventStore eventStore)
         {
             _eventStore = eventStore;
-            _utilityGraph = _eventStore.Projections.Get<UtilityGraphProjection>();
+            _utilityGraph = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
         public Task<Result<GetEquipmentDetailsResult>> HandleAsync(GetEquipmentDetails query)

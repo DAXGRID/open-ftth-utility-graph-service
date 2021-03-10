@@ -35,7 +35,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var nodeOfInterestId = Guid.NewGuid();
-            var registerNodeOfInterestCommand = new RegisterNodeOfInterest(nodeOfInterestId, TestRouteNetwork.CC_1);
+            var registerNodeOfInterestCommand = new RegisterNodeOfInterest(nodeOfInterestId, TestRouteNetwork.HH_11);
             var registerNodeOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand).Result;
 
             var placeNodeContainerCommand = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult.Value)
@@ -67,7 +67,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             // First node container
-            var registerNodeOfInterestCommand1 = new RegisterNodeOfInterest(Guid.NewGuid(), TestRouteNetwork.HH_11);
+            var registerNodeOfInterestCommand1 = new RegisterNodeOfInterest(Guid.NewGuid(), TestRouteNetwork.FP_2);
             var registerNodeOfInterestCommandResult1 = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand1).Result;
 
             var placeNodeContainerCommand1 = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult1.Value)
@@ -77,8 +77,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var firstNodeContainerResult = await _commandDispatcher.HandleAsync<PlaceNodeContainerInRouteNetwork, Result>(placeNodeContainerCommand1);
 
-            // First node container
-            var registerNodeOfInterestCommand2 = new RegisterNodeOfInterest(Guid.NewGuid(), TestRouteNetwork.HH_11);
+            // Second node container om same node
+            var registerNodeOfInterestCommand2 = new RegisterNodeOfInterest(Guid.NewGuid(), TestRouteNetwork.FP_2);
             var registerNodeOfInterestCommandResult2 = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand2).Result;
 
             var placeNodeContainerCommand2 = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult2.Value)

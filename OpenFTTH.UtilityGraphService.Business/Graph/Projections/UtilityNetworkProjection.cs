@@ -1,6 +1,4 @@
 ﻿using DAX.EventProcessing;
-using FluentResults;
-using OpenFTTH.Core;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model;
@@ -13,7 +11,7 @@ using System.Collections.Concurrent;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
-    public class UtilityGraphProjection : ProjectionBase
+    public class UtilityNetworkProjection : ProjectionBase
     {
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByEquipmentId = new ConcurrentDictionary<Guid, SpanEquipment>();
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new ConcurrentDictionary<Guid, SpanEquipment>();
@@ -27,10 +25,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public LookupCollection<SpanEquipment> SpanEquipments => new LookupCollection<SpanEquipment>(_spanEquipmentByEquipmentId.Values);
         
-        public UtilityGraphProjection(IExternalEventProducer externalEventProducer)
+        public UtilityNetworkProjection(IExternalEventProducer externalEventProducer)
         {
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
             ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
+            ProjectEvent<SpanSegmentsCut>(Project);
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
         }
       
@@ -86,6 +85,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanEquipmentAffixedToContainer @event):
+                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+                    break;
+
+                case (SpanSegmentsCut @event):
                     TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
                     break;
 

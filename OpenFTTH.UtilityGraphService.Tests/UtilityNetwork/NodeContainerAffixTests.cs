@@ -38,14 +38,14 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_2);
 
-            var testConduits = new TestConduits(_commandDispatcher, _queryDispatcher).Run();
+            var testNetwork = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
-            var testConduitId = TestConduits.MultiConduit_5x10_HH_1_to_HH_10;
+            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
 
-            var testConduit = _eventStore.Projections.Get<UtilityGraphProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
-                spanSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
+                spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
                 nodeContainerIngoingSide: NodeContainerSideEnum.West
             );
@@ -65,16 +65,16 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact]
         public async void TestAffixConduitToContainerTwoTimes_ShouldFaild()
         {
-            var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_1);
+            var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_10);
 
-            var testConduits = new TestConduits(_commandDispatcher, _queryDispatcher).Run();
+            var testConduits = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
-            var testConduitId = TestConduits.MultiConduit_5x10_HH_1_to_HH_10;
+            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
 
-            var testConduit = _eventStore.Projections.Get<UtilityGraphProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
-                spanSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
+                spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
                 nodeContainerIngoingSide: NodeContainerSideEnum.West
             );

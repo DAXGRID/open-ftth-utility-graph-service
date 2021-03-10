@@ -35,22 +35,30 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(AffixSpanEquipmentToNodeContainer command)
         {
-            if (command.SpanSegmentId == Guid.Empty)
+            if (command.SpanEquipmentOrSegmentId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToNodeContainerError(AffixSpanEquipmentToNodeContainerErrorCodes.INVALID_SPAN_SEGMENT_ID_CANNOT_BE_EMPTY, $"Span segment id must be specified.")));
 
             if (command.NodeContainerId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToNodeContainerError(AffixSpanEquipmentToNodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_CANNOT_BE_EMPTY, $"Node container id must be specified.")));
 
-            var _utilityNetwork = _eventStore.Projections.Get<UtilityGraphProjection>();
+            var _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentId, out var spanSegmentGraphElement))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToNodeContainerError(AffixSpanEquipmentToNodeContainerErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentId}")));
+          
+            // Find span equipment
+            if (!_utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
+            {
+                if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanEquipmentOrSegmentId, out var spanSegmentGraphElement))
+                    return Task.FromResult(Result.Fail(new AffixSpanEquipmentToNodeContainerError(AffixSpanEquipmentToNodeContainerErrorCodes.INVALID_SPAN_EQUIPMENT_OR_SEGMENT_ID_NOT_FOUND, $"Cannot find any span equipment or span segment with id: {command.SpanEquipmentOrSegmentId}")));
 
+                spanEquipment = spanSegmentGraphElement.SpanEquipment;
+            }
+
+            // Find node container
             if (!_utilityNetwork.TryGetEquipment<NodeContainer>(command.NodeContainerId, out var nodeContainer))
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToNodeContainerError(AffixSpanEquipmentToNodeContainerErrorCodes.INVALID_SPAN_CONTAINER_ID_NOT_FOUND, $"Cannot find any node container with id: {command.NodeContainerId}")));
 
             // Get interest information for both span equipment and node container, which is needed for the aggregate to validate the command
-            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanSegmentGraphElement.SpanEquipment.WalkOfInterestId, nodeContainer.InterestId })).Result;
+            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId, nodeContainer.InterestId })).Result;
 
             if (interestQueryResult.IsFailed)
                 throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for node container and/or span equipment while processing the AffixSpanEquipmentToNodeContainer command: " + JsonConvert.SerializeObject(command));
@@ -58,22 +66,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (interestQueryResult.Value.Interests == null)
                 throw new ApplicationException("No data were unexpectedly returned trying to query interest information for node container and/or span equipment while processing the AffixSpanEquipmentToNodeContainer command: " + JsonConvert.SerializeObject(command));
 
-            if (!interestQueryResult.Value.Interests.TryGetValue(spanSegmentGraphElement.SpanEquipment.WalkOfInterestId, out _))
-                throw new ApplicationException($"No interest information were unexpectedly returned querying span equipment with id: {spanSegmentGraphElement.SpanEquipment.Id} interest id: {spanSegmentGraphElement.SpanEquipment.WalkOfInterestId}");
+            if (!interestQueryResult.Value.Interests.TryGetValue(spanEquipment.WalkOfInterestId, out _))
+                throw new ApplicationException($"No interest information were unexpectedly returned querying span equipment with id: {spanEquipment.Id} interest id: {spanEquipment.WalkOfInterestId}");
 
             if (!interestQueryResult.Value.Interests.TryGetValue(nodeContainer.InterestId, out _))
                 throw new ApplicationException($"No interest information were unexpectedly returned querying node container with id: {nodeContainer.Id} interest id: {nodeContainer.InterestId}");
 
-            var nodeContainers = _eventStore.Projections.Get<UtilityGraphProjection>().NodeContainers;
+            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
 
-            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanSegmentGraphElement.SpanEquipment.Id);
+            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
             var affixResult = spanEquipmentAR.AffixToNodeContainer(
                 nodeContainers: nodeContainers,
-                spanEquipmentInterest: interestQueryResult.Value.Interests[spanSegmentGraphElement.SpanEquipment.WalkOfInterestId],
+                spanEquipmentInterest: interestQueryResult.Value.Interests[spanEquipment.WalkOfInterestId],
                 nodeContainerRouteNodeId: interestQueryResult.Value.Interests[nodeContainer.InterestId].RouteNetworkElementRefs[0],
                 nodeContainerId : command.NodeContainerId,
-                spanSegmentId: command.SpanSegmentId,
+                spanSegmentId: command.SpanEquipmentOrSegmentId,
                 nodeContainerIngoingSide: command.NodeContainerIngoingSide
             );
 

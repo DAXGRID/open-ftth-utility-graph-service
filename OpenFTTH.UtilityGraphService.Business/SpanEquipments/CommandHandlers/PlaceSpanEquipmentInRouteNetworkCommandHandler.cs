@@ -29,7 +29,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(PlaceSpanEquipmentInRouteNetwork command)
         {
-            var spanEquipments = _eventStore.Projections.Get<UtilityGraphProjection>().SpanEquipments;
+            var spanEquipments = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments;
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
             var spanEquipmentAR = new SpanEquipmentAR();

@@ -5,12 +5,12 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     public record SpanSegment
     {
         public Guid Id { get; }
-        public UInt16 FromNodeOfInterestIndex { get; }
-        public UInt16 ToNodeOfInterestIndex { get; }
-        public Guid FromTerminalId { get; set; }
-        public Guid ToTerminalId { get; set; }
+        public UInt16 FromNodeOfInterestIndex { get; init; }
+        public UInt16 ToNodeOfInterestIndex { get; init; }
+        public Guid FromTerminalId { get; init; }
+        public Guid ToTerminalId { get; init; }
 
-        public SpanSegment(Guid id, ushort fromNodeOfInterestIndex, ushort toNodeOfInterestIndex)
+        public SpanSegment(Guid id, UInt16 fromNodeOfInterestIndex, UInt16 toNodeOfInterestIndex)
         {
             Id = id;
             FromNodeOfInterestIndex = fromNodeOfInterestIndex;

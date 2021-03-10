@@ -11,13 +11,13 @@ using Xunit;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-    public class ManufactuereTests
+    public class ManufacturerTests
     {
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
 
-        public ManufactuereTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public ManufacturerTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;

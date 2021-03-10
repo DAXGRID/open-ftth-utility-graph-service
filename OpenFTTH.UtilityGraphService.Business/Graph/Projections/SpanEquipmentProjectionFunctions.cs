@@ -15,69 +15,112 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
     {
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanSegmentsCut spanSegmentsCutEvent)
         {
-            // First create a new nodes of interest list with the cut node added
-            List<Guid> newNodeOfInterestIdList = CreateNodeOfInterestIdListWith(existingSpanEquipment, spanSegmentsCutEvent.CutNodeOfInterestId);
-            UInt16 cutNodeOfInterestIndex = (UInt16)(newNodeOfInterestIdList.Count - 1);
-
             // Cut them segments
             List<SpanStructure> newStructures = new List<SpanStructure>();
 
             // Create dictionary of cuts for fast lookup
-            Dictionary<UInt16, SpanSegmentCutInfo> spanSegmentCutInfoByStructureIndex = spanSegmentsCutEvent.Cuts.ToDictionary(c => c.OldSegmentIndex);
+            Dictionary<Guid, SpanSegmentCutInfo> spanSegmentCutInfoBySegmentId = spanSegmentsCutEvent.Cuts.ToDictionary(c => c.OldSpanSegmentId);
 
-            // Go though all span structures
+            // First create a new nodes of interest list with the cut node added
+            Guid[] newNodeOfInterestIdList = CreateNewNodeOfInterestIdListWith(existingSpanEquipment, spanSegmentsCutEvent.CutNodeOfInterestId, spanSegmentsCutEvent.CutNodeOfInterestIndex);
+
+            bool nodeOfInterestAlreadyExists = existingSpanEquipment.NodesOfInterestIds.Contains(spanSegmentsCutEvent.CutNodeOfInterestId);
+
+            // Loop though all span structures
             for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
             {
-                // If cut info exists
-                if (spanSegmentCutInfoByStructureIndex.TryGetValue(structureIndex, out var spanSegmentCutInfo))
+                var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
+
+                List<SpanSegment> newSegments = new List<SpanSegment>();
+
+                // Loop throughh all span segments
+                foreach (var existingSegment in existingSpanStructure.SpanSegments)
                 {
-                    List<SpanSegment> newSegments = new List<SpanSegment>();
+                    UInt16 fromNodeOfInterestIndexToUse = existingSegment.FromNodeOfInterestIndex;
+                    UInt16 toNodeOfInterestIndexToUse = existingSegment.ToNodeOfInterestIndex;
 
-                    var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
-
-                    foreach (var existingSegment in existingSpanStructure.SpanSegments)
+                    if (!nodeOfInterestAlreadyExists)
                     {
-                        if (existingSegment.Id == spanSegmentCutInfo.OldSpanSegmentId)
-                        {
-                            // Add the first segment
-                            newSegments.Add(
-                                new SpanSegment(
-                                    id: spanSegmentCutInfo.NewSpanSegmentId1,
-                                    fromNodeOfInterestIndex: existingSegment.FromNodeOfInterestIndex,
-                                    toNodeOfInterestIndex: cutNodeOfInterestIndex)
-                                );
+                        if (fromNodeOfInterestIndexToUse >= spanSegmentsCutEvent.CutNodeOfInterestIndex)
+                            fromNodeOfInterestIndexToUse++;
 
-                            // Add the second segment
-                            newSegments.Add(
-                                new SpanSegment(
-                                    id: spanSegmentCutInfo.NewSpanSegmentId2,
-                                    fromNodeOfInterestIndex: cutNodeOfInterestIndex,
-                                    toNodeOfInterestIndex: existingSegment.ToNodeOfInterestIndex)
-                                );
+                        if (toNodeOfInterestIndexToUse >= spanSegmentsCutEvent.CutNodeOfInterestIndex)
+                            toNodeOfInterestIndexToUse++;
+                    }
+
+                    // If cut info exists
+                    if (spanSegmentCutInfoBySegmentId.TryGetValue(existingSegment.Id, out var spanSegmentCutInfo))
+                    {
+                        // Add the first segment
+                        newSegments.Add(
+                            new SpanSegment(
+                                id: spanSegmentCutInfo.NewSpanSegmentId1,
+                                fromNodeOfInterestIndex: fromNodeOfInterestIndexToUse,
+                                toNodeOfInterestIndex: spanSegmentsCutEvent.CutNodeOfInterestIndex)
+                            );
+
+                        // Add the second segment
+                        newSegments.Add(
+                            new SpanSegment(
+                                id: spanSegmentCutInfo.NewSpanSegmentId2,
+                                fromNodeOfInterestIndex: spanSegmentsCutEvent.CutNodeOfInterestIndex,
+                                toNodeOfInterestIndex: toNodeOfInterestIndexToUse)
+                            );
+                    }
+                    // If no cut info exists
+                    else
+                    {
+                        if (!nodeOfInterestAlreadyExists)
+                        {
+                            var newSegment = existingSegment with { FromNodeOfInterestIndex = fromNodeOfInterestIndexToUse, ToNodeOfInterestIndex = toNodeOfInterestIndexToUse };
+                            newSegments.Add(newSegment);
                         }
                         else
                         {
                             newSegments.Add(existingSegment);
                         }
                     }
-
-                    newStructures.Add(
-                        existingSpanStructure with { 
-                            SpanSegments = ImmutableArray.Create(newSegments.ToArray())
-                        });
                 }
-                // If no cut info exists
-                else
+
+                newStructures.Add(
+                    existingSpanStructure with
+                    {
+                        SpanSegments = ImmutableArray.Create(newSegments.ToArray())
+                    });
+            }
+
+            return existingSpanEquipment with
+            {
+                NodesOfInterestIds = newNodeOfInterestIdList,
+                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+            };
+        }
+
+        private static UInt16 FindWhereToInsertCutNodeOfInterest(SpanEquipment existingSpanEquipment, Dictionary<ushort, SpanSegmentCutInfo> spanSegmentCutInfoByStructureIndex)
+        {
+            UInt16 indexWhereToInsertNodeOfInterest = 0;
+
+            for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
+            {
+                // If cut info exists
+                if (spanSegmentCutInfoByStructureIndex.TryGetValue(structureIndex, out var spanSegmentCutInfo))
                 {
-                    // We just add the existing structure as-is
-                    newStructures.Add(existingSpanEquipment.SpanStructures[structureIndex]);
+                    var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
+
+                    foreach (var existingSegment in existingSpanStructure.SpanSegments)
+                    {
+                        if (existingSegment.Id == spanSegmentCutInfo.OldSpanSegmentId)
+                        {
+                            if (existingSegment.FromNodeOfInterestIndex > indexWhereToInsertNodeOfInterest)
+                                indexWhereToInsertNodeOfInterest = existingSegment.FromNodeOfInterestIndex;
+                        }
+                    }
                 }
             }
 
-            return existingSpanEquipment with {
-                NodesOfInterestIds = newNodeOfInterestIdList.ToArray(),
-                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
-            };
+            indexWhereToInsertNodeOfInterest++;
+
+            return indexWhereToInsertNodeOfInterest;
         }
 
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAffixedToContainer spanEquipmentAffixedToContainer)
@@ -97,12 +140,26 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
-        private static List<Guid> CreateNodeOfInterestIdListWith(SpanEquipment existingSpanEquipment, Guid cutNodeOfInterestId)
+        private static Guid[] CreateNewNodeOfInterestIdListWith(SpanEquipment existingSpanEquipment, Guid cutNodeOfInterestId, UInt16 newNodeOfInterestIndex)
         {
-            return new List<Guid>(existingSpanEquipment.NodesOfInterestIds)
+            if (existingSpanEquipment.NodesOfInterestIds.Contains(cutNodeOfInterestId))
+                return existingSpanEquipment.NodesOfInterestIds;
+
+            var result = new List<Guid>();
+
+            for (UInt16 i = 0; i < newNodeOfInterestIndex; i++)
             {
-                cutNodeOfInterestId
-            };
+                result.Add(existingSpanEquipment.NodesOfInterestIds[i]);
+            }
+
+            result.Add(cutNodeOfInterestId);
+
+            for (UInt16 i = newNodeOfInterestIndex; i < existingSpanEquipment.NodesOfInterestIds.Length; i++)
+            {
+                result.Add(existingSpanEquipment.NodesOfInterestIds[i]);
+            }
+
+            return result.ToArray();
         }
     }
 }

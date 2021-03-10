@@ -9,7 +9,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
 using Xunit;
 
-namespace OpenFTTH.UtilityGraphService.Tests.SpanEquipment
+namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 { 
     public class NodeContainerSpecificationTests
     {

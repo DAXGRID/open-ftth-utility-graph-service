@@ -6,12 +6,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
     {
         public Guid SpanEquipmentId { get; }
         public Guid CutNodeOfInterestId { get; }
+        public UInt16 CutNodeOfInterestIndex { get; }
         public SpanSegmentCutInfo[] Cuts { get; }
 
-        public SpanSegmentsCut(Guid spanEquipmentId, Guid cutNodeOfInterestId, SpanSegmentCutInfo[] cuts)
+        public SpanSegmentsCut(Guid spanEquipmentId, Guid cutNodeOfInterestId, UInt16 cutNodeOfInterestIndex, SpanSegmentCutInfo[] cuts)
         {
             SpanEquipmentId = spanEquipmentId;
             CutNodeOfInterestId = cutNodeOfInterestId;
+            CutNodeOfInterestIndex = cutNodeOfInterestIndex;
             Cuts = cuts;
         }
     }

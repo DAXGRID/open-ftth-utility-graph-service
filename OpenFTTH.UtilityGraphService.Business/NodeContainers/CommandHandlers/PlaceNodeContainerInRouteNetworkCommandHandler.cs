@@ -29,7 +29,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(PlaceNodeContainerInRouteNetwork command)
         {
-            var nodeContainers = _eventStore.Projections.Get<UtilityGraphProjection>().NodeContainers;
+            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
             var nodeContainerSpecifications = _eventStore.Projections.Get<NodeContainerSpecificationsProjection>().Specifications;
 
             var nodeContainerAR = new NodeContainerAR();
