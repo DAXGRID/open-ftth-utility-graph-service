@@ -1,11 +1,15 @@
-﻿using FluentResults;
+﻿using DAX.EventProcessing;
+using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.Events.Changes;
+using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,13 +17,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class CutSpanSegmentsCommandHandler : ICommandHandler<CutSpanSegmentsAtRouteNode, Result>
     {
+        // TODO: move into config
+        private readonly string _topicName = "notification.utility-network";
+
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
+        private readonly IExternalEventProducer _externalEventProducer;
 
-        public CutSpanSegmentsCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher)
+        public CutSpanSegmentsCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _queryDispatcher = queryDispatcher;
+            _externalEventProducer = externalEventProducer;
         }
 
         public Task<Result> HandleAsync(CutSpanSegmentsAtRouteNode command)
@@ -56,9 +65,32 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (cuteSpanEquipmentsResult.IsSuccess)
             {
                 _eventStore.Aggregates.Store(spanEquipmentAR);
+                NotifyExternalServicesAboutChange(spanSegmentGraphElement.SpanEquipment.Id, command.RouteNodeId);
             }
 
             return Task.FromResult(cuteSpanEquipmentsResult);
+        }
+
+        private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid routeNodeId)
+        {
+            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            {
+                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId })
+            };
+
+            var updatedEvent =
+                new RouteNetworkElementContainedEquipmentUpdated(
+                    eventType: typeof(RouteNetworkElementContainedEquipmentUpdated).Name,
+                    eventId: Guid.NewGuid(),
+                    eventTimestamp: DateTime.UtcNow,
+                    applicationName: "UtilityNetworkService",
+                    applicationInfo: null,
+                    category: "EquipmentConnectivityModification",
+                    idChangeSets: idChangeSets.ToArray(),
+                    affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
+                );
+
+            await _externalEventProducer.Produce(_topicName, updatedEvent);
         }
     }
 }

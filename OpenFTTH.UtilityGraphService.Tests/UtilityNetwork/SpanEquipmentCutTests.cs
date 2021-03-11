@@ -2,6 +2,7 @@
 using FluentAssertions;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -79,6 +80,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Second inner conduit
             spanEquipmentAfterCut.SpanStructures[2].SpanSegments.Length.Should().Be(2);
 
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipment)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CC_1);
         }
 
         [Fact]
