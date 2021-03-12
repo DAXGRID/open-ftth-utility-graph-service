@@ -88,16 +88,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (affixResult.IsSuccess)
             {
                 _eventStore.Aggregates.Store(spanEquipmentAR);
+
+                NotifyExternalServicesAboutChange(spanEquipment.Id, command.NodeContainerId, new Guid[] { interestQueryResult.Value.Interests[nodeContainer.InterestId].RouteNetworkElementRefs[0] });
             }
 
             return Task.FromResult(affixResult);
         }
 
-        private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid[] affectedRouteNetworkElementIds)
+        private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid routeContainerId, Guid[] affectedRouteNetworkElementIds)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
-                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId })
+                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId }),
+                new IdChangeSet("NodeContainer", ChangeTypeEnum.Modification, new Guid[] { routeContainerId })
             };
 
             var updatedEvent =

@@ -2,6 +2,7 @@
 using FluentAssertions;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
@@ -61,6 +62,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentQueryResult.IsSuccess.Should().BeTrue();
 
             equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.First(n => n.NodeContainerId == nodeContainerId).NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.West);
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == nodeContainerId) && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.HH_2);
+
         }
 
 
