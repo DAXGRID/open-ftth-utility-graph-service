@@ -69,6 +69,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     return true;
                 }
             }
+            else if (_utilityGraph.TryGetGraphElement<IUtilityGraphSegmentRef>(equipmentOrInterestId, out var utilityGraphSegmentRef))
+            {
+                if (utilityGraphSegmentRef.SpanEquipment is T)
+                {
+                    equipment = (T)(object)utilityGraphSegmentRef.SpanEquipment;
+                    return true;
+                }
+            }
 
             #pragma warning disable CS8601 // Possible null reference assignment.
             equipment = default(T);
