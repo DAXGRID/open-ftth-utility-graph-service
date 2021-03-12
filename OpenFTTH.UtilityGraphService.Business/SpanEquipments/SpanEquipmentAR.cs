@@ -456,8 +456,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     if (connectsBySegmentId.TryGetValue(segment.Id, out var spanSegmentToSimpleTerminalConnectInfo))
                     {
                         // Check if span segment is connected to route node where to cut
-                        if (_spanEquipment.NodesOfInterestIds[segment.FromNodeOfInterestIndex] != routeNodeId && _spanEquipment.NodesOfInterestIds[segment.ToNodeOfInterestIndex] != routeNodeId)
+                        if (_spanEquipment.NodesOfInterestIds[segment.FromNodeOfInterestIndex] == routeNodeId)
                         {
+                            spanSegmentToSimpleTerminalConnectInfo.ConnectionDirection = SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment;
+                        }
+                        else if (_spanEquipment.NodesOfInterestIds[segment.ToNodeOfInterestIndex] == routeNodeId)
+                        {
+                            spanSegmentToSimpleTerminalConnectInfo.ConnectionDirection = SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal;
+                        }
+                        else 
+                        { 
                             return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
                                 ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_END_NOT_FOUND,
                                 $"No ends of the span segment with id: {segment.Id} can be found in route node with id: {routeNodeId}")
@@ -473,14 +481,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                                );
                         }
 
-                        if (spanSegmentToSimpleTerminalConnectInfo.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment && segment.ToTerminalId != Guid.Empty)
+                        if (spanSegmentToSimpleTerminalConnectInfo.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment && segment.FromTerminalId != Guid.Empty)
                         {
                             return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
                                    ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CONNECTED,
                                    $"Span segment with id: {segment.Id} already connected from a terminal with id: {segment.FromTerminalId}")
                                );
                         }
-
 
                         spanSegmentsCutValidatedOk.Add(segment.Id);
                     }
