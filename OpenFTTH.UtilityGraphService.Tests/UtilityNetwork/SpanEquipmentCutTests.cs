@@ -12,11 +12,13 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
 using Xunit;
+using Xunit.Extensions.Ordering;
 
 #nullable disable
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
+    [Order(800)]
     public class SpanEquipmentCutTests
     {
         private readonly IEventStore _eventStore;
@@ -36,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestCutOuterContainerAtCC_1_ShouldSucceed()
+        public async void TestCut5x10ConduitAtCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -44,12 +46,15 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
 
-            // Cut segments in structure 1 (the outer conduit and second inner conduit)
+            // Cut segments in structure 1 (the outer conduit and 2,3,4 inner conduit)
             var cutCmd = new CutSpanSegmentsAtRouteNode(
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToCut: new Guid[] { 
                     spanEquipment.SpanStructures[0].SpanSegments[0].Id,
-                    spanEquipment.SpanStructures[2].SpanSegments[0].Id
+                    spanEquipment.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[2].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[3].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[4].SpanSegments[0].Id
                 }
             );
 
@@ -74,8 +79,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Outer conduit
             spanEquipmentAfterCut.SpanStructures[0].SpanSegments.Length.Should().Be(2);
 
-            // First inner conduit (should not be cut)
-            spanEquipmentAfterCut.SpanStructures[1].SpanSegments.Length.Should().Be(1);
+            // Last inner conduit (should not be cut)
+            spanEquipmentAfterCut.SpanStructures[5].SpanSegments.Length.Should().Be(1);
 
             // Second inner conduit
             spanEquipmentAfterCut.SpanStructures[2].SpanSegments.Length.Should().Be(2);
@@ -171,7 +176,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             cutResult1.IsSuccess.Should().BeTrue();
             cutResult2.IsFailed.Should().BeTrue();
-            ((CutSpanSegmentsAtRouteNodeError)cutResult2.Errors.First()).Code.Should().Be(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND);
+            ((CutSpanSegmentsAtRouteNodeError)cutResult2.Errors.First()).Code.Should().Be(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CUT);
         }
     }
 }

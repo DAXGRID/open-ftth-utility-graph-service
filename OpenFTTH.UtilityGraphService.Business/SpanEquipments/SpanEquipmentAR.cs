@@ -28,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentPlacedInRouteNetwork>(Apply);
             Register<SpanEquipmentAffixedToContainer>(Apply);
             Register<SpanSegmentsCut>(Apply);
+            Register<SpanSegmentsConnectedToSimpleTerminals>(Apply);
         }
 
         #region Place Span Equipment
@@ -248,7 +249,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             return Result.Ok();
         }
-                
         private UInt16 GetCutNodeOfInterestIndex(Guid routeNodeId, RouteNetworkInterest walkOfInterest)
         {
             if (_spanEquipment == null)
@@ -405,6 +405,116 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
 
+        #endregion
+
+
+        #region Connect Span Segments To Simple Terminals
+        public Result ConnectSpanSegmentsToSimpleTerminals(Guid routeNodeId,SpanSegmentToSimpleTerminalConnectInfo[] connects)
+        {
+            if (routeNodeId == Guid.Empty)
+                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_ROUTE_NODE_ID_CANNOT_BE_EMPTY, "Route node id cannot be empty."));
+
+            // Chat that span equipment is affixed to container at node where the connects should be created
+            if (!IsAffixedToNodeContainer(routeNodeId))
+            {
+                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                   ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_EQUIPMENT_NOT_AFFIXED_TO_NODE_CONTAINER,
+                   $"Connecting span segments is only allowed if the span equipment: {this.Id} is affixed to a node container in route node: {routeNodeId}")
+               );
+            }
+
+            // Check that connects are valid
+            var validConnectsResult = IsConnectsValid(routeNodeId, connects);
+
+            if (validConnectsResult.IsFailed)
+                return validConnectsResult;
+
+            var @event = new SpanSegmentsConnectedToSimpleTerminals(
+                spanEquipmentId: this.Id,
+                connects: connects
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private Result IsConnectsValid(Guid routeNodeId, SpanSegmentToSimpleTerminalConnectInfo[] connects)
+        {
+            HashSet<Guid> spanSegmentsCutValidatedOk = new HashSet<Guid>();
+
+            Dictionary<Guid, SpanSegmentToSimpleTerminalConnectInfo> connectsBySegmentId = connects.ToDictionary(c => c.SegmentId);
+
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            // Check that span segments are not already cut
+            foreach (var structure in _spanEquipment.SpanStructures)
+            {
+                foreach (var segment in structure.SpanSegments)
+                {
+                    if (connectsBySegmentId.TryGetValue(segment.Id, out var spanSegmentToSimpleTerminalConnectInfo))
+                    {
+                        // Check if span segment is connected to route node where to cut
+                        if (_spanEquipment.NodesOfInterestIds[segment.FromNodeOfInterestIndex] != routeNodeId && _spanEquipment.NodesOfInterestIds[segment.ToNodeOfInterestIndex] != routeNodeId)
+                        {
+                            return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                                ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_END_NOT_FOUND,
+                                $"No ends of the span segment with id: {segment.Id} can be found in route node with id: {routeNodeId}")
+                            );
+                        }
+
+                        // Check if already connected
+                        if (spanSegmentToSimpleTerminalConnectInfo.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal && segment.ToTerminalId != Guid.Empty)
+                        {
+                            return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                                   ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CONNECTED,
+                                   $"Span segment with id: {segment.Id} already connected to a terminal with id: {segment.ToTerminalId}")
+                               );
+                        }
+
+                        if (spanSegmentToSimpleTerminalConnectInfo.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment && segment.ToTerminalId != Guid.Empty)
+                        {
+                            return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                                   ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CONNECTED,
+                                   $"Span segment with id: {segment.Id} already connected from a terminal with id: {segment.FromTerminalId}")
+                               );
+                        }
+
+
+                        spanSegmentsCutValidatedOk.Add(segment.Id);
+                    }
+                }
+            }
+
+
+            // Check that we found all span segments
+            var notFoundList = new List<Guid>();
+
+            foreach (var segmentToConnect in connectsBySegmentId.Keys)
+            {
+                if (!spanSegmentsCutValidatedOk.Contains(segmentToConnect))
+                    notFoundList.Add(segmentToConnect);
+            }
+
+            if (notFoundList.Count > 0)
+            {
+                return Result.Fail(new CutSpanSegmentsAtRouteNodeError(
+                                CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND,
+                                $"The span segment with ids: {string.Join(",", notFoundList)} was not found in span equipment with id: {this.Id} Notice that you cannot connect span segments belonging to multiple span equipments to terminal in the same command!")
+                            );
+            }
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanSegmentsConnectedToSimpleTerminals @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
         #endregion
     }
 }

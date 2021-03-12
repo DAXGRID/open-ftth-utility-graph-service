@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Concurrent;
 
@@ -32,14 +33,33 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return false;
         }
 
-        public void AddDisconnectedSegment(SpanEquipment spanEquipment, UInt16 structureIndex)
+        public void AddDisconnectedSegment(SpanEquipment spanEquipment, UInt16 structureIndex, UInt16 segmentIndex)
         {
-            var spanSegment = spanEquipment.SpanStructures[structureIndex].SpanSegments[0];
+            var spanSegment = spanEquipment.SpanStructures[structureIndex].SpanSegments[segmentIndex];
 
-            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment, structureIndex);
+            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment, structureIndex, segmentIndex);
 
             if (!_graphElementsById.TryAdd(spanSegment.Id, disconnectedGraphSegment))
                 throw new ArgumentException($"A span segment with id: {spanSegment.Id} already exists in the graph.");
+        }
+
+        public void ApplySegmentCut(SpanEquipment spanEquipment, SpanSegmentCutInfo spanSegmentCutInfo)
+        {
+            if (!_graphElementsById.TryRemove(spanSegmentCutInfo.OldSpanSegmentId, out _))
+                throw new ApplicationException($"Cannot remove span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} from graph.");
+
+            if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId1, out var segment1withIndexInfo))
+                throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
+
+            // TODO: Fix to take into account eventually connectivity
+
+            AddDisconnectedSegment(spanEquipment, segment1withIndexInfo.StructureIndex, segment1withIndexInfo.SegmentIndex);
+
+            if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId2, out var segment2withIndexInfo))
+                throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
+
+            AddDisconnectedSegment(spanEquipment, segment2withIndexInfo.StructureIndex, segment2withIndexInfo.SegmentIndex);
+
         }
     }
 }

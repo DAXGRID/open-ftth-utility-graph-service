@@ -8,9 +8,11 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
 using Xunit;
+using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
-{ 
+{
+    [Order(300)]
     public class SpanEquipmentSpecificationTests
     {
         private IEventStore _eventStore;

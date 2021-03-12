@@ -11,11 +11,13 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
 using System.Linq;
 using Xunit;
+using Xunit.Extensions.Ordering;
 
 #nullable disable
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
+    [Order(500)]
     public class NodeContainerPlacementTests
     {
         private readonly ICommandDispatcher _commandDispatcher;

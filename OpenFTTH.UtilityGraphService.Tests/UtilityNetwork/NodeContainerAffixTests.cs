@@ -13,11 +13,13 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
 using Xunit;
+using Xunit.Extensions.Ordering;
 
 #nullable disable
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
+    [Order(700)]
     public class NodeContainerAffixTests
     {
         private readonly IEventStore _eventStore;

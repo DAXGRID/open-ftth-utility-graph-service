@@ -30,6 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
             ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
             ProjectEvent<SpanSegmentsCut>(Project);
+            ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
         }
       
@@ -89,6 +90,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanSegmentsCut @event):
+                    UpdateSpanEquipmentWithCutSegments(@event);
+                    break;
+
+                case (SpanSegmentsConnectedToSimpleTerminals @event):
                     TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
                     break;
 
@@ -118,8 +123,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             // Add span segments to the graph
             for (UInt16 structureIndex = 0; structureIndex < spanEquipment.SpanStructures.Length; structureIndex++)
             {
-                // We're dealing with a virgin span equipment and therefore only disconnected segments
-                _utilityGraph.AddDisconnectedSegment(spanEquipment, structureIndex);
+                // We're dealing with a virgin span equipment and therefore only disconnected segments at index 0
+                _utilityGraph.AddDisconnectedSegment(spanEquipment, structureIndex, 0);
             }
         }
 
@@ -128,6 +133,19 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             // Store the new span equipment in memory
             _nodeContainerByEquipmentId.Add(nodeContainer);
             _nodeContainerByInterestId.TryAdd(nodeContainer.InterestId, nodeContainer);
+        }
+
+        private void UpdateSpanEquipmentWithCutSegments(SpanSegmentsCut @event)
+        {
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            // Re-index segments cut
+            foreach (var spanSegmentCut in @event.Cuts)
+            {
+                _utilityGraph.ApplySegmentCut(spanEquipment, spanSegmentCut);
+            }
         }
 
     }

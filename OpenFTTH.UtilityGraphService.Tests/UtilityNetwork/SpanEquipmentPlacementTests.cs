@@ -14,9 +14,11 @@ using System.Linq;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.TestData;
+using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
+    [Order(400)]
     public class SpanEquipmentPlacementTests
     {
         private readonly ICommandDispatcher _commandDispatcher;

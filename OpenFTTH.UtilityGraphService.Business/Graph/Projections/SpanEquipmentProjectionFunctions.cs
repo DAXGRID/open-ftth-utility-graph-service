@@ -96,33 +96,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
-        private static UInt16 FindWhereToInsertCutNodeOfInterest(SpanEquipment existingSpanEquipment, Dictionary<ushort, SpanSegmentCutInfo> spanSegmentCutInfoByStructureIndex)
-        {
-            UInt16 indexWhereToInsertNodeOfInterest = 0;
-
-            for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
-            {
-                // If cut info exists
-                if (spanSegmentCutInfoByStructureIndex.TryGetValue(structureIndex, out var spanSegmentCutInfo))
-                {
-                    var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
-
-                    foreach (var existingSegment in existingSpanStructure.SpanSegments)
-                    {
-                        if (existingSegment.Id == spanSegmentCutInfo.OldSpanSegmentId)
-                        {
-                            if (existingSegment.FromNodeOfInterestIndex > indexWhereToInsertNodeOfInterest)
-                                indexWhereToInsertNodeOfInterest = existingSegment.FromNodeOfInterestIndex;
-                        }
-                    }
-                }
-            }
-
-            indexWhereToInsertNodeOfInterest++;
-
-            return indexWhereToInsertNodeOfInterest;
-        }
-
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAffixedToContainer spanEquipmentAffixedToContainer)
         {
             var newListOfAffixes = new List<SpanEquipmentNodeContainerAffix>();
@@ -135,8 +108,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
             newListOfAffixes.Add(spanEquipmentAffixedToContainer.Affix);
 
-            return existingSpanEquipment with { 
-                NodeContainerAffixes = ImmutableArray.Create(newListOfAffixes.ToArray()) 
+            return existingSpanEquipment with
+            {
+                NodeContainerAffixes = ImmutableArray.Create(newListOfAffixes.ToArray())
             };
         }
 
@@ -160,6 +134,59 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
 
             return result.ToArray();
+        }
+
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanSegmentsConnectedToSimpleTerminals @event)
+        {
+            List<SpanStructure> newStructures = new List<SpanStructure>();
+
+            // Create dictionary of cuts for fast lookup
+            Dictionary<Guid, SpanSegmentToSimpleTerminalConnectInfo> spanSegmentConnectInfoBySegmentId = @event.Connects.ToDictionary(c => c.SegmentId);
+
+            // Loop though all span structures
+            for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
+            {
+                var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
+
+                List<SpanSegment> newSegments = new List<SpanSegment>();
+
+                // Loop through all span segments
+                foreach (var existingSegment in existingSpanStructure.SpanSegments)
+                {
+                    // If connect info exists
+                    if (spanSegmentConnectInfoBySegmentId.TryGetValue(existingSegment.Id, out var spanSegmentConnectInfo))
+                    {
+                        if (spanSegmentConnectInfo.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal)
+                        {
+                            newSegments.Add(
+                                existingSegment with { ToTerminalId = spanSegmentConnectInfo.TerminalId }
+                            );
+                        }
+                        else
+                        {
+                            newSegments.Add(
+                                existingSegment with { FromTerminalId = spanSegmentConnectInfo.TerminalId }
+                            );
+                        }
+                    }
+                    else
+                    {
+                        newSegments.Add(existingSegment);
+                    }
+                }
+
+                newStructures.Add(
+                    existingSpanStructure with
+                    {
+                        SpanSegments = ImmutableArray.Create(newSegments.ToArray())
+                    }
+                );
+            }
+
+            return existingSpanEquipment with
+            {
+                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+            };
         }
     }
 }
