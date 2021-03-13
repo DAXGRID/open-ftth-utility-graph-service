@@ -29,6 +29,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentAffixedToContainer>(Apply);
             Register<SpanSegmentsCut>(Apply);
             Register<SpanSegmentsConnectedToSimpleTerminals>(Apply);
+            Register<SpanSegmentDisconnectedFromTerminal>(Apply);
             Register<SpanEquipmentDetachedFromContainer>(Apply);
         }
 
@@ -611,6 +612,51 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
+        #endregion
+
+        #region Disconnect Span Segment From Terminal
+        public Result DisconnectSegmentFromTerminal(Guid spanSegmentId, Guid terminalId)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (!_spanEquipment.TryGetSpanSegment(spanSegmentId, out var spanSegmentWithIndexInfo))
+            {
+                return Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment with id: {spanSegmentId} in span equipment with id: {this.Id}"));
+            }
+
+            if (!IsConnected(spanSegmentWithIndexInfo.SpanSegment, terminalId))
+            {
+                return Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_CONNECTED_TO_TERMINAL, $"Span segment with id: {spanSegmentId} not connected to termian: {terminalId} in span equipment with id: {this.Id}"));
+            }
+
+            var @event = new SpanSegmentDisconnectedFromTerminal(
+               spanEquipmentId: this.Id,
+               spanSegmentId: spanSegmentId,
+               terminalId: terminalId
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanSegmentDisconnectedFromTerminal @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        private bool IsConnected(SpanSegment spanSegment, Guid terminalId)
+        {
+            if (spanSegment.FromTerminalId == terminalId || spanSegment.ToTerminalId == terminalId)
+                return true;
+            else
+                return false;
+        }
+
         #endregion
     }
 }

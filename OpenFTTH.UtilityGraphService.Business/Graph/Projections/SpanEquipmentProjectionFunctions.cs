@@ -207,5 +207,55 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 SpanStructures = ImmutableArray.Create(newStructures.ToArray())
             };
         }
+
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanSegmentDisconnectedFromTerminal @event)
+        {
+            List<SpanStructure> newStructures = new List<SpanStructure>();
+
+            // Loop though all span structures
+            for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
+            {
+                var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
+
+                List<SpanSegment> newSegments = new List<SpanSegment>();
+
+                // Loop through all span segments
+                foreach (var existingSegment in existingSpanStructure.SpanSegments)
+                {
+                    // If disconnect
+                    if (existingSegment.Id == @event.SpanSegmentId)
+                    {
+                        if (existingSegment.FromTerminalId == @event.TerminalId)
+                        {
+                            newSegments.Add(
+                                existingSegment with { FromTerminalId = Guid.Empty }
+                            );
+                        }
+                        else if(existingSegment.ToTerminalId == @event.TerminalId)
+                        {
+                            newSegments.Add(
+                                existingSegment with { ToTerminalId = Guid.Empty }
+                            );
+                        }
+                    }
+                    else
+                    {
+                        newSegments.Add(existingSegment);
+                    }
+                }
+
+                newStructures.Add(
+                    existingSpanStructure with
+                    {
+                        SpanSegments = ImmutableArray.Create(newSegments.ToArray())
+                    }
+                );
+            }
+
+            return existingSpanEquipment with
+            {
+                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+            };
+        }
     }
 }

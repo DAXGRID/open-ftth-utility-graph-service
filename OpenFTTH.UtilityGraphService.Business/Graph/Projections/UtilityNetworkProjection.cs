@@ -32,6 +32,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentDetachedFromContainer>(Project);
             ProjectEvent<SpanSegmentsCut>(Project);
             ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
+            ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
             
         }
@@ -104,11 +105,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanSegmentsCut @event):
-                    UpdateSpanEquipmentWithCutSegments(@event);
+                    ProcesstSegmentCuts(@event);
                     break;
 
                 case (SpanSegmentsConnectedToSimpleTerminals @event):
-                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+                    ProcessSegmentConnects(@event);
+                    break;
+
+                case (SpanSegmentDisconnectedFromTerminal @event):
+                    ProcessSegmentDisconnects(@event);
                     break;
 
                 case (NodeContainerPlacedInRouteNetwork @event):
@@ -149,7 +154,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             _nodeContainerByInterestId.TryAdd(nodeContainer.InterestId, nodeContainer);
         }
 
-        private void UpdateSpanEquipmentWithCutSegments(SpanSegmentsCut @event)
+        private void ProcesstSegmentCuts(SpanSegmentsCut @event)
         {
             TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
 
@@ -161,6 +166,31 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 _utilityGraph.ApplySegmentCut(spanEquipment, spanSegmentCut);
             }
         }
+
+        private void ProcessSegmentConnects(SpanSegmentsConnectedToSimpleTerminals @event)
+        {
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            // Re-index segments connect
+            foreach (var spanSegmentToConnect in @event.Connects)
+            {
+                _utilityGraph.ApplySegmentConnect(spanEquipment, spanSegmentToConnect);
+            }
+        }
+
+        private void ProcessSegmentDisconnects(SpanSegmentDisconnectedFromTerminal @event)
+        {
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            _utilityGraph.ApplySegmentDisconnect(spanEquipment, @event.SpanSegmentId, @event.TerminalId);
+        }
+
+
+
 
     }
 }
