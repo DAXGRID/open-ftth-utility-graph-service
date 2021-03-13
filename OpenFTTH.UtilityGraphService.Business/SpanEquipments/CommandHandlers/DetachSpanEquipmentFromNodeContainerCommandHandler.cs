@@ -38,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (command.SpanEquipmentOrSegmentId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_SPAN_SEGMENT_ID_CANNOT_BE_EMPTY, $"Span segment id must be specified.")));
 
-            if (command.NodeContainerId == Guid.Empty)
+            if (command.RouteNodeId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_CANNOT_BE_EMPTY, $"Node container id must be specified.")));
 
             var _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -49,13 +49,24 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanEquipmentOrSegmentId, out var spanSegmentGraphElement))
                     return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_SPAN_EQUIPMENT_OR_SEGMENT_ID_NOT_FOUND, $"Cannot find any span equipment or span segment with id: {command.SpanEquipmentOrSegmentId}")));
-
-                spanEquipment = spanSegmentGraphElement.SpanEquipment;
             }
 
+            // TODO: Fix utility graph projection so this hack is not nessesary
+            spanEquipment = _utilityNetwork.SpanEquipments[spanEquipment.Id];
+
+
+            // Find node container id in span equipment
+            if (spanEquipment.NodeContainerAffixes == null)
+                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER, $"Span equipment with id {spanEquipment.Id} is not affixed to any node container.")));
+
+            if (!spanEquipment.NodeContainerAffixes.Any(n => n.RouteNodeId == command.RouteNodeId))
+                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER, $"Span equipment with id {spanEquipment.Id} is not affixed in route node with id: {command.RouteNodeId}")));
+
+            var nodeContainerId = spanEquipment.NodeContainerAffixes.First(n => n.RouteNodeId == command.RouteNodeId).NodeContainerId;
+
             // Find node container
-            if (!_utilityNetwork.TryGetEquipment<NodeContainer>(command.NodeContainerId, out var nodeContainer))
-                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_SPAN_CONTAINER_ID_NOT_FOUND, $"Cannot find any node container with id: {command.NodeContainerId}")));
+            if (!_utilityNetwork.TryGetEquipment<NodeContainer>(nodeContainerId, out var nodeContainer))
+                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_NOT_FOUND, $"Cannot find any node container with id: {command.RouteNodeId}")));
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
@@ -67,7 +78,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 _eventStore.Aggregates.Store(spanEquipmentAR);
 
-                NotifyExternalServicesAboutChange(spanEquipment.Id, command.NodeContainerId, new Guid[] { nodeContainer.RouteNodeId });
+                NotifyExternalServicesAboutChange(spanEquipment.Id, nodeContainerId, new Guid[] { nodeContainer.RouteNodeId });
             }
 
             return Task.FromResult(detachResult);

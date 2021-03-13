@@ -8,12 +8,12 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     public record DetachSpanEquipmentFromNodeContainer : ICommand<Result>
     {
         public Guid SpanEquipmentOrSegmentId { get; }
-        public Guid NodeContainerId { get; }
+        public Guid RouteNodeId { get; }
 
-        public DetachSpanEquipmentFromNodeContainer(Guid spanEquipmentOrSegmentId, Guid nodeContainerId)
+        public DetachSpanEquipmentFromNodeContainer(Guid spanEquipmentOrSegmentId, Guid routeNodeId)
         {
             SpanEquipmentOrSegmentId = spanEquipmentOrSegmentId;
-            NodeContainerId = nodeContainerId;
+            RouteNodeId = routeNodeId;
         }
     }
 }

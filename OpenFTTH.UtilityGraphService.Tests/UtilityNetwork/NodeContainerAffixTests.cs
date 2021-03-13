@@ -81,7 +81,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(
                 testConduit.SpanStructures[1].SpanSegments[0].Id,
-                nodeContainerId: nodeContainerId
+                routeNodeId: TestRouteNetwork.HH_2
             );
 
             // Act
