@@ -29,9 +29,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
             ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
+            ProjectEvent<SpanEquipmentDetachedFromContainer>(Project);
             ProjectEvent<SpanSegmentsCut>(Project);
             ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
+            
         }
       
 
@@ -94,6 +96,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanEquipmentAffixedToContainer @event):
+                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+                    break;
+
+                case (SpanEquipmentDetachedFromContainer @event):
                     TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
                     break;
 

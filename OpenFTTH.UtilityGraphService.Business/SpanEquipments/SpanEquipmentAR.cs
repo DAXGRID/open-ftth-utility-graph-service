@@ -29,6 +29,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentAffixedToContainer>(Apply);
             Register<SpanSegmentsCut>(Apply);
             Register<SpanSegmentsConnectedToSimpleTerminals>(Apply);
+            Register<SpanEquipmentDetachedFromContainer>(Apply);
         }
 
         #region Place Span Equipment
@@ -138,7 +139,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
-            if (CheckIfAlreadyAffixedToNodeContainerInRouteNode(nodeContainers, nodeContainerRouteNodeId))
+            if (IsAlreadyAffixedToNodeContainerInRouteNode(nodeContainers, nodeContainerRouteNodeId))
             {
                 return Result.Fail(new AffixSpanEquipmentToNodeContainerError(
                         AffixSpanEquipmentToNodeContainerErrorCodes.SPAN_EQUIPMENT_ALREADY_AFFIXED_TO_NODE_CONTAINER,
@@ -157,7 +158,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        private bool CheckIfAlreadyAffixedToNodeContainerInRouteNode(LookupCollection<NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId)
+        private bool IsAlreadyAffixedToNodeContainerInRouteNode(LookupCollection<NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -181,6 +182,95 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
+        #endregion
+
+        #region Detach From Node Container
+        public Result DetachFromNodeContainer(NodeContainer nodeContainer)
+        {
+            if (!IsAffixedToNodeContainer(nodeContainer.Id))
+            {
+                return Result.Fail(new DetachSpanEquipmentFromNodeContainerError(
+                        DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER,
+                        $"The span equipment with id: {this.Id} is not affixed to the node container: {nodeContainer.Id}")
+                    );
+            }
+
+            var canBeDetachedResult = CanBeDetached(nodeContainer);
+
+            if (canBeDetachedResult.IsFailed)
+                return canBeDetachedResult;
+
+            RaiseEvent(new SpanEquipmentDetachedFromContainer(this.Id, nodeContainer.Id));
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentDetachedFromContainer @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        private Result CanBeDetached(NodeContainer nodeContainer)
+        {
+            HashSet<Guid> spanSegmentsCutValidatedOk = new HashSet<Guid>();
+
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            // Check all span segments that are connected to/from the route node of the node container
+            foreach (var structure in _spanEquipment.SpanStructures)
+            {
+                foreach (var segment in structure.SpanSegments)
+                {
+                    if (_spanEquipment.NodesOfInterestIds[segment.FromNodeOfInterestIndex] == nodeContainer.RouteNodeId)
+                    {
+                        if (segment.FromTerminalId != Guid.Empty)
+                        {
+                            return Result.Fail(new DetachSpanEquipmentFromNodeContainerError(
+                                DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_SEGMENT_IS_CONNECTED_INSIDE_NODE_CONTAINER,
+                                $"The span segment with id: {segment.Id} is connected inside the node container with id: {nodeContainer.Id} Cannot detach a span equipment from a node container if any connected span segments.")
+                            );
+                        }
+
+                        // If span equipment is passing through node container, the span segment must be cut, which is not allowed either
+                        if (nodeContainer.RouteNodeId != _spanEquipment.NodesOfInterestIds.First() && nodeContainer.RouteNodeId != _spanEquipment.NodesOfInterestIds.Last())
+                        {
+                            return Result.Fail(new DetachSpanEquipmentFromNodeContainerError(
+                                DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_SEGMENT_IS_CUT_INSIDE_NODE_CONTAINER,
+                                $"The span segment with id: {segment.Id} is cut inside the node container with id: {nodeContainer.Id} Cannot detach a span equipment from a node container if any span segments are cut.")
+                            );
+                        }
+                    }
+
+                    if (_spanEquipment.NodesOfInterestIds[segment.ToNodeOfInterestIndex] == nodeContainer.RouteNodeId)
+                    {
+                        if (segment.ToTerminalId != Guid.Empty)
+                        {
+                            return Result.Fail(new DetachSpanEquipmentFromNodeContainerError(
+                                DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_SEGMENT_IS_CONNECTED_INSIDE_NODE_CONTAINER,
+                                $"The span segment with id: {segment.Id} is connected inside the node container with id: {nodeContainer.Id} Cannot detach a span equipment from a node container if any connected span segments.")
+                            );
+                        }
+
+                        // If span equipment is passing through node container, the span segment must be cut, which is not allowed either
+                        if (nodeContainer.RouteNodeId != _spanEquipment.NodesOfInterestIds.First() && nodeContainer.RouteNodeId != _spanEquipment.NodesOfInterestIds.Last())
+                        {
+                            return Result.Fail(new DetachSpanEquipmentFromNodeContainerError(
+                                DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_SEGMENT_IS_CUT_INSIDE_NODE_CONTAINER,
+                                $"The span segment with id: {segment.Id} is cut inside the node container with id: {nodeContainer.Id} Cannot detach a span equipment from a node container if any span segments are cut.")
+                            );
+                        }
+                    }
+
+                }
+            }
+
+            return Result.Ok();
+        }
+
         #endregion
 
         #region Cut Span Segments
@@ -303,7 +393,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return true;
         }
 
-        private bool IsAffixedToNodeContainer(Guid routeNodeId)
+        private bool IsAffixedToNodeContainer(Guid routeNodeOrContainerId)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -313,7 +403,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             foreach (var affix in _spanEquipment.NodeContainerAffixes)
             {
-                if (affix.RouteNodeId == routeNodeId)
+                if (affix.RouteNodeId == routeNodeOrContainerId || affix.NodeContainerId == routeNodeOrContainerId)
                     return true;
             }
 
@@ -406,7 +496,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         #endregion
-
 
         #region Connect Span Segments To Simple Terminals
         public Result ConnectSpanSegmentsToSimpleTerminals(Guid routeNodeId,SpanSegmentToSimpleTerminalConnectInfo[] connects)

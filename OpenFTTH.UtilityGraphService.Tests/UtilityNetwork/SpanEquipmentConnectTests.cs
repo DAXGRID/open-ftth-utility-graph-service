@@ -36,7 +36,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
-        [Fact, Order(1)]
+        [Fact, Order(10)]
         public async void TestConnect5x10To3x10ConduitAtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
@@ -82,7 +82,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             toEquipmentAfterConnect.SpanStructures[3].SpanSegments[0].FromTerminalId.Should().Be(terminalId);
         }
 
-        [Fact, Order(2)]
+        [Fact, Order(11)]
         public async void TestConnectMultipleInnerducts5x10To3x10ConduitAtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
@@ -166,6 +166,30 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             connectResult.IsFailed.Should().BeTrue();
             ((ConnectSpanSegmentsAtRouteNodeError)connectResult.Errors.First()).Code.Should().Be(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CONNECTED);
+        }
+
+        [Fact, Order(100)]
+        public async void TestDetachConduitFromContainerInCC1_ShouldFalid()
+        {
+            var testConduitId = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
+
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+
+            var nodeContainerId = testConduit.NodeContainerAffixes.First(n => n.RouteNodeId == TestRouteNetwork.CC_1).NodeContainerId;
+
+            var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(
+                testConduit.SpanStructures[1].SpanSegments[0].Id,
+                nodeContainerId: nodeContainerId
+            );
+
+            // Act
+            var detachResult = await _commandDispatcher.HandleAsync<DetachSpanEquipmentFromNodeContainer, Result>(detachConduitFromNodeContainer);
+
+            // Assert
+            detachResult.IsFailed.Should().BeTrue();
+
+            ((DetachSpanEquipmentFromNodeContainerError)detachResult.Errors.First()).Code.Should().Be(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_SEGMENT_IS_CONNECTED_INSIDE_NODE_CONTAINER);
+
         }
 
 

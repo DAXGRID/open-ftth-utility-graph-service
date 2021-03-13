@@ -114,6 +114,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentDetachedFromContainer @event)
+        {
+            var newListOfAffixes = new List<SpanEquipmentNodeContainerAffix>();
+
+            if (existingSpanEquipment.NodeContainerAffixes != null)
+            {
+                foreach (var existingAffix in existingSpanEquipment.NodeContainerAffixes)
+                {
+                    if (existingAffix.NodeContainerId != @event.NodeContainerId)
+                        newListOfAffixes.Add(existingAffix);
+                }
+            }
+            
+            return existingSpanEquipment with
+            {
+                NodeContainerAffixes = ImmutableArray.Create(newListOfAffixes.ToArray())
+            };
+        }
+
         private static Guid[] CreateNewNodeOfInterestIdListWith(SpanEquipment existingSpanEquipment, Guid cutNodeOfInterestId, UInt16 newNodeOfInterestIndex)
         {
             if (existingSpanEquipment.NodesOfInterestIds.Contains(cutNodeOfInterestId))

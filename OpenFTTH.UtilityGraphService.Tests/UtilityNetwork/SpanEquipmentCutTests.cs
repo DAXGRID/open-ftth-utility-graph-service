@@ -37,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
-        [Fact]
+        [Fact,Order(10)]
         public async void TestCut5x10ConduitAtCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -91,7 +91,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CC_1);
         }
 
-        [Fact]
+        [Fact, Order(15)]
         public async void TryCutWhenSpanEquipmentIsNotAffixedToNodeContainer_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -109,7 +109,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((CutSpanSegmentsAtRouteNodeError)cutResult.Errors.First()).Code.Should().Be(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_EQUIPMENT_NOT_AFFIXED_TO_NODE_CONTAINER);
         }
 
-        [Fact]
+        [Fact, Order(16)]
         public async void TryCutAtSpanEquipmentEnd_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -127,7 +127,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((CutSpanSegmentsAtRouteNodeError)cutResult.Errors.First()).Code.Should().Be(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_EQUIPMENT_CANNOT_BE_CUT_AT_ENDS);
         }
 
-        [Fact]
+        [Fact, Order(17)]
         public async void TryCutAtSpanSegmentThatDontExist_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -147,7 +147,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((CutSpanSegmentsAtRouteNodeError)cutResult.Errors.First()).Code.Should().Be(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND);
         }
 
-        [Fact]
+        [Fact, Order(18)]
         public async void TryCutSameSpanSegmentTwoTimes_ShouldFailSecondTime()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -177,6 +177,31 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cutResult1.IsSuccess.Should().BeTrue();
             cutResult2.IsFailed.Should().BeTrue();
             ((CutSpanSegmentsAtRouteNodeError)cutResult2.Errors.First()).Code.Should().Be(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CUT);
+        }
+
+
+        [Fact, Order(100)]
+        public async void TestDetachConduitFromContainerInCC1_ShouldFalid()
+        {
+            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+
+            var nodeContainerId = testConduit.NodeContainerAffixes.First(n => n.RouteNodeId == TestRouteNetwork.CC_1).NodeContainerId;
+
+            var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(
+                testConduit.SpanStructures[1].SpanSegments[0].Id,
+                nodeContainerId: nodeContainerId
+            );
+
+            // Act
+            var detachResult = await _commandDispatcher.HandleAsync<DetachSpanEquipmentFromNodeContainer, Result>(detachConduitFromNodeContainer);
+
+            // Assert
+            detachResult.IsFailed.Should().BeTrue();
+
+            ((DetachSpanEquipmentFromNodeContainerError)detachResult.Errors.First()).Code.Should().Be(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_SEGMENT_IS_CUT_INSIDE_NODE_CONTAINER);
+
         }
     }
 }
