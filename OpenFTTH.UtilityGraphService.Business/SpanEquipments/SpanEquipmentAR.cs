@@ -31,6 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanSegmentsConnectedToSimpleTerminals>(Apply);
             Register<SpanSegmentDisconnectedFromTerminal>(Apply);
             Register<SpanEquipmentDetachedFromContainer>(Apply);
+            Register<AdditionalStructuresAddedToSpanEquipment>(Apply);
         }
 
         #region Place Span Equipment
@@ -655,6 +656,76 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 return true;
             else
                 return false;
+        }
+
+        #endregion
+
+        #region Add Additional Structures
+        public Result AddAdditionalStructures(LookupCollection<SpanStructureSpecification> structureSpecifications, Guid[] structureSpecificationIdsToAdd)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (structureSpecifications.Count == 0)
+            {
+                return Result.Fail(new PlaceAdditionalStructuresInSpanEquipmentError(
+                   PlaceAdditionalStructuresInSpanEquipmentErrorCodes.INVALID_STRUCTURE_SPECIFICAION_ID_LIST_CANNOT_BE_EMPTY,
+                   $"Must provide at least 1 structure specification id")
+               );
+            }
+
+            // Check that all specifications are there
+            foreach (var structureSpecificationId in structureSpecificationIdsToAdd)
+            {
+                if (!structureSpecifications.ContainsKey(structureSpecificationId))
+                {
+                    return Result.Fail(new PlaceAdditionalStructuresInSpanEquipmentError(
+                        PlaceAdditionalStructuresInSpanEquipmentErrorCodes.INVALID_STRUCTURE_SPECIFICATION_ID_NOT_FOUND,
+                        $"Cannot find structure specification with id: {structureSpecificationId}")
+                    );
+                }
+            }
+
+            List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
+
+            var innerStructureStartPosition = 1;
+
+            if (_spanEquipment.SpanStructures.Any(s => s.Level == 2))
+                innerStructureStartPosition = _spanEquipment.SpanStructures.Where(s => s.Level == 2).Max(s => s.Position) + 1;
+                       
+            // Add structures to level 2
+            foreach (var structureSpecificationId in structureSpecificationIdsToAdd)
+            {
+                spanStructuresToInclude.Add(
+                    new SpanStructure(
+                        id: Guid.NewGuid(),
+                        specificationId: structureSpecificationId,
+                        level: 2,
+                        parentPosition: 1,
+                        position: (ushort)innerStructureStartPosition,
+                        spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, 1) }
+                    )
+                );
+
+                innerStructureStartPosition++;
+            }
+
+            var @event = new AdditionalStructuresAddedToSpanEquipment(
+               spanEquipmentId: this.Id,
+               spanStructuresToAdd: spanStructuresToInclude.ToArray()
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(AdditionalStructuresAddedToSpanEquipment @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
 
         #endregion

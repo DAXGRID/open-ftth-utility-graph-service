@@ -257,5 +257,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 SpanStructures = ImmutableArray.Create(newStructures.ToArray())
             };
         }
+
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, AdditionalStructuresAddedToSpanEquipment @event)
+        {
+            List<SpanStructure> newStructures = new List<SpanStructure>();
+
+            // Copy all span structures
+            foreach (var existingStructure in existingSpanEquipment.SpanStructures)
+            {
+                newStructures.Add(existingStructure);
+            }
+
+            // Add new ones
+            newStructures.AddRange(@event.SpanStructuresToAdd);
+
+            return existingSpanEquipment with
+            {
+                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+            };
+        }
+
     }
 }

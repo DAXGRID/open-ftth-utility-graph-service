@@ -34,7 +34,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
             ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
-            
+            ProjectEvent<AdditionalStructuresAddedToSpanEquipment>(Project);
         }
       
 
@@ -94,6 +94,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 case (SpanEquipmentPlacedInRouteNetwork @event):
                     StoreAndIndexVirginSpanEquipment(@event.Equipment);
+                    break;
+
+                case (AdditionalStructuresAddedToSpanEquipment @event):
+                    ProcessAdditionalStructures(@event);
                     break;
 
                 case (SpanEquipmentAffixedToContainer @event):
@@ -187,6 +191,21 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
 
             _utilityGraph.ApplySegmentDisconnect(spanEquipment, @event.SpanSegmentId, @event.TerminalId);
+        }
+
+        private void ProcessAdditionalStructures(AdditionalStructuresAddedToSpanEquipment @event)
+        {
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+
+            // Add new span structures to the graph
+            foreach (var spanStructure in @event.SpanStructuresToAdd)
+            {
+                // We're dealing with a virgin span structures and therefore only disconnected segments at index 0
+                _utilityGraph.AddDisconnectedSegment(spanEquipment, spanStructure.Position, 0);
+            }
         }
 
 

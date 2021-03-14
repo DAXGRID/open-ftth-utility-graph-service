@@ -91,5 +91,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             if (!_graphElementsById.TryAdd(spanSegmentId, disconnectedGraphSegment))
                 throw new ArgumentException($"A span segment with id: {spanSegmentId} already exists in the graph.");
         }
+
     }
 }
