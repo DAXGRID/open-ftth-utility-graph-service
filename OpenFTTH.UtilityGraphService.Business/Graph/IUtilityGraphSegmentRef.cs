@@ -9,7 +9,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
     public interface IUtilityGraphSegmentRef : IUtilityGraphElement
     {
-        SpanEquipment SpanEquipment { get; }
-        SpanSegment SpanSegment { get; }
+        SpanEquipment SpanEquipment(UtilityNetworkProjection utilityNetwork);
+        SpanSegment SpanSegment(UtilityNetworkProjection utilityNetwork);
     }
 }

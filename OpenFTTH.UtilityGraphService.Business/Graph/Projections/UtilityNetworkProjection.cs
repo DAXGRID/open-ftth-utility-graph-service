@@ -74,9 +74,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
             else if (_utilityGraph.TryGetGraphElement<IUtilityGraphSegmentRef>(equipmentOrInterestId, out var utilityGraphSegmentRef))
             {
-                if (utilityGraphSegmentRef.SpanEquipment is T)
+                if (utilityGraphSegmentRef.SpanEquipment(this) is T)
                 {
-                    equipment = (T)(object)utilityGraphSegmentRef.SpanEquipment;
+                    equipment = (T)(object)utilityGraphSegmentRef.SpanEquipment(this);
                     return true;
                 }
             }

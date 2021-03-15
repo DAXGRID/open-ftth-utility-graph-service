@@ -50,7 +50,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanEquipmentOrSegmentId, out var spanSegmentGraphElement))
                     return Task.FromResult(Result.Fail(new AffixSpanEquipmentToNodeContainerError(AffixSpanEquipmentToNodeContainerErrorCodes.INVALID_SPAN_EQUIPMENT_OR_SEGMENT_ID_NOT_FOUND, $"Cannot find any span equipment or span segment with id: {command.SpanEquipmentOrSegmentId}")));
 
-                spanEquipment = spanSegmentGraphElement.SpanEquipment;
+                spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
             }
 
             // Find node container

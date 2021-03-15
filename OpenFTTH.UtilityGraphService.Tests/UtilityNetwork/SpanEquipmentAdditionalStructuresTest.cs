@@ -70,8 +70,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Check utility graph
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(equipmentAfterAddingStructure.SpanStructures[2].SpanSegments[0].Id, out var fromGraphSegmentRef);
-            fromGraphSegmentRef.SpanSegment.FromTerminalId.Should().BeEmpty();
-            fromGraphSegmentRef.SpanSegment.ToTerminalId.Should().BeEmpty();
+            fromGraphSegmentRef.SpanSegment(utilityNetwork).FromTerminalId.Should().BeEmpty();
+            fromGraphSegmentRef.SpanSegment(utilityNetwork).ToTerminalId.Should().BeEmpty();
 
             
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created

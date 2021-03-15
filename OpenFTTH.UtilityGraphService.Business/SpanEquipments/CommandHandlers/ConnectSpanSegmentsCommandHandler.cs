@@ -49,19 +49,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanSegmentToConnectId, out var spanSegmentGraphElement))
                     return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {spanSegmentToConnectId}")));
 
-                if (!spanEquipmentsToConnect.ContainsKey(spanSegmentGraphElement.SpanEquipment.Id))
+                var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
+                var spanSegment = spanSegmentGraphElement.SpanSegment(utilityNetwork);
+
+                if (!spanEquipmentsToConnect.ContainsKey(spanEquipment.Id))
                 {
-                    spanSegmentGraphElement.SpanEquipment.TryGetSpanSegment(spanSegmentGraphElement.SpanSegment.Id, out var spanSegmentWithIndexInfo);
+                    spanEquipment.TryGetSpanSegment(spanSegment.Id, out var spanSegmentWithIndexInfo);
 
                     spanEquipmentsToConnect.Add(
-                        spanSegmentGraphElement.SpanEquipment.Id,
+                       spanEquipment.Id,
                         new SpanEquipmentWithConnectsHolder()
                         {
-                            SpanEquipment = spanSegmentGraphElement.SpanEquipment,
+                            SpanEquipment = spanEquipment,
                             Connects = new List<SpanSegmentConnectHolder> {
                                 new SpanSegmentConnectHolder(
                                     new SpanSegmentToSimpleTerminalConnectInfo(
-                                        segmentId: spanSegmentGraphElement.SpanSegment.Id,
+                                        segmentId: spanSegment.Id,
                                         terminalId: Guid.Empty,
                                         structureIndex: spanSegmentWithIndexInfo.StructureIndex,
                                         segmentIndex: spanSegmentWithIndexInfo.SegmentIndex
@@ -73,12 +76,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 }
                 else
                 {
-                    spanSegmentGraphElement.SpanEquipment.TryGetSpanSegment(spanSegmentGraphElement.SpanSegment.Id, out var spanSegmentWithIndexInfo);
+                    spanEquipment.TryGetSpanSegment(spanSegment.Id, out var spanSegmentWithIndexInfo);
 
-                    spanEquipmentsToConnect[spanSegmentGraphElement.SpanEquipment.Id].Connects.Add(
+                    spanEquipmentsToConnect[spanEquipment.Id].Connects.Add(
                         new SpanSegmentConnectHolder(
                             new SpanSegmentToSimpleTerminalConnectInfo(
-                                segmentId: spanSegmentGraphElement.SpanSegment.Id,
+                                segmentId: spanSegment.Id,
                                 terminalId: Guid.Empty,
                                 structureIndex: spanSegmentWithIndexInfo.StructureIndex,
                                 segmentIndex: spanSegmentWithIndexInfo.SegmentIndex

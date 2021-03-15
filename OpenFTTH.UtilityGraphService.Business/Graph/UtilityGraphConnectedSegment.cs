@@ -4,6 +4,7 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
+    /*
     public class UtilityGraphConnectedSegment : GraphEdge, IUtilityGraphSegmentRef
     {
         private readonly SpanEquipment _spanEquipment;
@@ -30,4 +31,5 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public SpanSegment SpanSegment => _spanEquipment.SpanStructures[_structureIndex].SpanSegments[_segmentIndex];
     }
+    */
 }

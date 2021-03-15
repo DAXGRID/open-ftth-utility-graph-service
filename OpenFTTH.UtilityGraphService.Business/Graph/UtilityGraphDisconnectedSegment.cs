@@ -11,27 +11,32 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
     /// </summary>
     public class UtilityGraphDisconnectedSegment : IUtilityGraphSegmentRef
     {
-        private readonly SpanEquipment _spanEquipment;
-        private readonly UInt16 _structureIndex;
-        private readonly UInt16 _segmentIndex;
+        public Guid SpanEquipmentId { get; }
+        public UInt16 StructureIndex { get; }
+        public UInt16 SegmentIndex { get; }
 
-        public UtilityGraphDisconnectedSegment(SpanEquipment spanEquipment, UInt16 structureIndex, UInt16 segmentIndex)
+        public SpanEquipment SpanEquipment(UtilityNetworkProjection utilityNetwork)
         {
-            _spanEquipment = spanEquipment;
-            _structureIndex = structureIndex;
-            _segmentIndex = segmentIndex;
+            if (utilityNetwork.TryGetEquipment<SpanEquipment>(SpanEquipmentId, out var spanEquipment))
+                return spanEquipment;
 
-            // Check that structure index is not out of bounds
-            if (_structureIndex < 0 || _structureIndex >= _spanEquipment.SpanStructures.Length)
-                throw new ArgumentException("Structure index out of bounds");
-
-            // Check that span index is not out of bounds
-            if (_segmentIndex < 0 || _segmentIndex >= _spanEquipment.SpanStructures[_structureIndex].SpanSegments.Length)
-                throw new ArgumentException("Segment index out of bounds");
+            throw new ApplicationException($"Cannot find span equipment with id: {SpanEquipmentId}. State corrupted!");
         }
 
-        public SpanEquipment SpanEquipment => _spanEquipment;
+        public SpanSegment SpanSegment(UtilityNetworkProjection utilityNetwork)
+        {
+            if (utilityNetwork.TryGetEquipment<SpanEquipment>(SpanEquipmentId, out var spanEquipment))
+                return spanEquipment.SpanStructures[StructureIndex].SpanSegments[SegmentIndex];
 
-        public SpanSegment SpanSegment => _spanEquipment.SpanStructures[_structureIndex].SpanSegments[_segmentIndex];
+            throw new ApplicationException($"Cannot find span equipment with id: {SpanEquipmentId}. State corrupted!");
+        }
+
+        public UtilityGraphDisconnectedSegment(Guid spanEquipmentId, ushort structureIndex, ushort segmentIndex)
+        {
+            SpanEquipmentId = spanEquipmentId;
+            StructureIndex = structureIndex;
+            SegmentIndex = segmentIndex;
+        }
+
     }
 }

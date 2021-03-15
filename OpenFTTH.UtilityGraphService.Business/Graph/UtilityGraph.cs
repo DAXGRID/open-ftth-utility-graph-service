@@ -37,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             var spanSegment = spanEquipment.SpanStructures[structureIndex].SpanSegments[segmentIndex];
 
-            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment, structureIndex, segmentIndex);
+            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment.Id, structureIndex, segmentIndex);
 
             if (!_graphElementsById.TryAdd(spanSegment.Id, disconnectedGraphSegment))
                 throw new ArgumentException($"A span segment with id: {spanSegment.Id} already exists in the graph.");
@@ -64,17 +64,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         internal void ApplySegmentConnect(SpanEquipment spanEquipment, SpanSegmentToSimpleTerminalConnectInfo spanSegmentToConnect)
         {
-            if (!_graphElementsById.TryRemove(spanSegmentToConnect.SegmentId, out _))
-                throw new ApplicationException($"Cannot remove span segment with id: {spanSegmentToConnect.SegmentId} from graph.");
-
-            if (!spanEquipment.TryGetSpanSegment(spanSegmentToConnect.SegmentId, out var segmentWithIndexInfo))
-                throw new ApplicationException($"Cannot find span segment with id: {spanSegmentToConnect.SegmentId} in span equipment: {spanEquipment.Id} ");
-
-            // TODO: Fix to take into account eventually connectivity
-            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment, segmentWithIndexInfo.StructureIndex, segmentWithIndexInfo.SegmentIndex);
-
-            if (!_graphElementsById.TryAdd(spanSegmentToConnect.SegmentId, disconnectedGraphSegment))
-                throw new ArgumentException($"A span segment with id: {spanSegmentToConnect.SegmentId} already exists in the graph.");
+            // TODO: Update graph connectivity
         }
 
         internal void ApplySegmentDisconnect(SpanEquipment spanEquipment, Guid spanSegmentId, Guid terminalId)
@@ -86,7 +76,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ApplicationException($"Cannot find span segment with id: {spanSegmentId} in span equipment: {spanEquipment.Id} ");
 
             // TODO: Fix to take into account eventually connectivity
-            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment, segmentWithIndexInfo.StructureIndex, segmentWithIndexInfo.SegmentIndex);
+            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment.Id, segmentWithIndexInfo.StructureIndex, segmentWithIndexInfo.SegmentIndex);
 
             if (!_graphElementsById.TryAdd(spanSegmentId, disconnectedGraphSegment))
                 throw new ArgumentException($"A span segment with id: {spanSegmentId} already exists in the graph.");

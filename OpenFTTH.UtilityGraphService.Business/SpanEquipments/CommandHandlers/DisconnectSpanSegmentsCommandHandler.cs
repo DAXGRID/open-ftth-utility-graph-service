@@ -48,47 +48,53 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentsToDisconnect[0], out var firstSpanSegmentGraphElement))
                 return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentsToDisconnect[0]}")));
 
+            var firstSpanEquipment = firstSpanSegmentGraphElement.SpanEquipment(utilityNetwork);
+            var firstSpanSegment = firstSpanSegmentGraphElement.SpanSegment(utilityNetwork);
+
             // Lookup the second span equipment
             if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentsToDisconnect[1], out var secondSpanSegmentGraphElement))
                 return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentsToDisconnect[1]}")));
+            
+            var secondSpanEquipment = secondSpanSegmentGraphElement.SpanEquipment(utilityNetwork);
+            var secondSpanSegment = secondSpanSegmentGraphElement.SpanSegment(utilityNetwork);
 
             // Check that first span segment is connected to route node
-            if (firstSpanSegmentGraphElement.SpanEquipment.NodesOfInterestIds[firstSpanSegmentGraphElement.SpanSegment.FromNodeOfInterestIndex] != command.RouteNodeId
-                && firstSpanSegmentGraphElement.SpanEquipment.NodesOfInterestIds[firstSpanSegmentGraphElement.SpanSegment.ToNodeOfInterestIndex] != command.RouteNodeId)
+            if (firstSpanEquipment.NodesOfInterestIds[firstSpanSegment.FromNodeOfInterestIndex] != command.RouteNodeId
+                && firstSpanEquipment.NodesOfInterestIds[firstSpanSegment.ToNodeOfInterestIndex] != command.RouteNodeId)
             {
-                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_IS_NOT_RELATED_TO_ROUTE_NODE, $"The span segment with id: {firstSpanSegmentGraphElement.SpanSegment.Id} is not related to route node: {command.RouteNodeId} in any way. Please check command arguments.")));
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_IS_NOT_RELATED_TO_ROUTE_NODE, $"The span segment with id: {firstSpanSegment.Id} is not related to route node: {command.RouteNodeId} in any way. Please check command arguments.")));
             }
 
             // Check that second span segment is connected to route node
-            if (secondSpanSegmentGraphElement.SpanEquipment.NodesOfInterestIds[secondSpanSegmentGraphElement.SpanSegment.FromNodeOfInterestIndex] != command.RouteNodeId
-                && secondSpanSegmentGraphElement.SpanEquipment.NodesOfInterestIds[secondSpanSegmentGraphElement.SpanSegment.ToNodeOfInterestIndex] != command.RouteNodeId)
+            if (secondSpanEquipment.NodesOfInterestIds[secondSpanSegment.FromNodeOfInterestIndex] != command.RouteNodeId
+                && secondSpanEquipment.NodesOfInterestIds[secondSpanSegment.ToNodeOfInterestIndex] != command.RouteNodeId)
             {
-                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_IS_NOT_RELATED_TO_ROUTE_NODE, $"The span segment with id: {secondSpanSegmentGraphElement.SpanSegment.Id} is not related to route node: {command.RouteNodeId} in any way. Please check command arguments.")));
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_IS_NOT_RELATED_TO_ROUTE_NODE, $"The span segment with id: {secondSpanSegment.Id} is not related to route node: {command.RouteNodeId} in any way. Please check command arguments.")));
             }
 
             // Check that the two segments are connected
             HashSet<Guid> firstSegmentTerminalIds = new HashSet<Guid>();
-            if (firstSpanSegmentGraphElement.SpanSegment.FromTerminalId != Guid.Empty)
-                firstSegmentTerminalIds.Add(firstSpanSegmentGraphElement.SpanSegment.FromTerminalId);
-            if (firstSpanSegmentGraphElement.SpanSegment.ToTerminalId != Guid.Empty)
-                firstSegmentTerminalIds.Add(firstSpanSegmentGraphElement.SpanSegment.ToTerminalId);
+            if (firstSpanSegment.FromTerminalId != Guid.Empty)
+                firstSegmentTerminalIds.Add(firstSpanSegment.FromTerminalId);
+            if (firstSpanSegment.ToTerminalId != Guid.Empty)
+                firstSegmentTerminalIds.Add(firstSpanSegment.ToTerminalId);
 
             Guid sharedTerminalId = Guid.Empty;
 
-            if (firstSegmentTerminalIds.Contains(secondSpanSegmentGraphElement.SpanSegment.FromTerminalId))
-                sharedTerminalId = secondSpanSegmentGraphElement.SpanSegment.FromTerminalId;
-            else if (firstSegmentTerminalIds.Contains(secondSpanSegmentGraphElement.SpanSegment.ToTerminalId))
-                sharedTerminalId = secondSpanSegmentGraphElement.SpanSegment.ToTerminalId;
+            if (firstSegmentTerminalIds.Contains(secondSpanSegment.FromTerminalId))
+                sharedTerminalId = secondSpanSegment.FromTerminalId;
+            else if (firstSegmentTerminalIds.Contains(secondSpanSegment.ToTerminalId))
+                sharedTerminalId = secondSpanSegment.ToTerminalId;
 
             if (sharedTerminalId == Guid.Empty)
-                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENTS_ARE_NOT_CONNECTED, $"The span segment with id: {firstSpanSegmentGraphElement.SpanSegment.Id} and The span segment with id: {secondSpanSegmentGraphElement.SpanSegment.Id} is not connected in route node: {command.RouteNodeId}. Please check command arguments.")));
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENTS_ARE_NOT_CONNECTED, $"The span segment with id: {firstSpanSegment.Id} and The span segment with id: {secondSpanSegment.Id} is not connected in route node: {command.RouteNodeId}. Please check command arguments.")));
 
 
             // Disconnect the first span equipment from the terminal
-            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanSegmentGraphElement.SpanEquipment.Id);
+            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.Id);
 
             var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.DisconnectSegmentFromTerminal(
-                spanSegmentId: firstSpanSegmentGraphElement.SpanSegment.Id,
+                spanSegmentId: firstSpanSegment.Id,
                 terminalId: sharedTerminalId
             );
 
@@ -96,10 +102,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Task.FromResult(firstSpanEquipmentConnectResult);
 
             // Disconnect the second span equipment from the terminal
-            var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanSegmentGraphElement.SpanEquipment.Id);
+            var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.Id);
 
             var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.DisconnectSegmentFromTerminal(
-                spanSegmentId: secondSpanSegmentGraphElement.SpanSegment.Id,
+                spanSegmentId: secondSpanSegment.Id,
                 terminalId: sharedTerminalId
             );
 
@@ -109,7 +115,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             _eventStore.Aggregates.Store(firstSpanEquipmentAR);
             _eventStore.Aggregates.Store(secondSpanEquipmentAR);
 
-            NotifyExternalServicesAboutChange(firstSpanSegmentGraphElement.SpanEquipment.Id, secondSpanSegmentGraphElement.SpanEquipment.Id, command.RouteNodeId);
+            NotifyExternalServicesAboutChange(firstSpanEquipment.Id, secondSpanEquipment.Id, command.RouteNodeId);
 
             return Task.FromResult(Result.Ok());
         }

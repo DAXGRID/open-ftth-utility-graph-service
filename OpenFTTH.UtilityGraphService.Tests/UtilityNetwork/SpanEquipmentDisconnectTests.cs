@@ -84,12 +84,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Check utility graph
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(fromEquipmentAfterDisconnect.SpanStructures[4].SpanSegments[0].Id, out var fromGraphSegmentRef);
-            fromGraphSegmentRef.SpanSegment.FromTerminalId.Should().BeEmpty();
-            fromGraphSegmentRef.SpanSegment.ToTerminalId.Should().BeEmpty();
+            fromGraphSegmentRef.SpanSegment(utilityNetwork).FromTerminalId.Should().BeEmpty();
+            fromGraphSegmentRef.SpanSegment(utilityNetwork).ToTerminalId.Should().BeEmpty();
 
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(toEquipmentAfterDisconnect.SpanStructures[3].SpanSegments[0].Id, out var toGraphSegmentRef);
-            toGraphSegmentRef.SpanSegment.FromTerminalId.Should().BeEmpty();
-            toGraphSegmentRef.SpanSegment.ToTerminalId.Should().BeEmpty();
+            toGraphSegmentRef.SpanSegment(utilityNetwork).FromTerminalId.Should().BeEmpty();
+            toGraphSegmentRef.SpanSegment(utilityNetwork).ToTerminalId.Should().BeEmpty();
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
             var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
