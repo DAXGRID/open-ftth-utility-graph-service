@@ -478,8 +478,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 cuts.Add(
                     new SpanSegmentCutInfo(
                        oldSpanSegmentId: spanSegmentId,
-                       oldStructureIndex: spanSegmentWithIndexInfo.StructureIndex,
-                       oldSegmentIndex: spanSegmentWithIndexInfo.SegmentIndex,
                        newSpanSegmentId1: Guid.NewGuid(),
                        newSpanSegmentId2: Guid.NewGuid()
                        )

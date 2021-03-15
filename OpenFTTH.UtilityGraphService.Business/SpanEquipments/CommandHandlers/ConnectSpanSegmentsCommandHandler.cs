@@ -65,9 +65,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                                 new SpanSegmentConnectHolder(
                                     new SpanSegmentToSimpleTerminalConnectInfo(
                                         segmentId: spanSegment.Id,
-                                        terminalId: Guid.Empty,
-                                        structureIndex: spanSegmentWithIndexInfo.StructureIndex,
-                                        segmentIndex: spanSegmentWithIndexInfo.SegmentIndex
+                                        terminalId: Guid.Empty
                                     )
                                 )
                             }
@@ -82,9 +80,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                         new SpanSegmentConnectHolder(
                             new SpanSegmentToSimpleTerminalConnectInfo(
                                 segmentId: spanSegment.Id,
-                                terminalId: Guid.Empty,
-                                structureIndex: spanSegmentWithIndexInfo.StructureIndex,
-                                segmentIndex: spanSegmentWithIndexInfo.SegmentIndex
+                                terminalId: Guid.Empty
                             )
                         )
                     );

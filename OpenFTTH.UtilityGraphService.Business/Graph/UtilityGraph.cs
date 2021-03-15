@@ -51,8 +51,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId1, out var segment1withIndexInfo))
                 throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
 
-            // TODO: Fix to take into account eventually connectivity
-
             AddDisconnectedSegment(spanEquipment, segment1withIndexInfo.StructureIndex, segment1withIndexInfo.SegmentIndex);
 
             if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId2, out var segment2withIndexInfo))
@@ -60,6 +58,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             AddDisconnectedSegment(spanEquipment, segment2withIndexInfo.StructureIndex, segment2withIndexInfo.SegmentIndex);
 
+            // TODO: Update all segments in the structure (because index shifted)
+            // TODO: Update graph connectivity
         }
 
         internal void ApplySegmentConnect(SpanEquipment spanEquipment, SpanSegmentToSimpleTerminalConnectInfo spanSegmentToConnect)
@@ -69,18 +69,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         internal void ApplySegmentDisconnect(SpanEquipment spanEquipment, Guid spanSegmentId, Guid terminalId)
         {
-            if (!_graphElementsById.TryRemove(spanSegmentId, out _))
-                throw new ApplicationException($"Cannot remove span segment with id: {spanSegmentId} from graph.");
-
-            if (!spanEquipment.TryGetSpanSegment(spanSegmentId, out var segmentWithIndexInfo))
-                throw new ApplicationException($"Cannot find span segment with id: {spanSegmentId} in span equipment: {spanEquipment.Id} ");
-
-            // TODO: Fix to take into account eventually connectivity
-            var disconnectedGraphSegment = new UtilityGraphDisconnectedSegment(spanEquipment.Id, segmentWithIndexInfo.StructureIndex, segmentWithIndexInfo.SegmentIndex);
-
-            if (!_graphElementsById.TryAdd(spanSegmentId, disconnectedGraphSegment))
-                throw new ArgumentException($"A span segment with id: {spanSegmentId} already exists in the graph.");
+            // TODO: Update graph connectivity
         }
-
     }
 }

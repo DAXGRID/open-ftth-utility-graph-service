@@ -19,15 +19,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
         public Guid SegmentId { get; }
         public Guid TerminalId { get; set; }
         public SpanSegmentToTerminalConnectionDirection ConnectionDirection { get; set; }
-        public UInt16 StructureIndex { get; }
-        public UInt16 SegmentIndex { get; }
-
-        public SpanSegmentToSimpleTerminalConnectInfo(Guid segmentId, Guid terminalId, ushort structureIndex, ushort segmentIndex)
+   
+        public SpanSegmentToSimpleTerminalConnectInfo(Guid segmentId, Guid terminalId)
         {
             SegmentId = segmentId;
             TerminalId = terminalId;
-            StructureIndex = structureIndex;
-            SegmentIndex = segmentIndex;
         }
     }
 

@@ -66,8 +66,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                     {
                         new SpanSegmentCutInfo(
                             oldSpanSegmentId: spanSegmentId1ToCut,
-                            oldStructureIndex: 0,
-                            oldSegmentIndex: 0,
                             newSpanSegmentId1: newSegmentId1,
                             newSpanSegmentId2: newSegmentId2
                             )
@@ -141,8 +139,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                     {
                         new SpanSegmentCutInfo(
                             oldSpanSegmentId: cut1spanSegmentId,
-                            oldStructureIndex: 0,
-                            oldSegmentIndex: 0,
                             newSpanSegmentId1: cut1newSegmentId1,
                             newSpanSegmentId2: cut1newSegmentId2
                             )
@@ -162,8 +158,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                      {
                                     new SpanSegmentCutInfo(
                                         oldSpanSegmentId: cut1newSegmentId1,
-                                        oldStructureIndex: 0,
-                                        oldSegmentIndex: 0,
                                         newSpanSegmentId1: cut2newSegmentId1,
                                         newSpanSegmentId2: cut2newSegmentId2
                                         )
@@ -246,8 +240,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                     {
                         new SpanSegmentCutInfo(
                             oldSpanSegmentId: structure1cut1OldSpanSegmentId,
-                            oldStructureIndex: 0,
-                            oldSegmentIndex: 0,
                             newSpanSegmentId1: structure1cut1newSegmentId1,
                             newSpanSegmentId2: structure1cut1newSegmentId2
                             )
@@ -267,8 +259,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                      {
                                     new SpanSegmentCutInfo(
                                         oldSpanSegmentId: structure1cut1newSegmentId1,
-                                        oldStructureIndex: 0,
-                                        oldSegmentIndex: 0,
                                         newSpanSegmentId1: structure1cut2newSegmentId1,
                                         newSpanSegmentId2: structure1cut2newSegmentId2
                                         )
@@ -288,8 +278,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                      {
                                     new SpanSegmentCutInfo(
                                         oldSpanSegmentId: structure2cut1OldSpanSegmentId,
-                                        oldStructureIndex: 1,
-                                        oldSegmentIndex: 0,
                                         newSpanSegmentId1: structure2cut1newSegmentId1,
                                         newSpanSegmentId2: structure2cut1newSegmentId2
                                         )
@@ -392,8 +380,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                     {
                         new SpanSegmentCutInfo(
                             oldSpanSegmentId: cut1spanSegmentId,
-                            oldStructureIndex: 0,
-                            oldSegmentIndex: 0,
                             newSpanSegmentId1: cut1newSegmentId1,
                             newSpanSegmentId2: cut1newSegmentId2
                             )
@@ -414,8 +400,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                      {
                                     new SpanSegmentCutInfo(
                                         oldSpanSegmentId: cut2spanSegmentId,
-                                        oldStructureIndex: 1,
-                                        oldSegmentIndex: 0,
                                         newSpanSegmentId1: cut2newSegmentId1,
                                         newSpanSegmentId2: cut2newSegmentId2
                                         )
@@ -517,8 +501,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                     {
                         new SpanSegmentCutInfo(
                             oldSpanSegmentId: cut1spanSegmentId,
-                            oldStructureIndex: 0,
-                            oldSegmentIndex: 0,
                             newSpanSegmentId1: cut1newSegmentId1,
                             newSpanSegmentId2: cut1newSegmentId2
                             )
@@ -540,8 +522,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.ProjectionFunctions
                     {
                         new SpanSegmentCutInfo(
                             oldSpanSegmentId: cut1spanSegmentId,
-                            oldStructureIndex: 1,
-                            oldSegmentIndex: 0,
                             newSpanSegmentId1: cut1newSegmentId1,
                             newSpanSegmentId2: cut1newSegmentId2
                             )
