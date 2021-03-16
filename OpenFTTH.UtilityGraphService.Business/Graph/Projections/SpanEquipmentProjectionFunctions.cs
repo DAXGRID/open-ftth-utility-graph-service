@@ -85,14 +85,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 newStructures.Add(
                     existingSpanStructure with
                     {
-                        SpanSegments = ImmutableArray.Create(newSegments.ToArray())
+                        SpanSegments = newSegments.ToArray()
                     });
             }
 
             return existingSpanEquipment with
             {
                 NodesOfInterestIds = newNodeOfInterestIdList,
-                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+                SpanStructures = newStructures.ToArray()
             };
         }
 
@@ -110,7 +110,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
             return existingSpanEquipment with
             {
-                NodeContainerAffixes = ImmutableArray.Create(newListOfAffixes.ToArray())
+                NodeContainerAffixes = newListOfAffixes.ToArray()
             };
         }
 
@@ -129,7 +129,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             
             return existingSpanEquipment with
             {
-                NodeContainerAffixes = ImmutableArray.Create(newListOfAffixes.ToArray())
+                NodeContainerAffixes = newListOfAffixes.ToArray()
             };
         }
 
@@ -197,14 +197,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 newStructures.Add(
                     existingSpanStructure with
                     {
-                        SpanSegments = ImmutableArray.Create(newSegments.ToArray())
+                        SpanSegments = newSegments.ToArray()
                     }
                 );
             }
 
             return existingSpanEquipment with
             {
-                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+                SpanStructures = newStructures.ToArray()
             };
         }
 
@@ -247,14 +247,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 newStructures.Add(
                     existingSpanStructure with
                     {
-                        SpanSegments = ImmutableArray.Create(newSegments.ToArray())
+                        SpanSegments = newSegments.ToArray()
                     }
                 );
             }
 
             return existingSpanEquipment with
             {
-                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+                SpanStructures = newStructures.ToArray()
             };
         }
 
@@ -273,7 +273,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
             return existingSpanEquipment with
             {
-                SpanStructures = ImmutableArray.Create(newStructures.ToArray())
+                SpanStructures = newStructures.ToArray()
             };
         }
 

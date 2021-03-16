@@ -6,7 +6,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing
     {
         public NodeTraceEnd From { get;  }
         public NodeTraceEnd To { get; }
-        public ImmutableArray<NodeTraceIntermediate> Intermediates { get; init; }
+        public NodeTraceIntermediate[]? Intermediates { get; init; }
 
         public NodeTrace(NodeTraceEnd from, NodeTraceEnd to)
         {

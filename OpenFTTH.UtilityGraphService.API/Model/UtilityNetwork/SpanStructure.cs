@@ -15,7 +15,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public UInt16 Level { get; }
         public UInt16 ParentPosition { get; }
         public UInt16 Position { get; }
-        public ImmutableArray<SpanSegment> SpanSegments { get; init; }
+        public SpanSegment[] SpanSegments { get; init; }
 
         public string? Name => this.GetType().Name;
         public string? Description => null;
@@ -27,7 +27,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             this.Level = level;
             this.ParentPosition = parentPosition;
             this.Position = position;
-            this.SpanSegments = ImmutableArray.Create(spanSegments);
+            this.SpanSegments = spanSegments;
         }
     }
 }

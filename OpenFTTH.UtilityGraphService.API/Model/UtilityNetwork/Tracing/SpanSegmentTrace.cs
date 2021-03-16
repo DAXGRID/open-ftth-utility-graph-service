@@ -10,7 +10,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing
 
         public NodeTrace? NodeTrace { get; init; }
 
-        public ImmutableArray<SegmentTrace>? SegmentTrace { get; init; }
+        public SegmentTrace[]? SegmentTrace { get; init; }
 
         public Guid Id => SpanSegmentId;
 
