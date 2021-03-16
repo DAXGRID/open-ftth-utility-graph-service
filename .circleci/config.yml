@@ -127,6 +127,8 @@ workflows:
               only: /.*/
       - publish-nuget:
           context: nuget
+          requires:
+            - test-app
           filters:
             tags:
               only: /^v.*/
