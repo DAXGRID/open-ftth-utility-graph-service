@@ -127,8 +127,6 @@ workflows:
               only: /.*/
       - publish-nuget:
           context: nuget
-          requires:
-            - docker-publish-image
           filters:
             tags:
               only: /^v.*/
