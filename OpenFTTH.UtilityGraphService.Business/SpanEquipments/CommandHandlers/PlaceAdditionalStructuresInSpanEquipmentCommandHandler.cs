@@ -54,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (interestQueryResult.IsFailed)
                 throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment while processing the PlaceAdditionalStructuresInSpanEquipment command: " + JsonConvert.SerializeObject(command));
 
-            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(command.SpanEquipmentId);
+            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
             var spanEquipmentAddStructuresResult = spanEquipmentAR.AddAdditionalStructures(
                 structureSpecifications: spanStructureSpecifications,

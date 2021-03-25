@@ -79,6 +79,34 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CC_1);
         }
+
+        [Fact, Order(2)]
+        public async void TestAddAdditionalStructuresTo5x10_UsingSpanSegmentId_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId = TestUtilityNetwork.FlexConduit_40_Red_CC_1_to_SP_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipment);
+
+            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(
+                spanEquipmentId: sutSpanEquipment.SpanStructures[0].SpanSegments[0].Id,
+                structureSpecificationIds: new Guid[] { TestSpecifications.Ø10_Turquoise }
+            );
+
+            var addStructureResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInSpanEquipment, Result>(addStructure);
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipmentId })
+            );
+
+            var equipmentAfterAddingStructure = equipmentQueryResult.Value.SpanEquipment[sutSpanEquipmentId];
+
+            // Assert
+            addStructureResult.IsSuccess.Should().BeTrue();
+            equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+        }
     }
 }
 
