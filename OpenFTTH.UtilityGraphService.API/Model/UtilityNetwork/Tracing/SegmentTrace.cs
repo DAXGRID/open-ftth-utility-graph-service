@@ -4,13 +4,11 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing
 {
     public record SegmentTrace
     {
-        public Guid SpanSegmentId { get; set; }
-        public Guid RouteSegmentId { get; set; }
+        public Guid NodeOfInterestId { get; set; }
 
-        public SegmentTrace(Guid spanSegmentId, Guid routeSegmentId)
+        public SegmentTrace(Guid nodeOfInterestId)
         {
-            SpanSegmentId = spanSegmentId;
-            RouteSegmentId = routeSegmentId;
+            NodeOfInterestId = nodeOfInterestId;
         }
     }
 }

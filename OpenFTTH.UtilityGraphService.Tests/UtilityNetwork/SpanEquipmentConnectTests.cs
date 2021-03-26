@@ -110,10 +110,22 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
                new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipment })
+               {
+                   EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                   {
+                       IncludeSpanTrace = true
+                   }
+               }
             );
 
             var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
               new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipment })
+              {
+                  EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                  {
+                      IncludeSpanTrace = true
+                  }
+              }
             );
 
             // Assert
@@ -124,21 +136,32 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var fromEquipmentAfterConnect = fromEquipmentQueryResult.Value.SpanEquipment[sutConnectFromSpanEquipment];
             var toEquipmentAfterConnect = toEquipmentQueryResult.Value.SpanEquipment[sutConnectToSpanEquipment];
 
+            var connection1fromSegment = fromEquipmentAfterConnect.SpanStructures[1].SpanSegments[0];
+            var connection1toSegment = toEquipmentAfterConnect.SpanStructures[1].SpanSegments[0];
+
+            var connection2fromSegment = fromEquipmentAfterConnect.SpanStructures[2].SpanSegments[0];
+            var connection2toSegment = toEquipmentAfterConnect.SpanStructures[2].SpanSegments[0];
+
+
             // First connection
-            fromEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].ToTerminalId.Should().NotBeEmpty();
-
-            var terminal1Id = fromEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].ToTerminalId;
-
-            toEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].FromTerminalId.Should().Be(terminal1Id);
+            connection1fromSegment.ToTerminalId.Should().NotBeEmpty();
+            connection1toSegment.FromTerminalId.Should().Be(connection1fromSegment.ToTerminalId);
 
             // Second connection
-            fromEquipmentAfterConnect.SpanStructures[2].SpanSegments[0].ToTerminalId.Should().NotBeEmpty();
+            connection2fromSegment.ToTerminalId.Should().NotBeEmpty();
+            connection2toSegment.FromTerminalId.Should().Be(connection2fromSegment.ToTerminalId);
 
-            var terminal2Id = fromEquipmentAfterConnect.SpanStructures[2].SpanSegments[0].ToTerminalId;
-
-            toEquipmentAfterConnect.SpanStructures[2].SpanSegments[0].FromTerminalId.Should().Be(terminal2Id);
-
+            // Check trace functionality
+            /*
+            TODO: Create connectivity projection logic
+            fromEquipmentAfterConnect.Traces.Should().NotBeNull();
+            fromEquipmentAfterConnect.Traces[fromEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].Id].Upstream.Length.Should().Be(1);
+            */
         }
+
+
+
+
 
 
         [Fact, Order(20)]

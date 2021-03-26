@@ -12,6 +12,20 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 
         public EquipmentIdList EquipmentIdsToQuery { get; }
 
+        #region Equipment Details Filter Options
+        private EquipmentDetailsFilterOptions _equipmentDetailsFilterOptions =
+            new EquipmentDetailsFilterOptions()
+            {
+                IncludeSpanTrace = false
+            };
+
+        public EquipmentDetailsFilterOptions EquipmentDetailsFilter
+        {
+            get { return _equipmentDetailsFilterOptions; }
+            init { _equipmentDetailsFilterOptions = value; }
+        }
+        #endregion
+
 
         /// <summary>
         /// Use this contructor, if you want to query by equipment ids
