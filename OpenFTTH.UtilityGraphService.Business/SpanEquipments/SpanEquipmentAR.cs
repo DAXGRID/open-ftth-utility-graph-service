@@ -701,7 +701,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                         level: 2,
                         parentPosition: 1,
                         position: (ushort)innerStructureStartPosition,
-                        spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, 1) }
+                        spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, (ushort)(_spanEquipment.NodesOfInterestIds.Length - 1)) }
                     )
                 );
 

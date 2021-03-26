@@ -66,7 +66,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentAfterAddingStructure.SpanStructures.Count(s => s.Level == 2).Should().Be(2);
             equipmentAfterAddingStructure.SpanStructures.Count(s => s.Level == 2 && s.Position == 1).Should().Be(1);
             equipmentAfterAddingStructure.SpanStructures.Count(s => s.Level == 2 && s.Position == 2).Should().Be(1);
-
+            equipmentAfterAddingStructure.SpanStructures[1].Id.Should().NotBeEmpty();
+            equipmentAfterAddingStructure.SpanStructures[1].SpanSegments[0].Id.Should().NotBeEmpty();
+            equipmentAfterAddingStructure.SpanStructures[2].Id.Should().NotBeEmpty();
+            equipmentAfterAddingStructure.SpanStructures[2].SpanSegments[0].Id.Should().NotBeEmpty();
 
             // Check utility graph
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(equipmentAfterAddingStructure.SpanStructures[2].SpanSegments[0].Id, out var fromGraphSegmentRef);
