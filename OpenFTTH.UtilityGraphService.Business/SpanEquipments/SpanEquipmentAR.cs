@@ -22,6 +22,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
     public class SpanEquipmentAR : AggregateBase
     {
         private SpanEquipment? _spanEquipment;
+        private bool _removed;
 
         public SpanEquipmentAR()
         {
@@ -32,6 +33,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanSegmentDisconnectedFromTerminal>(Apply);
             Register<SpanEquipmentDetachedFromContainer>(Apply);
             Register<AdditionalStructuresAddedToSpanEquipment>(Apply);
+            Register<SpanStructureRemoved>(Apply);
+            Register<SpanEquipmentRemoved>(Apply);
         }
 
         #region Place Span Equipment
@@ -659,7 +662,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Add Additional Structures
-        public Result AddAdditionalStructures(LookupCollection<SpanStructureSpecification> structureSpecifications, Guid[] structureSpecificationIdsToAdd)
+        public Result AddAdditionalStructures(SpanEquipmentSpecification specification, LookupCollection<SpanStructureSpecification> structureSpecifications, Guid[] structureSpecificationIdsToAdd)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -682,6 +685,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                         $"Cannot find structure specification with id: {structureSpecificationId}")
                     );
                 }
+            }
+
+            if (specification.IsFixed)
+            {
+                return Result.Fail(new PlaceAdditionalStructuresInSpanEquipmentError(
+                    PlaceAdditionalStructuresInSpanEquipmentErrorCodes.CANNOT_ADD_SPAN_STRUCTURES_TO_FIXED_SPAN_EQUIPMENT,
+                    $"Cannot add span structures to a span equipment with fixed structure - i.e. to a span equipment with pre-installed inner conduits")
+                );
             }
 
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
@@ -724,6 +735,125 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
+        #region Remove Span Structure
+
+        public Result RemoveSpanStructure(SpanEquipmentSpecification specification, ushort structureIndex)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (specification.IsFixed)
+            {
+                return Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(
+                    RemoveSpanStructureFromSpanEquipmentErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURES_FROM_FIXED_SPAN_EQUIPMENT,
+                    $"Cannot remove span structures from a span equipment with fixed structure - i.e. from a span equipment with pre-installed inner conduits")
+                ); 
+            }
+
+            if (structureIndex == 0)
+                throw new ApplicationException("You can't use the RemoveSpanStructure method to remove the outer span structure. In such case you need to remove the entire span equipment.");
+
+            if (structureIndex >= _spanEquipment.SpanStructures.Length || structureIndex < 0)
+                throw new ApplicationException("Structure index out of bounds.");
+
+            if (IsAnySpanSegmentsInStructureConnected(structureIndex))
+            {
+                return Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(
+                    RemoveSpanStructureFromSpanEquipmentErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
+                    $"Cannot remove span structures from a span equipment if some of its segments are connected")
+                );
+            }
+
+
+            var spanStructureToRemove = _spanEquipment.SpanStructures[structureIndex];
+
+            var @event = new SpanStructureRemoved(
+               spanEquipmentId: this.Id,
+               spanStructureId: spanStructureToRemove.Id
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private bool IsAnySpanSegmentsInStructureConnected(ushort structureIndex)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            var spanStructure = _spanEquipment.SpanStructures[structureIndex];
+
+            foreach (var spanSegment in spanStructure.SpanSegments)
+            {
+                if (spanSegment.FromTerminalId != Guid.Empty || spanSegment.ToTerminalId != Guid.Empty)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void Apply(SpanStructureRemoved @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
+
+        #region Remove
+        public Result Remove()
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (IsAnySpanSegmentsConnected())
+            {
+                return Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(
+                    RemoveSpanStructureFromSpanEquipmentErrorCodes.CANNOT_REMOVE_SPAN_EQUIPMENT_WITH_CONNECTED_SEGMENTS,
+                    $"Cannot remove a span equipment if some of its segments are connected")
+                );
+            }
+
+            var @event = new SpanEquipmentRemoved(
+               spanEquipmentId: this.Id
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentRemoved @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _removed = true;
+        }
+
+        private bool IsAnySpanSegmentsConnected()
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            foreach (var spanStructure in _spanEquipment.SpanStructures)
+            {
+                foreach (var spanSegment in spanStructure.SpanSegments)
+                {
+                    if (spanSegment.FromTerminalId != Guid.Empty || spanSegment.ToTerminalId != Guid.Empty)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion

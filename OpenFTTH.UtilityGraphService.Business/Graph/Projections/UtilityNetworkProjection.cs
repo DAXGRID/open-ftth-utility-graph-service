@@ -8,6 +8,7 @@ using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
@@ -35,6 +36,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
             ProjectEvent<AdditionalStructuresAddedToSpanEquipment>(Project);
+            ProjectEvent<SpanStructureRemoved>(Project);
+            ProjectEvent<SpanEquipmentRemoved>(Project);
         }
       
 
@@ -100,6 +103,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessAdditionalStructures(@event);
                     break;
 
+                case (SpanStructureRemoved @event):
+                    ProcessInnerStructureRemoval(@event);
+                    break;
+
                 case (SpanEquipmentAffixedToContainer @event):
                     TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
                     break;
@@ -123,18 +130,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (NodeContainerPlacedInRouteNetwork @event):
                     StoreAndIndexVirginContainerEquipment(@event.Container);
                     break;
+
+                case (SpanEquipmentRemoved @event):
+                    ProcessSpanEquipmentRemoval(@event);
+                    break;
             }
-        }
-
-        private void TryUpdate(SpanEquipment newSpanEquipmentState)
-        {
-            var oldSpanEquipment = _spanEquipmentByEquipmentId[newSpanEquipmentState.Id];
-
-            if (!_spanEquipmentByEquipmentId.TryUpdate(newSpanEquipmentState.Id, newSpanEquipmentState, oldSpanEquipment))
-                throw new ApplicationException($"Concurrency issue updating span equipment index. Span equipment id: {newSpanEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
-
-            if (!_spanEquipmentByInterestId.TryUpdate(newSpanEquipmentState.WalkOfInterestId, newSpanEquipmentState, oldSpanEquipment))
-                throw new ApplicationException($"Concurrency issue updating span equipment interest index. Span equipment id: {newSpanEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
         }
 
         private void StoreAndIndexVirginSpanEquipment(SpanEquipment spanEquipment)
@@ -208,8 +208,58 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
+        private void ProcessInnerStructureRemoval(SpanStructureRemoved @event)
+        {
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            var removedInnerSpanStructure = spanEquipment.SpanStructures.First(s => s.Id == @event.SpanStructureId);
+
+            // Remove span segments from the graph
+            foreach (var spanSegment in removedInnerSpanStructure.SpanSegments)
+            {
+                _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
+            }
+        }
 
 
+        private void ProcessSpanEquipmentRemoval(SpanEquipmentRemoved @event)
+        {
+            var existingSpanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            TryRemove(@event.SpanEquipmentId, existingSpanEquipment.WalkOfInterestId);
+
+            // Remove span segments from the graph
+            foreach (var spanStructure in existingSpanEquipment.SpanStructures)
+            {
+                foreach (var spanSegment in spanStructure.SpanSegments)
+                {
+                    _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
+                }
+            }
+        }
+
+
+        private void TryUpdate(SpanEquipment newSpanEquipmentState)
+        {
+            var oldSpanEquipment = _spanEquipmentByEquipmentId[newSpanEquipmentState.Id];
+
+            if (!_spanEquipmentByEquipmentId.TryUpdate(newSpanEquipmentState.Id, newSpanEquipmentState, oldSpanEquipment))
+                throw new ApplicationException($"Concurrency issue updating span equipment index. Span equipment id: {newSpanEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
+
+            if (!_spanEquipmentByInterestId.TryUpdate(newSpanEquipmentState.WalkOfInterestId, newSpanEquipmentState, oldSpanEquipment))
+                throw new ApplicationException($"Concurrency issue updating span equipment interest index. Span equipment id: {newSpanEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
+        }
+
+        private void TryRemove(Guid spanEquipmentId, Guid spanEquipmentInterestId)
+        {
+            if (!_spanEquipmentByEquipmentId.TryRemove(spanEquipmentId, out _))
+                throw new ApplicationException($"Concurrency issue removing span equipment index. Span equipment id: {spanEquipmentId} Please make sure that events are applied in sequence to the projection.");
+
+            if (!_spanEquipmentByInterestId.TryRemove(spanEquipmentInterestId, out _))
+                throw new ApplicationException($"Concurrency issue removing span equipment interest index. Span equipment id: {spanEquipmentId} Please make sure that events are applied in sequence to the projection.");
+        }
 
     }
 }

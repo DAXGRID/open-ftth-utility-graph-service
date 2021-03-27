@@ -43,6 +43,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ArgumentException($"A span segment with id: {spanSegment.Id} already exists in the graph.");
         }
 
+        public void RemoveDisconnectedSegment(Guid spanSegmentId)
+        {
+            if (!_graphElementsById.TryRemove(spanSegmentId, out _))
+                throw new ArgumentException($"The span segment with id: {spanSegmentId} cannot be removed from the graph.");
+        }
+
+
         public void ApplySegmentCut(SpanEquipment spanEquipment, SpanSegmentCutInfo spanSegmentCutInfo)
         {
             if (!_graphElementsById.TryRemove(spanSegmentCutInfo.OldSpanSegmentId, out _))
@@ -71,5 +78,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             // TODO: Update graph connectivity
         }
+
     }
 }

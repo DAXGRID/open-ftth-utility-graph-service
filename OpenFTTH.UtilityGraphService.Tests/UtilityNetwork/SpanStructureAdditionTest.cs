@@ -19,14 +19,14 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(400)]
-    public class SpanAdditionalStructuresTests
+    public class SpanStructureAdditionTests
     {
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly FakeExternalEventProducer _externalEventProducer;
 
-        public SpanAdditionalStructuresTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public SpanStructureAdditionTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
@@ -79,7 +79,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
             var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
-            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.StructuresAdded" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CC_1);
         }
 
@@ -108,6 +108,27 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             addStructureResult.IsSuccess.Should().BeTrue();
             equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+        }
+
+        [Fact, Order(10)]
+        public async void TestAddAdditionalStructuresFixedSpanEquipment_ShouldFail()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_10x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipment);
+
+            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(
+                spanEquipmentId: sutSpanEquipment.SpanStructures[0].SpanSegments[0].Id,
+                structureSpecificationIds: new Guid[] { TestSpecifications.Ø10_Turquoise }
+            );
+
+            var addStructureResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInSpanEquipment, Result>(addStructure);
+
+            // Assert
+            addStructureResult.IsFailed.Should().BeTrue();
 
         }
     }

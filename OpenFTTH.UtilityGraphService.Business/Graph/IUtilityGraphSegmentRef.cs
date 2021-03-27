@@ -11,5 +11,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
     {
         SpanEquipment SpanEquipment(UtilityNetworkProjection utilityNetwork);
         SpanSegment SpanSegment(UtilityNetworkProjection utilityNetwork);
+        ushort StructureIndex { get; }
+        ushort SegmentIndex { get; }
     }
 }

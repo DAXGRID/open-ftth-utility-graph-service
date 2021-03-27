@@ -48,6 +48,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     return Task.FromResult(Result.Fail(new PlaceAdditionalStructuresInSpanEquipmentError(PlaceAdditionalStructuresInSpanEquipmentErrorCodes.INVALID_SPAN_EQUIPMENT_ID_NOT_FOUND, $"Cannot find any span equipment with id: {command.SpanEquipmentId}")));
             }
 
+            // Get specification
+            var specification = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications[spanEquipment.SpecificationId];
+
             // Get interest information for both span equipment and node container, which is needed for the aggregate to validate the command
             var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId })).Result;
 
@@ -57,6 +60,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
             var spanEquipmentAddStructuresResult = spanEquipmentAR.AddAdditionalStructures(
+                specification: specification,
                 structureSpecifications: spanStructureSpecifications,
                 structureSpecificationIdsToAdd: command.StructureSpecificationIds
             );
@@ -84,7 +88,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
                     applicationInfo: null,
-                    category: "EquipmentModification",
+                    category: "EquipmentModification.StructuresAdded",
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: routeIdsAffected.ToArray() 
                 );

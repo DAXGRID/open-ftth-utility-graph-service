@@ -16,6 +16,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public UInt16 ParentPosition { get; }
         public UInt16 Position { get; }
         public SpanSegment[] SpanSegments { get; init; }
+        public bool Deleted { get; init; }
 
         public string? Name => this.GetType().Name;
         public string? Description => null;
