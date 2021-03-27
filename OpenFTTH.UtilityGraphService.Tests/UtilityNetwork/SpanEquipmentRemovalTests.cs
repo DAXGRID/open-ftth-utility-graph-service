@@ -38,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestRemoveNonConnectedSpanEquipment_ShouldSucceed()
+        public async void TestRemoveNonConnectedFixedSpanEquipment_ShouldSucceed()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -74,7 +74,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
 
         }
-
 
         [Fact, Order(10)]
         public async void TestRemoveSpanEquipmentWithConnectedSegments_ShouldFail()

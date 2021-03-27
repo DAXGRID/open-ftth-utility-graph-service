@@ -233,9 +233,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             // Remove span segments from the graph
             foreach (var spanStructure in existingSpanEquipment.SpanStructures)
             {
-                foreach (var spanSegment in spanStructure.SpanSegments)
+                if (!spanStructure.Deleted)
                 {
-                    _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
+                    foreach (var spanSegment in spanStructure.SpanSegments)
+                    {
+                        _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
+                    }
                 }
             }
         }
