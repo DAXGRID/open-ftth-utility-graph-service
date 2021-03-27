@@ -5,6 +5,7 @@ using OpenFTTH.CQRS;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -23,12 +24,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly string _topicName = "notification.utility-network";
 
         private readonly IEventStore _eventStore;
+        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
 
-        public RemoveSpanStructureFromSpanEquipmentCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public RemoveSpanStructureFromSpanEquipmentCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
+            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
         }
@@ -63,6 +66,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (removeSpanEquipment.IsSuccess)
                 {
                     _eventStore.Aggregates.Store(spanEquipmentAR);
+
+                    // Remember to remove the walk of interest as well
+                    var unregisterInterestCmd = new UnregisterInterest(spanEquipment.WalkOfInterestId);
+                    var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
+
+                    if (unregisterInterestCmdResult.IsFailed)
+                        throw new ApplicationException($"Failed to unregister interest: {spanEquipment.WalkOfInterestId} of span equipment: {spanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
+
                     NotifyExternalServicesAboutSpanEquipmentDeletion(spanEquipment.Id, interestQueryResult.Value.Interests[spanEquipment.WalkOfInterestId].RouteNetworkElementRefs);
                 }
 
