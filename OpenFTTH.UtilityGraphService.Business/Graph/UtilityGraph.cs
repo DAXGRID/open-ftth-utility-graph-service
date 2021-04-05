@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.Graph.Trace;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Concurrent;
@@ -79,5 +80,22 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             // TODO: Update graph connectivity
         }
 
+        public SpanSegmentTraceResult TraceSegment(Guid id)
+        {
+            var result = new SpanSegmentTraceResult() { SpanSegmentId = id };
+
+            if (_graphElementsById.TryGetValue(id, out var utilityGraphElement))
+            {
+                if (utilityGraphElement is UtilityGraphDisconnectedSegment)
+                {
+                    var connectedSegment = utilityGraphElement as UtilityGraphDisconnectedSegment;
+
+                    
+
+                }
+            }
+
+            return result;
+        }
     }
 }

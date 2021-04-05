@@ -16,7 +16,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
         private EquipmentDetailsFilterOptions _equipmentDetailsFilterOptions =
             new EquipmentDetailsFilterOptions()
             {
-                IncludeSpanTrace = false
+                IncludeRouteNetworkTrace = false
             };
 
         public EquipmentDetailsFilterOptions EquipmentDetailsFilter

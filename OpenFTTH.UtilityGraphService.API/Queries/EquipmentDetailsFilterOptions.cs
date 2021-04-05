@@ -2,7 +2,7 @@
 {
     public record EquipmentDetailsFilterOptions
     {
-        public bool IncludeSpanTrace { get; init; }
+        public bool IncludeRouteNetworkTrace { get; init; }
 
         public EquipmentDetailsFilterOptions()
         {

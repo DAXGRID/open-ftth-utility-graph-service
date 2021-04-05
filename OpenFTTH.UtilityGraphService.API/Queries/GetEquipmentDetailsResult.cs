@@ -1,5 +1,6 @@
 ﻿using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 
 namespace OpenFTTH.UtilityGraphService.API.Queries
 {
@@ -7,6 +8,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
     {
         public LookupCollection<SpanEquipmentWithRelatedInfo>? SpanEquipment { get; init; }
         public LookupCollection<NodeContainer>? NodeContainers { get; init; }
+        public LookupCollection<RouteNetworkTrace>? RouteNetworkTraces { get; init; }
 
         public GetEquipmentDetailsResult()
         {

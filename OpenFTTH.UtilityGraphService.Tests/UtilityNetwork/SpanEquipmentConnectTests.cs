@@ -113,7 +113,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                {
                    EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
                    {
-                       IncludeSpanTrace = true
+                       IncludeRouteNetworkTrace = true
                    }
                }
             );
@@ -123,7 +123,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
               {
                   EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
                   {
-                      IncludeSpanTrace = true
+                      IncludeRouteNetworkTrace = true
                   }
               }
             );

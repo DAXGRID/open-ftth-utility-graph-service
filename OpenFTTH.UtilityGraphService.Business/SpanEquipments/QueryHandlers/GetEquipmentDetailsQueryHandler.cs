@@ -5,6 +5,7 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
@@ -67,11 +68,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                 }
 
                 if (equipment is SpanEquipment spanEquipment)
+                {
                     spanEquipmentsToReturn.Add(new SpanEquipmentWithRelatedInfo(spanEquipment));
+                }
 
                 if (equipment is NodeContainer nodeContainer)
                     nodeContainersToReturn.Add(nodeContainer);
             }
+
+            // Add trace information if requested
+            if (query.EquipmentDetailsFilter.IncludeRouteNetworkTrace)
+            {
+                LookupCollection<RouteNetworkTrace> routeNetworkTraces = AddTraceRefsToSpanEquipments(spanEquipmentsToReturn);
+            }
+
 
             var result = new GetEquipmentDetailsResult() {
                 SpanEquipment = new LookupCollection<SpanEquipmentWithRelatedInfo>(spanEquipmentsToReturn),
@@ -81,6 +91,23 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             return Task.FromResult(
                 Result.Ok<GetEquipmentDetailsResult>(result)
             );
+        }
+
+        private LookupCollection<RouteNetworkTrace> AddTraceRefsToSpanEquipments(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn)
+        {
+            // TODO: Finish implementation
+            foreach (var spanEquipment in spanEquipmentsToReturn)
+            {
+                foreach (var spanStructure in spanEquipment.SpanStructures)
+                {
+                    foreach (var spanSegment in spanStructure.SpanSegments)
+                    {
+                        var spanTraceResult = _utilityGraph.Graph.TraceSegment(spanSegment.Id);
+                    }
+                }
+            }
+
+            return null;
         }
 
         private Result<List<SpanEquipmentWithRelatedInfo>> GetSpanEquipmentsById(EquipmentIdList equipmentIdsToFetch)
