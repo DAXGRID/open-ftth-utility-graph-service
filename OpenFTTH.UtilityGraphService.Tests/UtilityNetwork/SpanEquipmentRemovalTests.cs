@@ -122,14 +122,16 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             addStructureResult.IsSuccess.Should().BeTrue();
 
-            // Cut flex conduit inner conduit 1
+            // Cut flex conduit inner conduit 1 & 2
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipment2);
 
             var cutCmd = new CutSpanSegmentsAtRouteNode(
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToCut: new Guid[] {
                     spanEquipment2.SpanStructures[0].SpanSegments[0].Id,
-                    spanEquipment2.SpanStructures[1].SpanSegments[0].Id
+                    spanEquipment2.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipment2.SpanStructures[2].SpanSegments[0].Id,
+                    spanEquipment2.SpanStructures[3].SpanSegments[0].Id
                 }
             );
 

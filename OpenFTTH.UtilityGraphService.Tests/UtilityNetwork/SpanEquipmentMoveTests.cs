@@ -193,6 +193,40 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((MoveSpanEquipmentError)moveCmdResult.Errors.First()).Code.Should().Be(MoveSpanEquipmentErrorCodes.NEW_WALK_EQUALS_EXISTING_WALK);
         }
 
+        [Fact, Order(15)]
+        public async void TestMoveSpanEndWithConnections_ShouldFail()
+        {
+            MakeSureTestConduitsHasInnerConduitsAndConnections();
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            // Connect flex inner conduit 2 with 5x10 inner conduit 1
+            utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.FlexConduit_40_Red_SDU_1_to_SDU_2, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.MultiConduit_5x10_SDU_2_to_J_1, out var sutToSpanEquipment);
+
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.J_1,
+                spanSegmentsToConnect: new Guid[] {
+                    sutFromSpanEquipment.SpanStructures[3].SpanSegments[0].Id,
+                    sutToSpanEquipment.SpanStructures[1].SpanSegments[0].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+            connectResult.IsSuccess.Should().BeTrue();
+
+            // Act
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_SDU_2_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipment);
+
+            var moveCmd = new MoveSpanEquipment(spanEquipment.Id, new RouteNetworkElementIdList() { TestRouteNetwork.S7, TestRouteNetwork.S8 });
+
+            var moveCmdResult = await _commandDispatcher.HandleAsync<MoveSpanEquipment, Result>(moveCmd);
+
+            // Assert
+            moveCmdResult.IsFailed.Should().BeTrue();
+            ((MoveSpanEquipmentError)moveCmdResult.Errors.First()).Code.Should().Be(MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE);
+        }
 
 
         private async void MakeSureTestConduitsHasInnerConduitsAndConnections()
@@ -216,14 +250,16 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             addStructureResult.IsSuccess.Should().BeTrue();
 
-            // Cut flex conduit inner conduit 1
+            // Cut flex conduit inner conduit 1 & 2
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipment2);
 
             var cutCmd = new CutSpanSegmentsAtRouteNode(
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToCut: new Guid[] {
                     spanEquipment2.SpanStructures[0].SpanSegments[0].Id,
-                    spanEquipment2.SpanStructures[1].SpanSegments[0].Id
+                    spanEquipment2.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipment2.SpanStructures[2].SpanSegments[0].Id,
+                    spanEquipment2.SpanStructures[3].SpanSegments[0].Id
                 }
             );
 

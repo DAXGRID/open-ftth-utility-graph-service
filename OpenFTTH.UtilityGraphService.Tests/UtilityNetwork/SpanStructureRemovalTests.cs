@@ -165,7 +165,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToCut: new Guid[] {
                     spanEquipment2.SpanStructures[0].SpanSegments[0].Id,
-                    spanEquipment2.SpanStructures[1].SpanSegments[0].Id
+                    spanEquipment2.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipment2.SpanStructures[2].SpanSegments[0].Id,
+                    spanEquipment2.SpanStructures[3].SpanSegments[0].Id
                 }
             );
 
