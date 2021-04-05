@@ -35,6 +35,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<AdditionalStructuresAddedToSpanEquipment>(Apply);
             Register<SpanStructureRemoved>(Apply);
             Register<SpanEquipmentRemoved>(Apply);
+            Register<SpanEquipmentMoved>(Apply);
         }
 
         #region Place Span Equipment
@@ -807,7 +808,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #endregion
 
-
         #region Remove
         public Result Remove()
         {
@@ -854,6 +854,170 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             }
 
             return false;
+        }
+
+        #endregion
+
+        #region Move
+        public Result Move(ValidatedRouteNetworkWalk newWalk, ValidatedRouteNetworkWalk existingWalk)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            // If both ends are moved, there cannot be any cuts/breakouts.
+            if (newWalk.FromNodeId != existingWalk.FromNodeId && newWalk.ToNodeId != existingWalk.ToNodeId && _spanEquipment.NodesOfInterestIds.Length > 2)
+            {
+                return Result.Fail(new MoveSpanEquipmentError(
+                   MoveSpanEquipmentErrorCodes.CANNOT_MOVE_BOTH_ENDS_AT_THE_SAME_TIME_IF_SPAN_SEGMENT_HAS_CUTS,
+                   $"Cannot move both ends of the walk at the same time, when the span equipment has cuts/breakouts. This because we then have no idea if the walk has been reversed, which might lead to inconsistency in the segment connectivity direction inside the span equipment. The user has to moving one end at the time in this situation.")
+               );
+            }
+
+            // If from end is moved
+            if (newWalk.FromNodeId != existingWalk.FromNodeId)
+            {
+                // There cannot be any connection in the node moved away from
+                if (IsAnySpanSegmentsConnectedInNode(existingWalk.FromNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE,
+                       $"Cannot move from end from: {existingWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that has connections to other equipment in that node.")
+                   );
+                }
+
+                // There cannot be any cuts in the node moved to
+                if (IntermediateCutNodeIds.Contains(newWalk.FromNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_TO_NODE_WHERE_SEGMENTS_ARE_CUT,
+                       $"Cannot move from end from: {existingWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that are cut in that node.")
+                   );
+                }
+            }
+
+            // If to end is moved
+            if (newWalk.ToNodeId != existingWalk.ToNodeId)
+            {
+                // There cannot be any connection in the node moved away from
+                if (IsAnySpanSegmentsConnectedInNode(existingWalk.ToNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_TO_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE,
+                       $"Cannot move to end from: {existingWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that has connections to other equipment in that node.")
+                   );
+                }
+
+                // There cannot be any cuts in the node moved to
+                if (IntermediateCutNodeIds.Contains(newWalk.ToNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_TO_END_TO_NODE_WHERE_SEGMENTS_ARE_CUT,
+                       $"Cannot move to end from: {existingWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that are cut in that node.")
+                   );
+                }
+            }
+
+            // Check that span equipment is not moved away from nodes where it is cut
+            foreach (var nodeOfInterestId in IntermediateCutNodeIds)
+            {
+                if (!newWalk.RouteNetworkElementRefs.Contains(nodeOfInterestId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                        MoveSpanEquipmentErrorCodes.CANNOT_MOVE_NODE_BECAUSE_SEGMENTS_ARE_CUT_THERE,
+                        $"Cannot move span equipment away from node: {nodeOfInterestId} because segments are cut in this node.")
+                    );
+                }
+            }
+
+            // Check that span equipment is not moved away from nodes where it is affixed to a container
+            if (_spanEquipment.NodeContainerAffixes != null)
+            {
+                foreach (var nodeContainerAffix in _spanEquipment.NodeContainerAffixes)
+                {
+                    if (!newWalk.RouteNetworkElementRefs.Contains(nodeContainerAffix.RouteNodeId))
+                    {
+                        return Result.Fail(new MoveSpanEquipmentError(
+                            MoveSpanEquipmentErrorCodes.CANNOT_MOVE_NODE_BECAUSE_SPAN_EQUIPMENT_IS_AFFIXED_TO_CONTAINER,
+                            $"Cannot move span equipment away from node: {nodeContainerAffix.RouteNodeId} because span equipment is affixed to a container in this node.")
+                        );
+                    }
+                }
+            }
+
+
+            var @event = new SpanEquipmentMoved(
+              spanEquipmentId: this.Id,
+              nodesOfInterestIds: CreateNewNodesOfInterestIdList(newWalk)
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+
+        }
+
+        private Guid[] IntermediateCutNodeIds
+        {
+            get
+            {
+                if (_spanEquipment == null)
+                    throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+                List<Guid> result = new List<Guid>();
+
+                for (int i = 1; i < (_spanEquipment.NodesOfInterestIds.Length - 1); i++)
+                {
+                    result.Add(_spanEquipment.NodesOfInterestIds[i]);
+                }
+
+                return result.ToArray();
+            }
+        }
+
+        private Guid[] CreateNewNodesOfInterestIdList(ValidatedRouteNetworkWalk newWalk)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            Guid[] result = new Guid[_spanEquipment.NodesOfInterestIds.Length];
+
+            result[0] = newWalk.FromNodeId;
+            result[^1] = newWalk.ToNodeId;
+
+            return result;
+        }
+
+        private bool IsAnySpanSegmentsConnectedInNode(Guid nodeId)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            var nodeIndex = Array.IndexOf(_spanEquipment.NodesOfInterestIds, nodeId);
+
+            if (nodeIndex < 0)
+                throw new ApplicationException($"Cannot find node with id: {nodeId} in span equipment nodes of interest");
+
+            foreach (var spanStructure in _spanEquipment.SpanStructures)
+            {
+                foreach (var spanSegment in spanStructure.SpanSegments)
+                {
+                    if (spanSegment.FromTerminalId != Guid.Empty && spanSegment.FromNodeOfInterestIndex == nodeIndex)
+                        return true;
+
+                    if (spanSegment.ToTerminalId != Guid.Empty && spanSegment.ToNodeOfInterestIndex == nodeIndex)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void Apply(SpanEquipmentMoved @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
 
         #endregion

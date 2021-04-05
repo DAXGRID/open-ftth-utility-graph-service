@@ -300,5 +300,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentMoved @event)
+        {
+            return existingSpanEquipment with
+            {
+                NodesOfInterestIds = @event.NodesOfInterestIds
+            };
+        }
+
     }
 }

@@ -54,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId })).Result;
 
             if (interestQueryResult.IsFailed)
-                throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment while processing the PlaceAdditionalStructuresInSpanEquipment command: " + JsonConvert.SerializeObject(command));
+                throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment while processing the RemoveSpanStructureFromSpanEquipment command: " + JsonConvert.SerializeObject(command));
 
 
             // If outer conduit, that remove entire span equipment
