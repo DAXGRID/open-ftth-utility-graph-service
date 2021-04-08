@@ -8,9 +8,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public UInt16 FromNodeOfInterestIndex { get; init; }
         public UInt16 ToNodeOfInterestIndex { get; init; }
         public Guid FromTerminalId { get; init; }
-        public bool FromTerminalHasNoConnector { get; init; }
         public Guid ToTerminalId { get; init; }
-        public bool ToTerminalHasNoConnector { get; init; }
 
         public SpanSegment(Guid id, UInt16 fromNodeOfInterestIndex, UInt16 toNodeOfInterestIndex)
         {

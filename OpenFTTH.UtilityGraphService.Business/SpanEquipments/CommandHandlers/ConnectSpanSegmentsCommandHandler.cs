@@ -4,6 +4,7 @@ using OpenFTTH.CQRS;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -23,34 +24,220 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly string _topicName = "notification.utility-network";
 
         private readonly IEventStore _eventStore;
+        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
+        private readonly UtilityNetworkProjection _utilityNetwork;
 
-        public ConnectSpanSegmentsCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public ConnectSpanSegmentsCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
+            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
+            _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
         public Task<Result> HandleAsync(ConnectSpanSegmentsAtRouteNode command)
         {
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
             if (command.SpanSegmentsToConnect.Length == 0)
                 return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_SPAN_SEGMENT_LIST_CANNOT_BE_EMPTY, "A list of span segments to connect must be provided.")));
 
-            // Because the client do not provide the span equipment ids, but span segment ids only,
-            // we need lookup the span equipments via the the utility network graph
+            // Build supporting structure holding information on how span equipments are to be connected to each other
+            var spanEquipmentsToConnectBuilderResult = BuildSpanEquipmentsToConnect(command);
+
+            if (spanEquipmentsToConnectBuilderResult.IsFailed)
+                return Task.FromResult(Result.Fail(spanEquipmentsToConnectBuilderResult.Errors.First()));
+
+            var spanEquipmentsToConnect = spanEquipmentsToConnectBuilderResult.Value;
+           
+
+            // Check that span segments from exactly two span equipment has been specified by the client
+            if (spanEquipmentsToConnect.Count != 2)
+            {
+                return Task.FromResult(
+                    Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                        ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SPAN_SEGMENTS_FROM_TWO_SPAN_EQUIPMENT,
+                        $"Got span segments belonging to {spanEquipmentsToConnect.Count} This command can only handle connecting span segments between two span equipments.")
+                    )
+                );
+            }
+
+            var firstSpanEquipment = spanEquipmentsToConnect.Values.First();
+            var secondSpanEquipment = spanEquipmentsToConnect.Values.Last();
+
+            // Check that number of span segments from each span equipment is the same
+            if (firstSpanEquipment.Connects.Count != secondSpanEquipment.Connects.Count)
+            {
+                return Task.FromResult(
+                    Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                        ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SAME_NUMBER_OF_SPAN_SEGMENTS_BELONGING_TO_TWO_SPAN_EQUIPMENT,
+                        $"Cannot connect the span segments specified because {firstSpanEquipment.Connects.Count} span segments are selected from span equipment: {firstSpanEquipment.SpanEquipment.Id} and {secondSpanEquipment.Connects.Count} span segments are selected from span equipment: {secondSpanEquipment.SpanEquipment.Id} The number of span segments selected in the two span equipments must the same!")
+                    )
+                );
+            }
+
+            // Check that the conduits selected in the two span equipment are alligned in terms of numbers and type
+            var allignedResult = CheckIfConnectsAreAlligned(firstSpanEquipment, secondSpanEquipment);
+
+            if (allignedResult.IsFailed)
+                return Task.FromResult(Result.Fail(allignedResult.Errors.First()));
+
+            // Check if a merge should be done instead of connecting the individually spans using junctions/terminals
+            if (ShouldBeMerged(firstSpanEquipment, secondSpanEquipment))
+            {
+                var mergeResult = MergeSpanEquipment(command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
+
+                return Task.FromResult(mergeResult);
+            }
+            else
+            {
+                // Connect the individual spans using junctions/terminals
+                var connectResult = ConnectSpanEquipment(command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
+
+                return Task.FromResult(connectResult);
+            }
+        }
+
+        private Result MergeSpanEquipment(Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        {
+            // Merge the first span equipment with the second one
+            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.SpanEquipment.Id);
+
+            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.Merge(
+                routeNodeId: routeNodeId,
+                secondSpanEquipment.SpanEquipment
+            );
+
+            if (firstSpanEquipmentConnectResult.IsFailed)
+                return firstSpanEquipmentConnectResult;
+
+            var firstSpanEquipmentWalk = GetInterestInformation(firstSpanEquipment.SpanEquipment);
+            var secondSpanEquipmentWalk = GetInterestInformation(secondSpanEquipment.SpanEquipment);
+
+            // Update interest of the first span equipment to cover both span equipments
+            var newSegmentIds = MergeWalks(firstSpanEquipmentWalk, secondSpanEquipmentWalk);
+
+            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(firstSpanEquipment.SpanEquipment.WalkOfInterestId, newSegmentIds);
+            var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
+
+            if (updateWalkOfInterestCommandResult.IsFailed)
+                return updateWalkOfInterestCommandResult;
+
+            // Remove the second span equipment
+            var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
+            var removeSpanEquipment = secondSpanEquipmentAR.Remove();
+
+            if (removeSpanEquipment.IsSuccess)
+            {
+                // Remember to remove the walk of interest as well
+                var unregisterInterestCmd = new UnregisterInterest(secondSpanEquipment.SpanEquipment.WalkOfInterestId);
+                var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
+
+                if (unregisterInterestCmdResult.IsFailed)
+                    throw new ApplicationException($"Failed to unregister interest: {secondSpanEquipment.SpanEquipment.WalkOfInterestId} of span equipment: {secondSpanEquipment.SpanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
+            }
+
+            _eventStore.Aggregates.Store(firstSpanEquipmentAR);
+            _eventStore.Aggregates.Store(secondSpanEquipmentAR);
+
+
+            return Result.Ok();
+        }
+
+        private RouteNetworkElementIdList MergeWalks(ValidatedRouteNetworkWalk firstSpanEquipmentWalk, ValidatedRouteNetworkWalk secondSpanEquipmentWalk)
+        {
+            var result = new RouteNetworkElementIdList();
+
+            // first span equipment -> second span equipment
+            if (firstSpanEquipmentWalk.ToNodeId == secondSpanEquipmentWalk.FromNodeId)
+            {
+                result.AddRange(firstSpanEquipmentWalk.SegmentIds);
+                result.AddRange(secondSpanEquipmentWalk.SegmentIds);
+            }
+            // first span equipment -> second span equipment (reversed)
+            else if (firstSpanEquipmentWalk.ToNodeId == secondSpanEquipmentWalk.ToNodeId)
+            {
+                secondSpanEquipmentWalk = secondSpanEquipmentWalk.Reverse();
+
+                result.AddRange(firstSpanEquipmentWalk.SegmentIds);
+                result.AddRange(secondSpanEquipmentWalk.SegmentIds);
+            }
+            // second span equipment -> first span equipment
+            else if (firstSpanEquipmentWalk.FromNodeId == secondSpanEquipmentWalk.ToNodeId)
+            {
+                result.AddRange(secondSpanEquipmentWalk.SegmentIds);
+                result.AddRange(firstSpanEquipmentWalk.SegmentIds);
+            }
+            // second span equipment (reversed) -> first span equipment
+            else if (firstSpanEquipmentWalk.FromNodeId == secondSpanEquipmentWalk.FromNodeId)
+            {
+                secondSpanEquipmentWalk = secondSpanEquipmentWalk.Reverse();
+
+                result.AddRange(secondSpanEquipmentWalk.SegmentIds);
+                result.AddRange(firstSpanEquipmentWalk.SegmentIds);
+            }
+            else
+                throw new ApplicationException("Merge Walk logic is broken");
+
+            return result;
+        }
+
+        private Result ConnectSpanEquipment(Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        {
+            // Create junction/terminal ids used to connect span segments
+            for (int i = 0; i < firstSpanEquipment.Connects.Count; i++)
+            {
+                var junctionId = Guid.NewGuid();
+
+                firstSpanEquipment.Connects[i].ConnectInfo.TerminalId = junctionId;
+                firstSpanEquipment.Connects[i].ConnectInfo.ConnectionDirection = SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal;
+
+                secondSpanEquipment.Connects[i].ConnectInfo.TerminalId = junctionId;
+                secondSpanEquipment.Connects[i].ConnectInfo.ConnectionDirection = SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment;
+            }
+
+            // Connect the first span equipment to terminals
+            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.SpanEquipment.Id);
+
+            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+                routeNodeId: routeNodeId,
+                connects: firstSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
+            );
+
+            if (firstSpanEquipmentConnectResult.IsFailed)
+                return firstSpanEquipmentConnectResult;
+
+            // Connect the second span equipment to terminals
+            var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
+
+            var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+                routeNodeId: routeNodeId,
+                connects: secondSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
+            );
+
+            if (secondSpanEquipmentConnectResult.IsFailed)
+                return secondSpanEquipmentConnectResult;
+
+            _eventStore.Aggregates.Store(firstSpanEquipmentAR);
+            _eventStore.Aggregates.Store(secondSpanEquipmentAR);
+
+            NotifyExternalServicesAboutChange(firstSpanEquipment.SpanEquipment.Id, secondSpanEquipment.SpanEquipment.Id, routeNodeId);
+
+            return Result.Ok();
+        }
+
+        private Result<Dictionary<Guid, SpanEquipmentWithConnectsHolder>> BuildSpanEquipmentsToConnect(ConnectSpanSegmentsAtRouteNode command)
+        {
             Dictionary<Guid, SpanEquipmentWithConnectsHolder> spanEquipmentsToConnect = new Dictionary<Guid, SpanEquipmentWithConnectsHolder>();
 
             foreach (var spanSegmentToConnectId in command.SpanSegmentsToConnect)
             {
-                if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanSegmentToConnectId, out var spanSegmentGraphElement))
-                    return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {spanSegmentToConnectId}")));
+                if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanSegmentToConnectId, out var spanSegmentGraphElement))
+                    return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {spanSegmentToConnectId}"));
 
-                var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
-                var spanSegment = spanSegmentGraphElement.SpanSegment(utilityNetwork);
+                var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
+                var spanSegment = spanSegmentGraphElement.SpanSegment(_utilityNetwork);
 
                 if (!spanEquipmentsToConnect.ContainsKey(spanEquipment.Id))
                 {
@@ -87,31 +274,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 }
             }
 
-            // Check that span segments from exactly two span equipment has been specified by the client
-            if (spanEquipmentsToConnect.Count != 2)
-            {
-                return Task.FromResult(
-                    Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
-                        ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SPAN_SEGMENTS_FROM_TWO_SPAN_EQUIPMENT,
-                        $"Got span segments belonging to {spanEquipmentsToConnect.Count} This command can only handle connecting span segments between two span equipments.")
-                    )
-                );
-            }
+            return Result.Ok(spanEquipmentsToConnect);
+        }
 
-            var firstSpanEquipment = spanEquipmentsToConnect.Values.First();
-            var secondSpanEquipment = spanEquipmentsToConnect.Values.Last();
-
-            // Check that number of span segments from each span equipment is the same
-            if (firstSpanEquipment.Connects.Count != secondSpanEquipment.Connects.Count)
-            {
-                return Task.FromResult(
-                    Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
-                        ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SAME_NUMBER_OF_SPAN_SEGMENTS_BELONGING_TO_TWO_SPAN_EQUIPMENT,
-                        $"Cannot connect the span segments specified because {firstSpanEquipment.Connects.Count} span segments are selected from span equipment: {firstSpanEquipment.SpanEquipment.Id} and {secondSpanEquipment.Connects.Count} span segments are selected from span equipment: {secondSpanEquipment.SpanEquipment.Id} The number of span segments selected in the two span equipments must the same!")
-                    )
-                );
-            }
-
+        private Result CheckIfConnectsAreAlligned(SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        {
             // If more than 2 segments selected in each span equipment, check that they are alligned in terms of specifications
             if (firstSpanEquipment.Connects.Count > 1)
             {
@@ -138,13 +305,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 {
                     if (!secondSpanEquipmentStructureSpecIds.Contains(firstStructureId))
                     {
-                        return Task.FromResult(
-                            Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
-                                ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SAME_SPECIFICATIONS_OF_SPAN_SEGMENTS_BELONGING_TO_TWO_SPAN_EQUIPMENT,
-                                $"Cannot connect the span segments specified because specifications on the span structures don't allign. Make sure that you connect span segments beloning to structure with the same specs - i.e. a red and blue Ø10 from one span equipment to a red and blue Ø10 in the other span equipment.")
-                            )
+                        return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                            ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SAME_SPECIFICATIONS_OF_SPAN_SEGMENTS_BELONGING_TO_TWO_SPAN_EQUIPMENT,
+                            $"Cannot connect the span segments specified because specifications on the span structures don't allign. Make sure that you connect span segments beloning to structure with the same specs - i.e. a red and blue Ø10 from one span equipment to a red and blue Ø10 in the other span equipment.")
                         );
-
                     }
                 }
 
@@ -153,48 +317,39 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 secondSpanEquipment.Connects = secondSpanEquipment.Connects.OrderBy(s => s.StructureSpecificationId).ToList();
             }
 
-            // Create junction/terminal ids used to connect span segments
-            for (int i = 0; i < firstSpanEquipment.Connects.Count; i++)
-            {
-                var junctionId = Guid.NewGuid();
-
-                firstSpanEquipment.Connects[i].ConnectInfo.TerminalId = junctionId;
-                firstSpanEquipment.Connects[i].ConnectInfo.ConnectionDirection = SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal;
-
-                secondSpanEquipment.Connects[i].ConnectInfo.TerminalId = junctionId;
-                secondSpanEquipment.Connects[i].ConnectInfo.ConnectionDirection = SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment;
-            }
-
-            // Connect the first span equipment to terminals
-            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.SpanEquipment.Id);
-
-            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
-                routeNodeId: command.RouteNodeId,
-                connects: firstSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
-            );
-
-            if (!firstSpanEquipmentConnectResult.IsSuccess)
-                return Task.FromResult(firstSpanEquipmentConnectResult);
-
-            // Connect the second span equipment to terminals
-            var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
-
-            var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
-                routeNodeId: command.RouteNodeId,
-                connects: secondSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
-            );
-
-            if (!secondSpanEquipmentConnectResult.IsSuccess)
-                return Task.FromResult(firstSpanEquipmentConnectResult);
-
-            _eventStore.Aggregates.Store(firstSpanEquipmentAR);
-            _eventStore.Aggregates.Store(secondSpanEquipmentAR);
-
-            NotifyExternalServicesAboutChange(firstSpanEquipment.SpanEquipment.Id, secondSpanEquipment.SpanEquipment.Id, command.RouteNodeId);
-
-            return Task.FromResult(Result.Ok());
+            return Result.Ok();
         }
 
+        private static bool ShouldBeMerged(SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        {
+            if (firstSpanEquipment.Connects.Count == 1 && firstSpanEquipment.SpanEquipment.TryGetSpanSegment(firstSpanEquipment.Connects[0].ConnectInfo.SegmentId, out var firstSpanSegmentWithIndexInfo))
+            {
+                // If we're dealing with structure index 0, then the client is connecting the outer span
+                if (firstSpanSegmentWithIndexInfo.StructureIndex == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private ValidatedRouteNetworkWalk GetInterestInformation(SpanEquipment spanEquipment)
+        {
+            // Get interest information from existing span equipment
+            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId })).Result;
+
+            if (interestQueryResult.IsFailed)
+                throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment: {spanEquipment.Id} walk of interest id: {spanEquipment.WalkOfInterestId}");
+
+            if (interestQueryResult.Value.Interests == null)
+                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
+
+            if (!interestQueryResult.Value.Interests.TryGetValue(spanEquipment.WalkOfInterestId, out var routeNetworkInterest))
+                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
+
+            return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
+        }
         private async void NotifyExternalServicesAboutChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>

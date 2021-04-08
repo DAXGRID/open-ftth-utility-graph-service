@@ -7,6 +7,7 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
@@ -44,8 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Task.FromResult(Result.Fail(new CutSpanSegmentsAtRouteNodeError(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentsToCut[0]}")));
 
             var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
-            var spanSegment = spanSegmentGraphElement.SpanSegment(utilityNetwork);
-
+            var firstSpanSegment = spanSegmentGraphElement.SpanSegment(utilityNetwork);
 
             // Get walk of interest of the span equipment
             var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(

@@ -44,20 +44,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Because the client is allowed to provide either a span equipment or segment id, we need look it up via the utility network graph
             if (!utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
                 return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
-     
+
             // Get interest information from existing span equipment
-            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId })).Result;
-
-            if (interestQueryResult.IsFailed)
-                throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
-
-            if (interestQueryResult.Value.Interests == null)
-                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
-
-            if (!interestQueryResult.Value.Interests.TryGetValue(spanEquipment.WalkOfInterestId, out var existingRouteNetworkInterest))
-                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
-
-            var existingWalk = new ValidatedRouteNetworkWalk(existingRouteNetworkInterest.RouteNetworkElementRefs);
+            var existingWalk = GetInterestInformation(spanEquipment);
 
             // Validate the new walk
             var newWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(command.NewWalkIds)).Result;
@@ -98,6 +87,23 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             NotifyExternalServicesAboutSpanEquipmentChange(spanEquipment.Id, existingWalk, newWalk);
 
             return Task.FromResult(moveSpanEquipmentResult);
+        }
+
+        private ValidatedRouteNetworkWalk GetInterestInformation(SpanEquipment spanEquipment)
+        {
+            // Get interest information from existing span equipment
+            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId })).Result;
+
+            if (interestQueryResult.IsFailed)
+                throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment: {spanEquipment.Id} walk of interest id: {spanEquipment.WalkOfInterestId}");
+
+            if (interestQueryResult.Value.Interests == null)
+                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
+
+            if (!interestQueryResult.Value.Interests.TryGetValue(spanEquipment.WalkOfInterestId, out var routeNetworkInterest))
+                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
+
+            return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
         }
 
         private async void NotifyExternalServicesAboutSpanEquipmentChange(Guid spanEquipmentId, ValidatedRouteNetworkWalk existingWalk, ValidatedRouteNetworkWalk newWalk)

@@ -29,6 +29,8 @@ namespace OpenFTTH.TestData
         public static Guid MultiConduit_5x10_SDU_1_to_SDU_2;
         public static Guid MultiConduit_5x10_SDU_1_to_J_1;
         public static Guid MultiConduit_5x10_SDU_2_to_J_1;
+        public static Guid MultiConduit_12x7_SDU_1_to_J_1;
+        public static Guid MultiConduit_12x7_SDU_2_to_J_1;
 
         public static Guid NodeContainer_HH_1;
         public static Guid NodeContainer_CC_1;
@@ -63,6 +65,8 @@ namespace OpenFTTH.TestData
                 MultiConduit_5x10_SDU_1_to_SDU_2 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S7, TestRouteNetwork.S8 });
                 MultiConduit_5x10_SDU_1_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S7 });
                 MultiConduit_5x10_SDU_2_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S8 });
+                MultiConduit_12x7_SDU_1_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_12x7, new RouteNetworkElementIdList() { TestRouteNetwork.S7 });
+                MultiConduit_12x7_SDU_2_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_12x7, new RouteNetworkElementIdList() { TestRouteNetwork.S8 });
 
 
                 // Place node containers

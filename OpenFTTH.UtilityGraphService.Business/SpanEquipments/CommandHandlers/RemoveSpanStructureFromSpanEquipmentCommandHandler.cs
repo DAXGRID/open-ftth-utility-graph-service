@@ -65,14 +65,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 if (removeSpanEquipment.IsSuccess)
                 {
-                    _eventStore.Aggregates.Store(spanEquipmentAR);
-
                     // Remember to remove the walk of interest as well
                     var unregisterInterestCmd = new UnregisterInterest(spanEquipment.WalkOfInterestId);
                     var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
 
                     if (unregisterInterestCmdResult.IsFailed)
                         throw new ApplicationException($"Failed to unregister interest: {spanEquipment.WalkOfInterestId} of span equipment: {spanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
+
+                    _eventStore.Aggregates.Store(spanEquipmentAR);
 
                     NotifyExternalServicesAboutSpanEquipmentDeletion(spanEquipment.Id, interestQueryResult.Value.Interests[spanEquipment.WalkOfInterestId].RouteNetworkElementRefs);
                 }

@@ -36,6 +36,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanStructureRemoved>(Apply);
             Register<SpanEquipmentRemoved>(Apply);
             Register<SpanEquipmentMoved>(Apply);
+            Register<SpanEquipmentMerged>(Apply);
         }
 
         #region Place Span Equipment
@@ -1013,6 +1014,102 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         private void Apply(SpanEquipmentMoved @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
+        #region Merge
+        public Result Merge(Guid routeNodeId, SpanEquipment spanEquipmentToMergeWith)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (_spanEquipment.SpecificationId != spanEquipmentToMergeWith.SpecificationId)
+            {
+                return Result.Fail(new MergeSpanEquipmentError(
+                        MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_OF_SPECIFICATION_MISMATCH,
+                        $"Cannot merge span equipment: {_spanEquipment.Id} with span equipment: {spanEquipmentToMergeWith.Id} because their specification is not the same.")
+                    );
+            }
+
+            // This span equipment must end in the route node specificed
+            if (_spanEquipment.NodesOfInterestIds.First() != routeNodeId && _spanEquipment.NodesOfInterestIds.Last() != routeNodeId)
+            {
+                return Result.Fail(new MergeSpanEquipmentError(
+                       MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_ENDS_ARE_NOT_COLOCATED_IN_ROUTE_NODE,
+                       $"Cannot merge span equipment: {_spanEquipment.Id} with span equipment: {spanEquipmentToMergeWith.Id} because no ends of the former is ending in route node: {routeNodeId}")
+                   );
+            }
+
+            // The other span equipment must end in the route node specificed as well
+            if (spanEquipmentToMergeWith.NodesOfInterestIds.First() != routeNodeId && spanEquipmentToMergeWith.NodesOfInterestIds.Last() != routeNodeId)
+            {
+                return Result.Fail(new MergeSpanEquipmentError(
+                       MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_ENDS_ARE_NOT_COLOCATED_IN_ROUTE_NODE,
+                       $"Cannot merge span equipment: {_spanEquipment.Id} with span equipment: {spanEquipmentToMergeWith.Id} because no ends of the later is ending in route node: {routeNodeId}")
+                   );
+            }
+
+            // The span equipment we want to merge with this one cannot contain any connections (because it's deleted)
+            if (spanEquipmentToMergeWith.SpanStructures.Any(st => st.SpanSegments.Any(se => se.FromTerminalId != Guid.Empty || se.ToTerminalId != Guid.Empty)))
+            {
+                return Result.Fail(new MergeSpanEquipmentError(
+                        MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_OF_CONNECTIVITY,
+                        $"Cannot merge span equipment: {_spanEquipment.Id} with span equipment: {spanEquipmentToMergeWith.Id} because the later has connectivity to other span segments.")
+                    );
+            }
+
+            // This span equipment cannot be affixed to node container in merge node
+            if (_spanEquipment.NodeContainerAffixes != null && _spanEquipment.NodeContainerAffixes.Any(affix => affix.RouteNodeId == routeNodeId))
+            {
+                return Result.Fail(new MergeSpanEquipmentError(
+                        MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_END_IS_AFFIXED_TO_NODE_CONTAINER,
+                        $"Cannot merge span equipment: {_spanEquipment.Id} with span equipment: {spanEquipmentToMergeWith.Id} because the former is affixed to a node container in route node: {routeNodeId}")
+                    );
+            }
+
+            // The span equipment we want to merge with cannot be affixed to node container in merge node
+            if (spanEquipmentToMergeWith.NodeContainerAffixes != null && spanEquipmentToMergeWith.NodeContainerAffixes.Any(affix => affix.RouteNodeId == routeNodeId))
+            {
+                return Result.Fail(new MergeSpanEquipmentError(
+                        MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_END_IS_AFFIXED_TO_NODE_CONTAINER,
+                        $"Cannot merge span equipment: {_spanEquipment.Id} with span equipment: {spanEquipmentToMergeWith.Id} because the later is affixed to a node container in route node: {routeNodeId}")
+                    );
+            }
+
+
+            // Create a new node of interest id array that include the new end from the other span equipment resulting from the merge
+            Guid[] updatedNodeOfInterestIds = new Guid[_spanEquipment.NodesOfInterestIds.Length];
+            _spanEquipment.NodesOfInterestIds.CopyTo(updatedNodeOfInterestIds, 0);
+
+            if (_spanEquipment.NodesOfInterestIds.First() == spanEquipmentToMergeWith.NodesOfInterestIds.First())
+                updatedNodeOfInterestIds[0] = spanEquipmentToMergeWith.NodesOfInterestIds.Last();
+            else if (_spanEquipment.NodesOfInterestIds.Last() == spanEquipmentToMergeWith.NodesOfInterestIds.First())
+                updatedNodeOfInterestIds[^1] = spanEquipmentToMergeWith.NodesOfInterestIds.Last();
+            else if (_spanEquipment.NodesOfInterestIds.First() == spanEquipmentToMergeWith.NodesOfInterestIds.Last())
+                updatedNodeOfInterestIds[0] = spanEquipmentToMergeWith.NodesOfInterestIds.First();
+            else if (_spanEquipment.NodesOfInterestIds.Last() == spanEquipmentToMergeWith.NodesOfInterestIds.Last())
+                updatedNodeOfInterestIds[^1] = spanEquipmentToMergeWith.NodesOfInterestIds.First();
+            else
+                throw new ApplicationException("There an unexpected error in shared node validation and/or identification");
+
+
+            var @event = new SpanEquipmentMerged(
+              spanEquipmentId: this.Id,
+              nodesOfInterestIds: updatedNodeOfInterestIds
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentMerged @event)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");

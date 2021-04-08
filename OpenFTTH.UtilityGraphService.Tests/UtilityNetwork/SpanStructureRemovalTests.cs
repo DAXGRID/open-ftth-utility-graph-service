@@ -132,9 +132,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             removeStructureCmdResult.IsFailed.Should().BeTrue();
             //((RemoveSpanStructureFromSpanEquipmentError)removeStructureCmdResult.Errors.First()).Code.Should().Be(RemoveSpanStructureFromSpanEquipmentErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT);
-            
         }
-
 
 
         private async void MakeSureTestConduitsHasInnerConduitsAndConnections()
