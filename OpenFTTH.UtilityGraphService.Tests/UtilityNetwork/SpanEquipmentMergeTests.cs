@@ -105,10 +105,17 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // From span segment should now start en SDU 2
             fromSpanEquipmentAfterConnect.NodesOfInterestIds.First().Should().Be(TestRouteNetwork.SDU_2);
 
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.Merge" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutFromSpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.SDU_1);
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.SDU_2);
+
 
         }
 
-      
+
         [Fact, Order(10)]
         public async void TryMerge12x7With5x10_ShouldFail()
         {
