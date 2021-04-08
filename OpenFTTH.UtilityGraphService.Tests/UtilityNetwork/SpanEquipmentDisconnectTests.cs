@@ -97,6 +97,81 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.CC_1);
         }
 
+        [Fact, Order(2)]
+        public async void TestDisconnectSameSegmentsInSameSpanEquipment_ShouldFail()
+        {
+            MakeSureTestConduitIsCutAndConnectedAtCC_1();
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
+
+            // Disconnect the same inner conduit from itself
+            var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.CC_1,
+                spanSegmentsToDisconnect: new Guid[] {
+                    sutFromSpanEquipment.SpanStructures[1].SpanSegments[0].Id,
+                    sutFromSpanEquipment.SpanStructures[1].SpanSegments[0].Id,
+                }
+            );
+
+            var disconnectResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsAtRouteNode, Result>(disconnectCmd);
+
+            var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipment })
+            );
+
+            var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+              new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipment })
+            );
+
+            // Assert
+            disconnectResult.IsFailed.Should().BeTrue();
+            ((DisconnectSpanSegmentsAtRouteNodeError)disconnectResult.Errors.First()).Code.Should().Be(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_SEGMENT_TO_ITSELF);
+        }
+
+        [Fact, Order(3)]
+        public async void TestDisconnectDifferentSegmentsInSameSpanEquipment_ShouldFail()
+        {
+            MakeSureTestConduitIsCutAndConnectedAtCC_1();
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
+
+            // Disconnect the same inner conduit from itself
+            var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.CC_1,
+                spanSegmentsToDisconnect: new Guid[] {
+                    sutFromSpanEquipment.SpanStructures[1].SpanSegments[0].Id,
+                    sutFromSpanEquipment.SpanStructures[2].SpanSegments[0].Id,
+                }
+            );
+
+            var disconnectResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsAtRouteNode, Result>(disconnectCmd);
+
+            var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipment })
+            );
+
+            var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+              new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipment })
+            );
+
+            // Assert
+            disconnectResult.IsFailed.Should().BeTrue();
+            ((DisconnectSpanSegmentsAtRouteNodeError)disconnectResult.Errors.First()).Code.Should().Be(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_EQUIPMENT_TO_ITSELF);
+        }
+
+
         private async void MakeSureTestConduitIsCutAndConnectedAtCC_1()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();

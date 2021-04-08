@@ -38,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             if (command.SpanSegmentsToDisconnect.Length != 2)
-                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_SPAN_SEGMENT_LIST_MUST_CONTAIN_TWO_SPAN_SEGMENT_IDS, "The list of span segments to connect must container two span segment ids.")));
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_SPAN_SEGMENT_LIST_MUST_CONTAIN_TWO_SPAN_SEGMENT_IDS, "The list of span segments to connect must contain two span segment ids.")));
 
             // Because the client do not provide the span equipment ids, but span segment ids only,
             // we need lookup the span equipments via the the utility network graph
@@ -57,6 +57,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             
             var secondSpanEquipment = secondSpanSegmentGraphElement.SpanEquipment(utilityNetwork);
             var secondSpanSegment = secondSpanSegmentGraphElement.SpanSegment(utilityNetwork);
+
+            // Check that the two span segments specified is not the same
+            if (firstSpanSegment.Id == secondSpanSegment.Id)
+            {
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_SEGMENT_TO_ITSELF, $"Cannot connect the same span segment to itself")));
+            }
+
+            // Check that the two span equipments found is not the same
+            if (firstSpanEquipment.Id == secondSpanEquipment.Id)
+            {
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_EQUIPMENT_TO_ITSELF, $"Cannot connect the same span equipment to itself")));
+            }
 
             // Check that first span segment is connected to route node
             if (firstSpanEquipment.NodesOfInterestIds[firstSpanSegment.FromNodeOfInterestIndex] != command.RouteNodeId
