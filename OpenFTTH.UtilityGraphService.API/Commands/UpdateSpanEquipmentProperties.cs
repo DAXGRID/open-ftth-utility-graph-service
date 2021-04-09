@@ -8,7 +8,7 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
 {
     public record UpdateSpanEquipmentProperties : ICommand<Result>
     {
-        public Guid SpanEquipmentId { get; }
+        public Guid SpanEquipmentOrSegmentId { get; }
 
         public Guid? SpecificationId { get; init; }
         public Guid? ManufacturerId { get; init; }
@@ -17,7 +17,7 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
 
         public UpdateSpanEquipmentProperties(Guid spanEquipmentId)
         {
-            SpanEquipmentId = spanEquipmentId;
+            SpanEquipmentOrSegmentId = spanEquipmentId;
         }
     }
 }
