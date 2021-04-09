@@ -42,6 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentMerged>(Project);
             ProjectEvent<SpanEquipmentMarkingInfoChanged>(Project);
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
+            ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
         }
       
 
@@ -154,6 +155,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (SpanEquipmentManufacturerChanged @event):
                     TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
                     break;
+
+                case (SpanEquipmentSpecificationChanged @event):
+                    ProcessSpanEquipmentSpecificationChange(@event);
+                    break;
             }
         }
 
@@ -261,6 +266,40 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     }
                 }
             }
+        }
+
+        private void ProcessSpanEquipmentSpecificationChange(SpanEquipmentSpecificationChanged @event)
+        {
+            var spanEquipmentBeforeChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipmentAfterChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            var structuresToBeDeleted = @event.StructureModificationInstructions.Where(i => i.StructureToBeDeleted).ToDictionary(i => i.StructureId);
+            var structuresToBeAdded = @event.StructureModificationInstructions.Where(i => i.NewStructureToBeInserted != null).ToDictionary(i => i.StructureId);
+
+            // Deleted span segments from the graph
+            foreach (var spanStructure in spanEquipmentBeforeChange.SpanStructures)
+            {
+                if (structuresToBeDeleted.ContainsKey(spanStructure.Id))
+                {
+                    foreach (var spanSegment in spanStructure.SpanSegments)
+                    {
+                        _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
+                    }
+                }
+            }
+
+            // Add structures
+            foreach (var structureToBeAddedInstruction in @event.StructureModificationInstructions.Where(i => i.NewStructureToBeInserted != null))
+            {
+                if (structureToBeAddedInstruction.NewStructureToBeInserted != null)
+                {
+                    _utilityGraph.AddDisconnectedSegment(spanEquipmentAfterChange, structureToBeAddedInstruction.NewStructureToBeInserted.Position, 0);
+                }
+            }
+          
         }
 
 

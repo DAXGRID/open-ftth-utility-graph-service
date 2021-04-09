@@ -39,6 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentMerged>(Apply);
             Register<SpanEquipmentMarkingInfoChanged>(Apply);
             Register<SpanEquipmentManufacturerChanged>(Apply);
+            Register<SpanEquipmentSpecificationChanged>(Apply);
         }
 
         #region Place Span Equipment

@@ -334,9 +334,43 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentSpecificationChanged @event)
         {
-            //List<SpanStructure> newSpanStructures = new List<SpanStructure>();
+            List<SpanStructure> newSpanStructures = new List<SpanStructure>();
 
-            return existingSpanEquipment;
+            Dictionary<Guid, StructureModificationInstruction> modificationInstructionByStructureId = @event.StructureModificationInstructions.ToDictionary(s => s.StructureId);
+
+            // Modify and delete the existing structures
+            foreach (var existingSpanStructure in existingSpanEquipment.SpanStructures)
+            {
+                if (modificationInstructionByStructureId.ContainsKey(existingSpanStructure.Id))
+                {
+                    var instruction = modificationInstructionByStructureId[existingSpanStructure.Id];
+                    
+                    if (instruction.StructureToBeDeleted == true)
+                    {
+                        // Don't copy the existing structure
+                    }
+                    else if (instruction.StructureSpecificationIdToBeUpdated != null)
+                    {
+                        newSpanStructures.Add(existingSpanStructure with { SpecificationId = instruction.StructureSpecificationIdToBeUpdated.Value });
+                    }
+                }
+            }
+
+            // Add eventually new structures
+            foreach (var instruction in @event.StructureModificationInstructions)
+            {
+                if (instruction.NewStructureToBeInserted != null)
+                {
+                    newSpanStructures.Add(instruction.NewStructureToBeInserted);
+                }
+
+            }
+
+            return existingSpanEquipment with
+            {
+                SpecificationId = @event.NewSpecificationId,
+                SpanStructures = newSpanStructures.ToArray()
+            };
         }
     }
 }

@@ -7,8 +7,8 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     public record SpanEquipment : IEquipment
     {
         public Guid Id { get; }
-        public Guid SpecificationId { get; }
         public Guid WalkOfInterestId { get; }
+        public Guid SpecificationId { get; init; }
         public Guid[] NodesOfInterestIds { get; init; }
         public SpanStructure[] SpanStructures { get; init; }
 

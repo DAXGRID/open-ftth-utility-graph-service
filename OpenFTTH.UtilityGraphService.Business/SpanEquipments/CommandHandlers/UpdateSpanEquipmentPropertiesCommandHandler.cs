@@ -37,13 +37,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(UpdateSpanEquipmentProperties command)
         {
-            var spanEquipments = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments;
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             // Because the client is allowed to provide either a span equipment or segment id, we need look it up via the utility network graph
             if (!utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
-                return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
+                return Task.FromResult(Result.Fail(new UpdateSpanEquipmentPropertiesError(UpdateSpanEquipmentPropertiesErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
@@ -74,6 +73,25 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 if (updateManufacturerInfoResult.IsFailed)
                     return Task.FromResult(Result.Fail(updateManufacturerInfoResult.Errors.First()));
+
+                somethingChanged = true;
+            }
+
+            // Check if specification has been updated
+            if (command.SpecificationId != null && !command.SpecificationId.Equals(spanEquipment.SpecificationId))
+            {
+                if (!spanEquipmentSpecifications.ContainsKey(command.SpecificationId.Value))
+                {
+                    return Task.FromResult(Result.Fail(new UpdateSpanEquipmentPropertiesError(UpdateSpanEquipmentPropertiesErrorCodes.SPAN_SPECIFICATION_NOT_FOUND, $"Cannot find any span equipment specification with id: {command.SpecificationId.Value}")));
+                }
+
+                var updateSpecificationResult = spanEquipmentAR.ChangeSpecification(
+                    spanEquipmentSpecifications[spanEquipment.SpecificationId],
+                    spanEquipmentSpecifications[command.SpecificationId.Value]
+                );
+
+                if (updateSpecificationResult.IsFailed)
+                    return Task.FromResult(Result.Fail(updateSpecificationResult.Errors.First()));
 
                 somethingChanged = true;
             }

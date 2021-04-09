@@ -11,7 +11,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     public record SpanStructure : IIdentifiedObject
     {
         public Guid Id { get; }
-        public Guid SpecificationId { get; }
+        public Guid SpecificationId { get; init; }
         public UInt16 Level { get; }
         public UInt16 ParentPosition { get; }
         public UInt16 Position { get; }
