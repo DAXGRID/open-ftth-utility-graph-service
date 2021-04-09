@@ -52,9 +52,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             bool somethingChanged = false; 
 
+            // Check if marking info has been updated
             if (command.MarkingInfo != null && !command.MarkingInfo.Equals(spanEquipment.MarkingInfo))
             {
-                var updateMarkingInfoResult = spanEquipmentAR.UpdateMarkingInfo(
+                var updateMarkingInfoResult = spanEquipmentAR.ChangeMarkingInfo(
                     command.MarkingInfo
                 );
 
@@ -63,6 +64,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 somethingChanged = true;
             }
+
+            // Check if manufacturer as been updated
+            if (command.ManufacturerId != null && !command.ManufacturerId.Equals(spanEquipment.ManufacturerId))
+            {
+                var updateManufacturerInfoResult = spanEquipmentAR.ChangeManufacturer(
+                    command.ManufacturerId.Value
+                );
+
+                if (updateManufacturerInfoResult.IsFailed)
+                    return Task.FromResult(Result.Fail(updateManufacturerInfoResult.Errors.First()));
+
+                somethingChanged = true;
+            }
+
+
 
             if (somethingChanged)
             {

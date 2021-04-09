@@ -91,6 +91,64 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
+        public async void UpdateManufacturer_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
+
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            {
+                ManufacturerId = TestSpecifications.Manu_Emtelle
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateSpanEquipmentProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            spanEquipmentAfterUpdate.ManufacturerId.Should().Be(updateCmd.ManufacturerId);
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.PropertiesUpdated" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
+        }
+
+        [Fact, Order(11)]
+        public async void UpdateManufacturerToGuidEmpty_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
+
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            {
+                ManufacturerId = Guid.Empty
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateSpanEquipmentProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            spanEquipmentAfterUpdate.ManufacturerId.Should().Be(updateCmd.ManufacturerId);
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.PropertiesUpdated" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
+        }
+
+
+
+        [Fact, Order(100)]
         public async void UpdateMarkingInfoToSameAsBefore_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();

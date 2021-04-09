@@ -37,7 +37,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentRemoved>(Apply);
             Register<SpanEquipmentMoved>(Apply);
             Register<SpanEquipmentMerged>(Apply);
-            Register<MarkingInfoUpdated>(Apply);
+            Register<SpanEquipmentMarkingInfoChanged>(Apply);
+            Register<SpanEquipmentManufacturerChanged>(Apply);
         }
 
         #region Place Span Equipment
@@ -1120,8 +1121,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #endregion
 
-        #region Update Marking Info
-        public Result UpdateMarkingInfo(MarkingInfo? markingInfo)
+        #region Change Marking Info
+        public Result ChangeMarkingInfo(MarkingInfo? markingInfo)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -1134,7 +1135,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                    );
             }
 
-            var @event = new MarkingInfoUpdated(
+            var @event = new SpanEquipmentMarkingInfoChanged(
               spanEquipmentId: this.Id,
               markingInfo: markingInfo
             );
@@ -1144,7 +1145,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        private void Apply(MarkingInfoUpdated @event)
+        private void Apply(SpanEquipmentMarkingInfoChanged @event)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -1153,5 +1154,41 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         #endregion
+
+
+        #region Change Manufacturer
+        public Result ChangeManufacturer(Guid manufacturerId)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (_spanEquipment.ManufacturerId == manufacturerId)
+            {
+                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
+                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_MANUFACTURER,
+                       $"Will not change manufacturer, because the provided value is equal the existing value.")
+                   );
+            }
+
+            var @event = new SpanEquipmentManufacturerChanged(
+              spanEquipmentId: this.Id,
+              manufacturerId: manufacturerId
+            );
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentManufacturerChanged @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
     }
 }
