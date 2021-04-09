@@ -114,7 +114,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             var spanEquipment = new SpanEquipment(spanEquipmentId, specification.Id, walkOfInterestId, nodesOfInterestIds, spanStructuresToInclude.ToArray())
             {
-                ManufacturerId = manufacturerId,
+                ManufacturerId = manufacturerId == null ? Guid.Empty : manufacturerId,
                 NamingInfo = namingInfo,
                 MarkingInfo = markingInfo
             };
