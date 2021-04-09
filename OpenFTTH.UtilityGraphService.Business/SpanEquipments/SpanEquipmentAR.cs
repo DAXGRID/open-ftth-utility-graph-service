@@ -1155,7 +1155,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #endregion
 
-
         #region Change Manufacturer
         public Result ChangeManufacturer(Guid manufacturerId)
         {
@@ -1181,6 +1180,149 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         private void Apply(SpanEquipmentManufacturerChanged @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
+        #region Change Specification
+        public Result ChangeSpecification(SpanEquipmentSpecification currentSpecification, SpanEquipmentSpecification newSpecification)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (_spanEquipment.SpecificationId == newSpecification.Id)
+            {
+                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
+                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_SPECIFICATION,
+                       $"Will not change specification, because the provided specification id is the same as the existing one.")
+                   );
+            }
+
+            // Changed specification from non-fixed to fixed is not allowedd
+            if (!currentSpecification.IsFixed && newSpecification.IsFixed)
+            {
+                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
+                       UpdateSpanEquipmentPropertiesErrorCodes.CANNOT_CHANGE_FROM_NON_FIXED_TO_FIXED,
+                       $"No rules defined that can handle a change from a non-fixed multi span equipment to a fixed one.")
+                   );
+            }
+
+            // If specification changed from is-fixed to non-fixed or non-fixed to another non-fixed, we just need to update the span equipment specification id and outer structure specification id
+            if ((currentSpecification.IsFixed && !newSpecification.IsFixed) || (!currentSpecification.IsFixed && !newSpecification.IsFixed))
+            {
+                StructureModificationInstruction updateOuterSpanStructureInstruction = new StructureModificationInstruction(_spanEquipment.SpanStructures[0].Id, false)
+                {
+                    StructureSpecificationIdToBeUpdated = newSpecification.RootTemplate.SpanStructureSpecificationId
+                };
+
+                var @event = new SpanEquipmentSpecificationChanged(
+                  spanEquipmentId: this.Id,
+                  newSpecificationId: newSpecification.Id,
+                  structureModificationInstructions: new StructureModificationInstruction[] { updateOuterSpanStructureInstruction }
+                );
+
+                RaiseEvent(@event);
+
+                return Result.Ok();
+            }
+           
+
+            // If the specification is changed from fixed to another fixed span equipment then the fun begins
+            if (currentSpecification.IsFixed && newSpecification.IsFixed)
+            {
+                List<StructureModificationInstruction> structureModificationInstructions = new List<StructureModificationInstruction>();
+
+                // For all structures that exists in the existing span equipment that is also present in the new specification, update the specification id
+                var newSpecificationStructureTemplates = newSpecification.RootTemplate.GetAllSpanStructureTemplatesRecursive();
+
+                HashSet<SpanStructure> existingStructureProcessed = new();
+                HashSet<SpanStructureTemplate> newSpecificationSpanStructureTemplateProcessed = new();
+
+                foreach (var existingStructure in _spanEquipment.SpanStructures)
+                {
+                    var newStructureTemplate = newSpecificationStructureTemplates.FirstOrDefault(n => n.Level == existingStructure.Level && n.Position == existingStructure.Position);
+
+                    if (newStructureTemplate != null)
+                    {
+                        var updateStructureSpecIdInstruction = new StructureModificationInstruction(existingStructure.Id, false)
+                        {
+                            StructureSpecificationIdToBeUpdated = newStructureTemplate.SpanStructureSpecificationId
+                        };
+
+                        structureModificationInstructions.Add(updateStructureSpecIdInstruction);
+
+                        newSpecificationSpanStructureTemplateProcessed.Add(newStructureTemplate);
+                        existingStructureProcessed.Add(existingStructure);
+                    }
+                }
+
+                // For all structures in the existing span equipment that was not in the new specification, check if can be deleted and if so create instruction for that
+                for (int existingStructureIndex = 0; existingStructureIndex < _spanEquipment.SpanStructures.Length; existingStructureIndex++)
+                {
+                    var existingStructure = _spanEquipment.SpanStructures[existingStructureIndex];
+
+                    if (!existingStructureProcessed.Contains(existingStructure))
+                    {
+                        if (IsAnySpanSegmentsInStructureConnected((ushort)existingStructureIndex))
+                        {
+                            return Result.Fail(new UpdateSpanEquipmentPropertiesError(
+                                UpdateSpanEquipmentPropertiesErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
+                                $"The new specification contains less span structure that the old one. But cannot remove span structure at index: {existingStructureIndex} because some of its segments are connected.")
+                            );
+                        }
+
+                        var deleteStructureSpecIdInstruction = new StructureModificationInstruction(existingStructure.Id, true);
+                        structureModificationInstructions.Add(deleteStructureSpecIdInstruction);
+
+                        existingStructureProcessed.Add(existingStructure);
+                    }
+                }
+
+                // Finnally add level two structures pressent in new specification that was not pressent in the existing span equipment
+                foreach (var spanStructureTemplate in newSpecification.RootTemplate.ChildTemplates)
+                {
+                    if (!newSpecificationSpanStructureTemplateProcessed.Contains(spanStructureTemplate))
+                    {
+                        var newStructure = new SpanStructure(
+                            id: Guid.NewGuid(),
+                            specificationId: spanStructureTemplate.SpanStructureSpecificationId,
+                            level: spanStructureTemplate.Level,
+                            position: spanStructureTemplate.Position,
+                            parentPosition: 1,
+                            spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, 1) }
+                        );
+
+                        var addStructureSpecIdInstruction = new StructureModificationInstruction(newStructure.Id, false)
+                        {
+                            NewStructureToBeInserted = newStructure
+                        };
+                        
+                        structureModificationInstructions.Add(addStructureSpecIdInstruction);
+
+                        newSpecificationSpanStructureTemplateProcessed.Add(spanStructureTemplate);
+                    }
+                }
+
+                var @event = new SpanEquipmentSpecificationChanged(
+                  spanEquipmentId: this.Id,
+                  newSpecificationId: newSpecification.Id,
+                  structureModificationInstructions: structureModificationInstructions.ToArray()
+                );
+
+                RaiseEvent(@event);
+
+                return Result.Ok();
+            }
+
+            throw new ApplicationException("Specification change not supported. Check change span equipment specification logic.");
+        }
+
+        private void Apply(SpanEquipmentSpecificationChanged @event)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");

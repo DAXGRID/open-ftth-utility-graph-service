@@ -48,7 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
-            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: sutSpanEquipmentId)
             {
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "Rød"}
             };
@@ -76,7 +76,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
-            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: spanEquipmentBeforeUpdate.SpanStructures[0].SpanSegments[0].Id)
             {
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = null }
             };
@@ -99,7 +99,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
-            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: sutSpanEquipmentId)
             {
                 ManufacturerId = TestSpecifications.Manu_Emtelle
             };
@@ -127,7 +127,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
-            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: sutSpanEquipmentId)
             {
                 ManufacturerId = Guid.Empty
             };
@@ -157,7 +157,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
-            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentId: sutSpanEquipmentId)
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: sutSpanEquipmentId)
             {
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = null }
             };

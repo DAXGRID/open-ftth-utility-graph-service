@@ -332,5 +332,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentSpecificationChanged @event)
+        {
+            //List<SpanStructure> newSpanStructures = new List<SpanStructure>();
+
+            return existingSpanEquipment;
+        }
     }
 }

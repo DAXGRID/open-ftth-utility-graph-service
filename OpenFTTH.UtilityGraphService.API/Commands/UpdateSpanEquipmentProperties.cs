@@ -15,9 +15,9 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public NamingInfo? NamingInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
 
-        public UpdateSpanEquipmentProperties(Guid spanEquipmentId)
+        public UpdateSpanEquipmentProperties(Guid spanEquipmentOrSegmentId)
         {
-            SpanEquipmentOrSegmentId = spanEquipmentId;
+            SpanEquipmentOrSegmentId = spanEquipmentOrSegmentId;
         }
     }
 }
