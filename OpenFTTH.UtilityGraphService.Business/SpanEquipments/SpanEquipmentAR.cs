@@ -1295,7 +1295,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                             level: spanStructureTemplate.Level,
                             position: spanStructureTemplate.Position,
                             parentPosition: 1,
-                            spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, 1) }
+                            spanSegments: new SpanSegment[] { new SpanSegment(Guid.NewGuid(), 0, (ushort)(_spanEquipment.NodesOfInterestIds.Length - 1)) }
                         );
 
                         var addStructureSpecIdInstruction = new StructureModificationInstruction(newStructure.Id, false)

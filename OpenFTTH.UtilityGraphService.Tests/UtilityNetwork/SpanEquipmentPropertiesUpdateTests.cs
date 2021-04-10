@@ -45,7 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
@@ -73,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
@@ -91,12 +91,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentAfterUpdate.MarkingInfo.Should().BeEquivalentTo(updateCmd.MarkingInfo);
         }
 
-        [Fact, Order(10)]
+        [Fact, Order(3)]
         public async void UpdateManufacturer_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
@@ -119,12 +119,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
         }
 
-        [Fact, Order(11)]
+        [Fact, Order(4)]
         public async void UpdateManufacturerToGuidEmpty_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
@@ -148,51 +148,36 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void ChangeSpecificationFrom5x10to3x10_ShouldSucceed()
+        public async void TestCutInnerConduit1In3x10_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-            var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_SDU_1_to_J_1;
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
-            var spanEquipmentSpecification = spanEquipmentSpecifications[TestSpecifications.Multi_Ø32_3x10];
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
 
-            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
+            // Cut sthe outer conduit and first inner conduit
+            var cutCmd = new CutSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.J_1,
+                spanSegmentsToCut: new Guid[] {
+                    spanEquipment.SpanStructures[0].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[1].SpanSegments[0].Id,
+                }
+            );
 
-            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: sutSpanEquipmentId)
-            {
-                SpecificationId = TestSpecifications.Multi_Ø32_3x10
-            };
+            var cutResult = await _commandDispatcher.HandleAsync<CutSpanSegmentsAtRouteNode, Result>(cutCmd);
 
-            var updateResult = await _commandDispatcher.HandleAsync<UpdateSpanEquipmentProperties, Result>(updateCmd);
-
-            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentAfterUpdate);
-
-            // Assert
-            updateResult.IsSuccess.Should().BeTrue();
-            spanEquipmentAfterUpdate.SpecificationId.Should().Be(updateCmd.SpecificationId.Value);
-
-            spanEquipmentAfterUpdate.SpanStructures.Length.Should().Be(4);
-            spanEquipmentAfterUpdate.SpanStructures[0].SpecificationId.Should().Be(spanEquipmentSpecification.RootTemplate.SpanStructureSpecificationId);
-
-            // Check that graph don't contain old segments
-            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentBeforeUpdate.SpanStructures[4].SpanSegments[0].Id, out var _).Should().BeFalse();
-            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentBeforeUpdate.SpanStructures[5].SpanSegments[0].Id, out var _).Should().BeFalse();
-
-            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
-            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
-            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.PropertiesUpdated" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
-            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
+            cutResult.IsSuccess.Should().BeTrue();
         }
 
 
-        [Fact, Order(10)]
+        [Fact, Order(11)]
         public async void ChangeSpecificationFrom3x10to12x7_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
             var spanEquipmentSpecification = spanEquipmentSpecifications[TestSpecifications.Multi_Ø40_12x7];
 
@@ -215,7 +200,67 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentAfterUpdate.SpanStructures[0].SpecificationId.Should().Be(spanEquipmentSpecification.RootTemplate.SpanStructureSpecificationId);
 
             // Check that graph contain new segments
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[4].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[5].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[6].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[7].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[8].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[9].SpanSegments[0].Id, out var _).Should().BeTrue();
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[10].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[11].SpanSegments[0].Id, out var _).Should().BeTrue();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[12].SpanSegments[0].Id, out var _).Should().BeTrue();
+
+            // Check new span segments got correct nodeOfInteresIndexes
+            spanEquipmentAfterUpdate.NodesOfInterestIds.Length.Should().Be(3); // 3 because we made a cut in previous test
+            spanEquipmentAfterUpdate.SpanStructures[12].SpanSegments[0].FromNodeOfInterestIndex.Should().Be(0);
+            spanEquipmentAfterUpdate.SpanStructures[12].SpanSegments[0].ToNodeOfInterestIndex.Should().Be((ushort)(spanEquipmentAfterUpdate.NodesOfInterestIds.Length - 1));
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.PropertiesUpdated" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
+        }
+
+        [Fact, Order(12)]
+        public async void ChangeSpecificationFrom12x7to10x10_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+            var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
+
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
+
+            var spanEquipmentSpecification = spanEquipmentSpecifications[TestSpecifications.Multi_Ø50_10x10];
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
+
+            var updateCmd = new UpdateSpanEquipmentProperties(spanEquipmentOrSegmentId: sutSpanEquipmentId)
+            {
+                SpecificationId = TestSpecifications.Multi_Ø50_10x10
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateSpanEquipmentProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            spanEquipmentAfterUpdate.SpecificationId.Should().Be(updateCmd.SpecificationId.Value);
+
+            spanEquipmentAfterUpdate.SpanStructures.Length.Should().Be(11);
+            spanEquipmentAfterUpdate.SpanStructures[0].SpecificationId.Should().Be(spanEquipmentSpecification.RootTemplate.SpanStructureSpecificationId);
+
+            // Check that graph contain all 11 span segments
+            for (int i = 0; i < 11; i++)
+                utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[i].SpanSegments[0].Id, out var _).Should().BeTrue();
+
+            // Check that graph don't contain old segments
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentBeforeUpdate.SpanStructures[11].SpanSegments[0].Id, out var _).Should().BeFalse();
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentBeforeUpdate.SpanStructures[12].SpanSegments[0].Id, out var _).Should().BeFalse();
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.PropertiesUpdated" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
         }
 
         [Fact, Order(100)]
@@ -223,7 +268,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
 
