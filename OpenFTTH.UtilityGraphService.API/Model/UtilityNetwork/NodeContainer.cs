@@ -10,6 +10,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid InterestId { get;  }
         public Guid RouteNodeId { get;  }
         public Guid? ManufacturerId { get; init; }
+        public NodeContainerVerticalContentAlignmentEnum VertialContentAlignmemt { get; init; }
 
         public string? Name => null;
         public string? Description => null;

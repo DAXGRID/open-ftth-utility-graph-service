@@ -7,6 +7,7 @@ using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
 using System.Linq;
@@ -61,6 +62,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentQueryResult.Value.NodeContainers[placeNodeContainerCommand.NodeContainerId].SpecificationId.Should().Be(placeNodeContainerCommand.NodeContainerSpecificationId);
             equipmentQueryResult.Value.NodeContainers[placeNodeContainerCommand.NodeContainerId].ManufacturerId.Should().Be(placeNodeContainerCommand.ManufacturerId);
             equipmentQueryResult.Value.NodeContainers[placeNodeContainerCommand.NodeContainerId].InterestId.Should().Be(nodeOfInterestId);
+            equipmentQueryResult.Value.NodeContainers[placeNodeContainerCommand.NodeContainerId].VertialContentAlignmemt.Should().Be(NodeContainerVerticalContentAlignmentEnum.Bottom);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the node container we just created
             var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();

@@ -14,15 +14,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
     public class UtilityNetworkProjection : ProjectionBase
     {
-        private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByEquipmentId = new ConcurrentDictionary<Guid, SpanEquipment>();
-        private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new ConcurrentDictionary<Guid, SpanEquipment>();
-        private readonly LookupCollection<NodeContainer> _nodeContainerByEquipmentId = new LookupCollection<NodeContainer>();
-        private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new ConcurrentDictionary<Guid, NodeContainer>();
-        private readonly UtilityGraph _utilityGraph = new UtilityGraph();
+        private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByEquipmentId = new();
+        private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new();
+        private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByEquipmentId = new();
+        private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new();
+
+        private readonly UtilityGraph _utilityGraph = new();
 
         public UtilityGraph Graph => _utilityGraph;
-    
-        public LookupCollection<NodeContainer> NodeContainers => _nodeContainerByEquipmentId;
+
+        public LookupCollection<NodeContainer> NodeContainers => new LookupCollection<NodeContainer>(_nodeContainerByEquipmentId.Values);
 
         public LookupCollection<SpanEquipment> SpanEquipments => new LookupCollection<SpanEquipment>(_spanEquipmentByEquipmentId.Values);
         
@@ -34,7 +35,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanSegmentsCut>(Project);
             ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
             ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
-            ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
             ProjectEvent<AdditionalStructuresAddedToSpanEquipment>(Project);
             ProjectEvent<SpanStructureRemoved>(Project);
             ProjectEvent<SpanEquipmentRemoved>(Project);
@@ -43,8 +43,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentMarkingInfoChanged>(Project);
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
+
+
+            ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
+            ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
         }
-      
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
         {
@@ -132,10 +135,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessSegmentDisconnects(@event);
                     break;
 
-                case (NodeContainerPlacedInRouteNetwork @event):
-                    StoreAndIndexVirginContainerEquipment(@event.Container);
-                    break;
-
                 case (SpanEquipmentRemoved @event):
                     ProcessSpanEquipmentRemoval(@event);
                     break;
@@ -159,6 +158,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (SpanEquipmentSpecificationChanged @event):
                     ProcessSpanEquipmentSpecificationChange(@event);
                     break;
+
+                case (NodeContainerPlacedInRouteNetwork @event):
+                    StoreAndIndexVirginContainerEquipment(@event.Container);
+                    break;
+
+                case (NodeContainerVerticalAlignmentReversed @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
             }
         }
 
@@ -179,7 +186,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         private void StoreAndIndexVirginContainerEquipment(NodeContainer nodeContainer)
         {
             // Store the new span equipment in memory
-            _nodeContainerByEquipmentId.Add(nodeContainer);
+            _nodeContainerByEquipmentId.TryAdd(nodeContainer.Id, nodeContainer);
             _nodeContainerByInterestId.TryAdd(nodeContainer.InterestId, nodeContainer);
         }
 
@@ -299,9 +306,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     _utilityGraph.AddDisconnectedSegment(spanEquipmentAfterChange, structureToBeAddedInstruction.NewStructureToBeInserted.Position, 0);
                 }
             }
-          
         }
-
 
         private void TryUpdate(SpanEquipment newSpanEquipmentState)
         {
@@ -314,6 +319,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ApplicationException($"Concurrency issue updating span equipment interest index. Span equipment id: {newSpanEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
         }
 
+        private void TryUpdate(NodeContainer newNodeContainerState)
+        {
+            var oldEquipment = _nodeContainerByEquipmentId[newNodeContainerState.Id];
+
+            if (!_nodeContainerByEquipmentId.TryUpdate(newNodeContainerState.Id, newNodeContainerState, oldEquipment))
+                throw new ApplicationException($"Concurrency issue updating node container equipment index. Node container equipment id: {newNodeContainerState.Id} Please make sure that events are applied in sequence to the projection.");
+
+            if (!_nodeContainerByInterestId.TryUpdate(newNodeContainerState.InterestId, newNodeContainerState, oldEquipment))
+                throw new ApplicationException($"Concurrency issue updating node container equipment interest index. Node container equipment id: {newNodeContainerState.Id} Please make sure that events are applied in sequence to the projection.");
+        }
+
         private void TryRemove(Guid spanEquipmentId, Guid spanEquipmentInterestId)
         {
             if (!_spanEquipmentByEquipmentId.TryRemove(spanEquipmentId, out _))
@@ -322,6 +338,5 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             if (!_spanEquipmentByInterestId.TryRemove(spanEquipmentInterestId, out _))
                 throw new ApplicationException($"Concurrency issue removing span equipment interest index. Span equipment id: {spanEquipmentId} Please make sure that events are applied in sequence to the projection.");
         }
-
     }
 }

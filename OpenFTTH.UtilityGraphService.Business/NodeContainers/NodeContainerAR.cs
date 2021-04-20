@@ -5,6 +5,7 @@ using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         public NodeContainerAR()
         {
             Register<NodeContainerPlacedInRouteNetwork>(Apply);
+            Register<NodeContainerVerticalAlignmentReversed>(Apply);
         }
 
         public Result PlaceNodeContainerInRouteNetworkNode(
@@ -61,10 +63,32 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             return Result.Ok();
         }
-      
+
         private void Apply(NodeContainerPlacedInRouteNetwork obj)
         {
+            Id = obj.Container.Id;
             _container = obj.Container;
+        }
+
+
+        public Result ReverseVerticalContentAlignment()
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            var reverseEvent = new NodeContainerVerticalAlignmentReversed(this.Id);
+
+            RaiseEvent(reverseEvent);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerVerticalAlignmentReversed @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
         }
     }
 }
