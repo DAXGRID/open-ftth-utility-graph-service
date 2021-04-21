@@ -37,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
-        [Fact,Order(10)]
+        [Fact,Order(1)]
         public async void TestCut5x10ConduitAtCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -46,7 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
 
-            // Cut segments in structure 1 (the outer conduit and 2,3,4 inner conduit)
+            // Cut the outer conduit and 4 inner conduit
             var cutCmd = new CutSpanSegmentsAtRouteNode(
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToCut: new Guid[] { 

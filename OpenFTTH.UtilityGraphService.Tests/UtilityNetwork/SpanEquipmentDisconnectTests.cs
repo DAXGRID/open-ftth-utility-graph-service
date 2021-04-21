@@ -50,7 +50,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
 
-            // Disconnect inner conduit 2 in 5x10 with inner conduit 3 in 3x10
+            // Disconnect inner conduit 4 in 5x10 from inner conduit 3 in 3x10
             var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToDisconnect: new Guid[] {

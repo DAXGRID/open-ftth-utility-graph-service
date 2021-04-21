@@ -19,6 +19,7 @@ namespace OpenFTTH.TestData
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
 
+        public static Guid MultiConduit_5x10_CO_1_to_HH_1;
         public static Guid MultiConduit_5x10_HH_1_to_HH_10;
         public static Guid MultiConduit_10x10_HH_1_to_HH_10;
         public static Guid FlexConduit_40_Red_HH_2_to_FP_2;
@@ -56,6 +57,7 @@ namespace OpenFTTH.TestData
                     return this;
 
                 // Place some conduits in the route network we can play with
+                MultiConduit_5x10_CO_1_to_HH_1 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
                 MultiConduit_5x10_HH_1_to_HH_10 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S2, TestRouteNetwork.S4, TestRouteNetwork.S13 });
                 MultiConduit_10x10_HH_1_to_HH_10 = PlaceConduit(TestSpecifications.Multi_Ø50_10x10, new RouteNetworkElementIdList() { TestRouteNetwork.S2, TestRouteNetwork.S4, TestRouteNetwork.S13 });
                 FlexConduit_40_Red_HH_2_to_FP_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { TestRouteNetwork.S3 });
@@ -70,11 +72,14 @@ namespace OpenFTTH.TestData
                 MultiConduit_12x7_SDU_1_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_12x7, new RouteNetworkElementIdList() { TestRouteNetwork.S7 });
                 MultiConduit_12x7_SDU_2_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_12x7, new RouteNetworkElementIdList() { TestRouteNetwork.S8 });
 
-
                 // Place node containers
                 NodeContainer_HH_1 = PlaceNodeContainer(TestSpecifications.Well_Fiberpowertech_37_EK_378_400x800, TestSpecifications.Manu_Fiberpowertech, TestRouteNetwork.HH_1);
                 NodeContainer_CC_1 = PlaceNodeContainer(TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, TestSpecifications.Manu_Emtelle, TestRouteNetwork.CC_1);
                 NodeContainer_J_1 = PlaceNodeContainer(TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, TestSpecifications.Manu_Emtelle, TestRouteNetwork.J_1);
+
+                // Affix the two 5x10 in HH 1
+                AffixSpanEquipmentToContainer(MultiConduit_5x10_CO_1_to_HH_1, NodeContainer_HH_1, NodeContainerSideEnum.North);
+                AffixSpanEquipmentToContainer(MultiConduit_5x10_HH_1_to_HH_10, NodeContainer_HH_1, NodeContainerSideEnum.North);
 
                 // Affix 5x10 and 3x10 in CC 1
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_HH_1_to_HH_10, NodeContainer_CC_1, NodeContainerSideEnum.West);

@@ -31,6 +31,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             throw new ApplicationException($"Cannot find span equipment with id: {SpanEquipmentId}. State corrupted!");
         }
 
+        public IUtilityGraphSegmentRef CreateWithNewSegmentIndex(ushort newSegmentIndex)
+        {
+            return new UtilityGraphDisconnectedSegment(SpanEquipmentId, StructureIndex, newSegmentIndex);
+        }
+
         public UtilityGraphDisconnectedSegment(Guid spanEquipmentId, ushort structureIndex, ushort segmentIndex)
         {
             SpanEquipmentId = spanEquipmentId;

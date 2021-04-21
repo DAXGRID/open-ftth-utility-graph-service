@@ -5,8 +5,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
     public class UtilityGraphConnectedTerminal : GraphNode, IUtilityGraphElement
     {
-        public UtilityGraphConnectedTerminal(Guid id) : base(id)
+        public Guid NodeOfInterestId { get; }
+
+        public UtilityGraphConnectedTerminal(Guid id, Guid nodeOfInterestId) : base(id)
         {
+            NodeOfInterestId = nodeOfInterestId;
+        }
+
+        public override string ToString()
+        {
+            return $"Terminal at route node: {NodeOfInterestId}";
         }
     }
 }

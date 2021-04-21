@@ -2,6 +2,8 @@
 using Newtonsoft.Json;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.RouteNetwork.API.Model;
+using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -20,12 +22,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
         IQueryHandler<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>
     {
         private readonly IEventStore _eventStore;
-        private readonly UtilityNetworkProjection _utilityGraph;
+        private readonly IQueryDispatcher _queryDispatcher;
+        private readonly UtilityNetworkProjection _utilityNetwork;
 
-        public GetEquipmentDetailsQueryHandler(IEventStore eventStore)
+        public GetEquipmentDetailsQueryHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
-            _utilityGraph = _eventStore.Projections.Get<UtilityNetworkProjection>();
+            _queryDispatcher = queryDispatcher;
+            _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
         public Task<Result<GetEquipmentDetailsResult>> HandleAsync(GetEquipmentDetails query)
@@ -60,7 +64,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             // Fetch equipment by interest id
             foreach (var interestId in query.InterestIdsToQuery)
             {
-                if (!_utilityGraph.TryGetEquipment<IEquipment>(interestId, out IEquipment equipment))
+                if (!_utilityNetwork.TryGetEquipment<IEquipment>(interestId, out IEquipment equipment))
                 {
                     return Task.FromResult(
                         Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_INTEREST_ID, $"Cannot find equipment with interest id: {interestId}"))
@@ -95,17 +99,50 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
         private LookupCollection<RouteNetworkTrace> AddTraceRefsToSpanEquipments(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn)
         {
-            // TODO: Finish implementation
+            HashSet<Guid> interestList = new();
+
+            // Trace all segments of all span equipments
             foreach (var spanEquipment in spanEquipmentsToReturn)
             {
                 foreach (var spanStructure in spanEquipment.SpanStructures)
                 {
                     foreach (var spanSegment in spanStructure.SpanSegments)
                     {
-                        var spanTraceResult = _utilityGraph.Graph.TraceSegment(spanSegment.Id);
+                        var spanTraceResult = _utilityNetwork.Graph.TraceSegment(spanSegment.Id);
+
+                        foreach (var item in spanTraceResult.Upstream)
+                        {
+                            if (item is UtilityGraphConnectedSegment connectedSegment)
+                            {
+                                var interestId = connectedSegment.SpanEquipment(_utilityNetwork).WalkOfInterestId;
+                                if (!interestList.Contains(interestId))
+                                    interestList.Add(interestId);
+                            }
+                        }
+
+                        foreach (var item in spanTraceResult.Downstream)
+                        {
+                            if (item is UtilityGraphConnectedSegment connectedSegment)
+                            {
+                                var interestId = connectedSegment.SpanEquipment(_utilityNetwork).WalkOfInterestId;
+                                if (!interestList.Contains(interestId))
+                                    interestList.Add(interestId);
+                            }
+                        }
                     }
                 }
             }
+
+            InterestIdList interestIdList = new();
+            interestIdList.AddRange(interestList);
+
+            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+                new GetRouteNetworkDetails(interestIdList)
+                {
+                    RouteNetworkElementFilter = new RouteNetworkElementFilterOptions() { IncludeNamingInfo = true }
+                }
+            ).Result;
+
 
             return null;
         }
@@ -116,7 +153,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
             foreach (var equipmentId in equipmentIdsToFetch)
             {
-                if (!_utilityGraph.TryGetEquipment<SpanEquipment>(equipmentId, out var spanEquipment))
+                if (!_utilityNetwork.TryGetEquipment<SpanEquipment>(equipmentId, out var spanEquipment))
                     return Result.Fail(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Cannot find equipment with equipment id: {equipmentId}"));
 
                 result.Add(new SpanEquipmentWithRelatedInfo(spanEquipment));
