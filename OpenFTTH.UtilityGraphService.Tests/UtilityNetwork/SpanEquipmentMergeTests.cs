@@ -111,9 +111,131 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.SDU_1);
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.SDU_2);
-
-
         }
+
+        [Fact, Order(2)]
+        public async void TestAffixConduitToContainer_ShouldSucceed()
+        {
+            var testConduitId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+
+            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
+                spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
+                nodeContainerId: TestUtilityNetwork.NodeContainer_J_1,
+                nodeContainerIngoingSide: NodeContainerSideEnum.West
+            );
+
+            var affixResult = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToNodeContainer, Result>(affixConduitToContainerCommand);
+
+            affixResult.IsSuccess.Should().BeTrue();
+        }
+
+
+
+        [Fact, Order(3)]
+        public async void CutMergeConduitInJ_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
+
+            // Cut the outer conduit and 4 inner conduit
+            var cutCmd = new CutSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.J_1,
+                spanSegmentsToCut: new Guid[] {
+                    spanEquipment.SpanStructures[0].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[2].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[3].SpanSegments[0].Id,
+                    spanEquipment.SpanStructures[4].SpanSegments[0].Id
+                }
+            );
+
+            var cutResult = await _commandDispatcher.HandleAsync<CutSpanSegmentsAtRouteNode, Result>(cutCmd);
+
+            cutResult.IsSuccess.Should().BeTrue();
+        }
+
+
+        [Fact, Order(4)]
+        public async void ConnectInMergedConduitInJ_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
+
+            // Connect inner conduit 1
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.J_1,
+                spanSegmentsToConnect: new Guid[] {
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[1].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentAfterConnect);
+
+            // Assert
+            connectResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(5)]
+        public async void DisconnectInMergedConduitInJ_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
+
+            // Connect inner conduit 1
+            var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.J_1,
+                spanSegmentsToDisconnect: new Guid[] {
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[1].Id
+                }
+            );
+
+            var disconnectResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsAtRouteNode, Result>(disconnectCmd);
+
+            // Assert
+            disconnectResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(6)]
+        public async void ConnectAgainInMergedConduitInJ_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
+
+            // Connect inner conduit 1
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.J_1,
+                spanSegmentsToConnect: new Guid[] {
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[1].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentAfterConnect);
+
+            // Assert
+            connectResult.IsSuccess.Should().BeTrue();
+        }
+
 
 
         [Fact, Order(10)]
@@ -169,52 +291,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             connectResult.IsFailed.Should().BeTrue();
             ((MergeSpanEquipmentError)connectResult.Errors.First()).Code.Should().Be(MergeSpanEquipmentErrorCodes.CANNOT_MERGE_SPAN_EQUIPMENT_BECAUSE_ENDS_ARE_NOT_COLOCATED_IN_ROUTE_NODE);
-        }
-
-
-        [Fact, Order(20)]
-        public async void Affix12x7toContainerInJ_1_ShouldSucceed()
-        {
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
-
-            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
-
-            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
-                spanEquipmentOrSegmentId: spanEquipment.SpanStructures[0].SpanSegments[0].Id,
-                nodeContainerId: TestUtilityNetwork.NodeContainer_J_1,
-                nodeContainerIngoingSide: NodeContainerSideEnum.West
-            );
-
-            var affixResult = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToNodeContainer, Result>(affixConduitToContainerCommand);
-
-            // Assert
-            affixResult.IsSuccess.Should().BeTrue();
-        }
-
-        [Fact, Order(21)]
-        public async void CutOuterConduitAndOneInnerConduit_ShouldSucceed()
-        {
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
-
-            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
-
-            // Cut the outer conduit and 1 inner conduit
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
-                routeNodeId: TestRouteNetwork.J_1,
-                spanSegmentsToCut: new Guid[] {
-                    spanEquipment.SpanStructures[0].SpanSegments[0].Id,
-                    spanEquipment.SpanStructures[1].SpanSegments[0].Id,
-                }
-            );
-
-            var cutResult = await _commandDispatcher.HandleAsync<CutSpanSegmentsAtRouteNode, Result>(cutCmd);
-
-            // Assert
-            cutResult.IsSuccess.Should().BeTrue();
         }
     }
 }

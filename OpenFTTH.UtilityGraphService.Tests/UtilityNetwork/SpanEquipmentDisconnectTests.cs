@@ -131,7 +131,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Assert
             disconnectResult.IsFailed.Should().BeTrue();
-            ((DisconnectSpanSegmentsAtRouteNodeError)disconnectResult.Errors.First()).Code.Should().Be(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_SEGMENT_TO_ITSELF);
+            ((DisconnectSpanSegmentsAtRouteNodeError)disconnectResult.Errors.First()).Code.Should().Be(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_DISCONNECT_SPAN_SEGMENT_TO_ITSELF);
         }
 
         [Fact, Order(3)]
@@ -168,7 +168,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Assert
             disconnectResult.IsFailed.Should().BeTrue();
-            ((DisconnectSpanSegmentsAtRouteNodeError)disconnectResult.Errors.First()).Code.Should().Be(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_EQUIPMENT_TO_ITSELF);
+            ((DisconnectSpanSegmentsAtRouteNodeError)disconnectResult.Errors.First()).Code.Should().Be(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENTS_ARE_NOT_CONNECTED);
         }
 
 

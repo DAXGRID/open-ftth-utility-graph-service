@@ -61,13 +61,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Check that the two span segments specified is not the same
             if (firstSpanSegment.Id == secondSpanSegment.Id)
             {
-                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_SEGMENT_TO_ITSELF, $"Cannot connect the same span segment to itself")));
-            }
-
-            // Check that the two span equipments found is not the same
-            if (firstSpanEquipment.Id == secondSpanEquipment.Id)
-            {
-                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_CONNECT_SPAN_EQUIPMENT_TO_ITSELF, $"Cannot connect the same span equipment to itself")));
+                return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_DISCONNECT_SPAN_SEGMENT_TO_ITSELF, $"Cannot connect the same span segment to itself")));
             }
 
             // Check that first span segment is connected to route node
