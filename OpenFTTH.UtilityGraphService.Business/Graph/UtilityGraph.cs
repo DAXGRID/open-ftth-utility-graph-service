@@ -57,82 +57,86 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public void ApplySegmentCut(SpanEquipment spanEquipment, SpanSegmentCutInfo spanSegmentCutInfo)
         {
-            if (!_graphElementsById.TryGetValue(spanSegmentCutInfo.OldSpanSegmentId, out var oldSegmentGraphElement))
-                throw new ApplicationException($"Cannot find span segment graph element with id: {spanSegmentCutInfo.OldSpanSegmentId} processing segment cut.");
-
-            if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId1, out var segment1withIndexInfo))
-                throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
-
-            if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId2, out var segment2withIndexInfo))
-                throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
-
             var version = _objectManager.GetLatestCommitedVersion();
 
             var trans = _objectManager.CreateTransaction();
 
-            // We need to go through all new span segments in the structure, and check if we need update the graph element due to segment index shift
-            for (int newSegmentIndex = 0; newSegmentIndex < spanEquipment.SpanStructures[segment1withIndexInfo.StructureIndex].SpanSegments.Length; newSegmentIndex++)
+            try
             {
-                var newSegment = spanEquipment.SpanStructures[segment1withIndexInfo.StructureIndex].SpanSegments[newSegmentIndex];
+                if (!_graphElementsById.TryGetValue(spanSegmentCutInfo.OldSpanSegmentId, out var oldSegmentGraphElement))
+                    throw new ApplicationException($"Cannot find span segment graph element with id: {spanSegmentCutInfo.OldSpanSegmentId} processing segment cut.");
 
-                if (TryGetGraphElement<IUtilityGraphSegmentRef>(newSegment.Id, out var existingUtilityGraphSegmentRef))
+                if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId1, out var segment1withIndexInfo))
+                    throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
+
+                if (!spanEquipment.TryGetSpanSegment(spanSegmentCutInfo.NewSpanSegmentId2, out var segment2withIndexInfo))
+                    throw new ApplicationException($"Cannot find span segment with id: {spanSegmentCutInfo.OldSpanSegmentId} in span equipment: {spanEquipment.Id} ");
+
+                // We need to go through all new span segments in the structure, and check if we need update the graph element due to segment index shift
+                for (int newSegmentIndex = 0; newSegmentIndex < spanEquipment.SpanStructures[segment1withIndexInfo.StructureIndex].SpanSegments.Length; newSegmentIndex++)
                 {
-                    if (existingUtilityGraphSegmentRef.SegmentIndex != newSegmentIndex)
-                    {
-                        var newUtilityGraphElement = existingUtilityGraphSegmentRef.CreateWithNewSegmentIndex((ushort)newSegmentIndex);
-                        
-                        if (newUtilityGraphElement is UtilityGraphConnectedSegment)
-                            trans.Update((UtilityGraphConnectedSegment)newUtilityGraphElement);
+                    var newSegment = spanEquipment.SpanStructures[segment1withIndexInfo.StructureIndex].SpanSegments[newSegmentIndex];
 
-                        UpdateDict(newSegment.Id, newUtilityGraphElement);
+                    if (TryGetGraphElement<IUtilityGraphSegmentRef>(newSegment.Id, out var existingUtilityGraphSegmentRef))
+                    {
+                        if (existingUtilityGraphSegmentRef.SegmentIndex != newSegmentIndex)
+                        {
+                            var newUtilityGraphElement = existingUtilityGraphSegmentRef.CreateWithNewSegmentIndex((ushort)newSegmentIndex);
+
+                            if (newUtilityGraphElement is UtilityGraphConnectedSegment)
+                                trans.Update((UtilityGraphConnectedSegment)newUtilityGraphElement);
+
+                            UpdateDict(newSegment.Id, newUtilityGraphElement);
+                        }
                     }
                 }
-            }
 
-            // If existing segment is disconnected, it's not in the graph either
-            if (oldSegmentGraphElement is UtilityGraphDisconnectedSegment)
-            {
-                AddDisconnectedSegment(spanEquipment, segment1withIndexInfo.StructureIndex, segment1withIndexInfo.SegmentIndex);
-                AddDisconnectedSegment(spanEquipment, segment2withIndexInfo.StructureIndex, segment2withIndexInfo.SegmentIndex);
-                RemoveFromDict(spanSegmentCutInfo.OldSpanSegmentId);
-            }
-            else
-            {
-                var oldConnectedGraphElement = (UtilityGraphConnectedSegment)oldSegmentGraphElement;
-
-                // Create the two loneny terminals in the node between the segments (becase we are cut)
-                var terminalBetweenSegmentsNodeOfInterestId = spanEquipment.NodesOfInterestIds[segment1withIndexInfo.SpanSegment.ToNodeOfInterestIndex];
-
-                if (terminalBetweenSegmentsNodeOfInterestId == Guid.Parse("020c3eb8-13cc-4c0e-a331-c7610f996a52") && segment1withIndexInfo.StructureIndex == 1)
+                // If existing segment is disconnected, it's not in the graph either
+                if (oldSegmentGraphElement is UtilityGraphDisconnectedSegment)
                 {
-
+                    AddDisconnectedSegment(spanEquipment, segment1withIndexInfo.StructureIndex, segment1withIndexInfo.SegmentIndex);
+                    AddDisconnectedSegment(spanEquipment, segment2withIndexInfo.StructureIndex, segment2withIndexInfo.SegmentIndex);
+                    RemoveFromDict(spanSegmentCutInfo.OldSpanSegmentId);
                 }
+                else
+                {
+                    var oldConnectedGraphElement = (UtilityGraphConnectedSegment)oldSegmentGraphElement;
 
-                var terminal1BetweenSegments = new UtilityGraphConnectedTerminal(Guid.NewGuid(), terminalBetweenSegmentsNodeOfInterestId);
-                trans.Add(terminal1BetweenSegments);
+                    // Create the two loneny terminals in the node between the segments (becase we are cut)
+                    var terminalBetweenSegmentsNodeOfInterestId = spanEquipment.NodesOfInterestIds[segment1withIndexInfo.SpanSegment.ToNodeOfInterestIndex];
 
-                var terminal2BetweenSegments = new UtilityGraphConnectedTerminal(Guid.NewGuid(), terminalBetweenSegmentsNodeOfInterestId);
-                trans.Add(terminal2BetweenSegments);
+                    if (terminalBetweenSegmentsNodeOfInterestId == Guid.Parse("020c3eb8-13cc-4c0e-a331-c7610f996a52") && segment1withIndexInfo.StructureIndex == 1)
+                    {
 
-                // Create first/left segment
-                var newSegment1GraphElement = new UtilityGraphConnectedSegment(spanSegmentCutInfo.NewSpanSegmentId1, (UtilityGraphConnectedTerminal)oldConnectedGraphElement.InV(version), terminal1BetweenSegments, spanEquipment.Id, segment1withIndexInfo.StructureIndex, segment1withIndexInfo.SegmentIndex);
-                trans.Add(newSegment1GraphElement);
-                
-                AddToDict(newSegment1GraphElement.Id, newSegment1GraphElement);
+                    }
 
-                // Create second/right segment
-                var newSegment2GraphElement = new UtilityGraphConnectedSegment(spanSegmentCutInfo.NewSpanSegmentId2, terminal2BetweenSegments, (UtilityGraphConnectedTerminal)oldConnectedGraphElement.OutV(version), spanEquipment.Id, segment2withIndexInfo.StructureIndex, segment2withIndexInfo.SegmentIndex);
-                trans.Add(newSegment2GraphElement);
+                    var terminal1BetweenSegments = new UtilityGraphConnectedTerminal(Guid.NewGuid(), terminalBetweenSegmentsNodeOfInterestId);
+                    trans.Add(terminal1BetweenSegments);
 
-                AddToDict(newSegment2GraphElement.Id, newSegment2GraphElement);
+                    var terminal2BetweenSegments = new UtilityGraphConnectedTerminal(Guid.NewGuid(), terminalBetweenSegmentsNodeOfInterestId);
+                    trans.Add(terminal2BetweenSegments);
 
-                // Remove old segment
-                trans.Delete(oldConnectedGraphElement.Id);
-                RemoveFromDict(oldConnectedGraphElement.Id);
+                    // Create first/left segment
+                    var newSegment1GraphElement = new UtilityGraphConnectedSegment(spanSegmentCutInfo.NewSpanSegmentId1, (UtilityGraphConnectedTerminal)oldConnectedGraphElement.InV(version), terminal1BetweenSegments, spanEquipment.Id, segment1withIndexInfo.StructureIndex, segment1withIndexInfo.SegmentIndex);
+                    trans.Add(newSegment1GraphElement);
+
+                    AddToDict(newSegment1GraphElement.Id, newSegment1GraphElement);
+
+                    // Create second/right segment
+                    var newSegment2GraphElement = new UtilityGraphConnectedSegment(spanSegmentCutInfo.NewSpanSegmentId2, terminal2BetweenSegments, (UtilityGraphConnectedTerminal)oldConnectedGraphElement.OutV(version), spanEquipment.Id, segment2withIndexInfo.StructureIndex, segment2withIndexInfo.SegmentIndex);
+                    trans.Add(newSegment2GraphElement);
+
+                    AddToDict(newSegment2GraphElement.Id, newSegment2GraphElement);
+
+                    // Remove old segment
+                    trans.Delete(oldConnectedGraphElement.Id);
+                    RemoveFromDict(oldConnectedGraphElement.Id);
+                }
             }
-
-
-            trans.Commit();
+            finally
+            {
+                trans.Commit();
+            }
         }
 
         internal void ApplySegmentConnect(SpanEquipment spanEquipment, SpanSegmentToSimpleTerminalConnectInfo spanSegmentToConnect)
@@ -147,60 +151,61 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             var trans = _objectManager.CreateTransaction();
 
-            // Find or create terminal
-            var terminalToConnect = _objectManager.GetObject(spanSegmentToConnect.TerminalId, version) as UtilityGraphConnectedTerminal;
-
-            if (terminalToConnect == null)
+            try
             {
-                var terminalNodeOfInterestId = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal ? spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.ToNodeOfInterestIndex] : spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.FromNodeOfInterestIndex];
-                terminalToConnect = new UtilityGraphConnectedTerminal(spanSegmentToConnect.TerminalId, terminalNodeOfInterestId);
-                trans.Add(terminalToConnect);
-            }
+                // Find or create terminal
+                var terminalToConnect = _objectManager.GetObject(spanSegmentToConnect.TerminalId, version) as UtilityGraphConnectedTerminal;
 
-            // If segment has never been connected before
-            if (existingSegmentGraphElement is UtilityGraphDisconnectedSegment)
-            {
-                var dummyTerminalNodeOfInterestId = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal ? spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.FromNodeOfInterestIndex] : spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.ToNodeOfInterestIndex];
-                var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), dummyTerminalNodeOfInterestId);
-                var fromNodeToConnect = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment ? terminalToConnect : dummyTerminal;
-                var toNodeToConnect = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal ? terminalToConnect : dummyTerminal;
-
-                var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentToConnect.SegmentId, fromNodeToConnect, toNodeToConnect, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
-
-                // Add segment and terminals
-                trans.Add(dummyTerminal);
-                trans.Add(newSegmentGraphElement);
-
-                UpdateDict(spanSegmentToConnect.SegmentId, newSegmentGraphElement);
-            }
-            // We're dealing with update to a segment already connected
-            else
-            {
-                if (spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal)
+                if (terminalToConnect == null)
                 {
-                    var existingFromTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).InV(version);
+                    var terminalNodeOfInterestId = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal ? spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.ToNodeOfInterestIndex] : spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.FromNodeOfInterestIndex];
+                    terminalToConnect = new UtilityGraphConnectedTerminal(spanSegmentToConnect.TerminalId, terminalNodeOfInterestId);
+                    trans.Add(terminalToConnect);
+                }
 
-                    var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentToConnect.SegmentId, existingFromTerminal, terminalToConnect, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
-                    trans.Update(newSegmentGraphElement);
+                // If segment has never been connected before
+                if (existingSegmentGraphElement is UtilityGraphDisconnectedSegment)
+                {
+                    var dummyTerminalNodeOfInterestId = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal ? spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.FromNodeOfInterestIndex] : spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.ToNodeOfInterestIndex];
+                    var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), dummyTerminalNodeOfInterestId);
+                    var fromNodeToConnect = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromTerminalToSpanSegment ? terminalToConnect : dummyTerminal;
+                    var toNodeToConnect = spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal ? terminalToConnect : dummyTerminal;
+
+                    var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentToConnect.SegmentId, fromNodeToConnect, toNodeToConnect, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
+
+                    // Add segment and terminals
+                    trans.Add(dummyTerminal);
+                    trans.Add(newSegmentGraphElement);
 
                     UpdateDict(spanSegmentToConnect.SegmentId, newSegmentGraphElement);
                 }
+                // We're dealing with update to a segment already connected
                 else
                 {
-                    var existingToTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).OutV(version);
+                    if (spanSegmentToConnect.ConnectionDirection == SpanSegmentToTerminalConnectionDirection.FromSpanSegmentToTerminal)
+                    {
+                        var existingFromTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).InV(version);
 
-                    var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentToConnect.SegmentId, terminalToConnect, existingToTerminal, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
-                    trans.Update(newSegmentGraphElement);
+                        var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentToConnect.SegmentId, existingFromTerminal, terminalToConnect, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
+                        trans.Update(newSegmentGraphElement);
 
-                    UpdateDict(spanSegmentToConnect.SegmentId, newSegmentGraphElement);
+                        UpdateDict(spanSegmentToConnect.SegmentId, newSegmentGraphElement);
+                    }
+                    else
+                    {
+                        var existingToTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).OutV(version);
+
+                        var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentToConnect.SegmentId, terminalToConnect, existingToTerminal, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
+                        trans.Update(newSegmentGraphElement);
+
+                        UpdateDict(spanSegmentToConnect.SegmentId, newSegmentGraphElement);
+                    }
                 }
             }
-
-            trans.Commit();
-
-            // Find or create terminal
-            var terminalAfterCommit = _objectManager.GetObject(spanSegmentToConnect.TerminalId) as UtilityGraphConnectedTerminal;
-
+            finally
+            {
+                trans.Commit();
+            }
         }
 
         internal void ApplySegmentDisconnect(SpanEquipment spanEquipment, Guid spanSegmentId, Guid terminalId)
@@ -213,16 +218,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             var version = _objectManager.GetLatestCommitedVersion();
 
-            var trans = _objectManager.CreateTransaction();
-
             if (existingSegmentGraphElement.InV(version).Id == terminalId)
             {
+                var trans = _objectManager.CreateTransaction();
+
                 var dummyTerminalNodeOfInterestId = spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.FromNodeOfInterestIndex];
-
-                if (dummyTerminalNodeOfInterestId == Guid.Parse("020c3eb8-13cc-4c0e-a331-c7610f996a52") && spanSegmentWithIndexInfo.StructureIndex == 1)
-                {
-
-                }
 
                 var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), dummyTerminalNodeOfInterestId);
                 trans.Add(dummyTerminal);
@@ -230,18 +230,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 var existingToTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).OutV(version);
                 var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentId, dummyTerminal, existingToTerminal, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
                 trans.Update(newSegmentGraphElement);
+                trans.Commit();
 
                 UpdateDict(spanSegmentId, newSegmentGraphElement);
             }
             else if (existingSegmentGraphElement.OutV(version).Id == terminalId)
             {
+                var trans = _objectManager.CreateTransaction();
+
                 var dummyTerminalNodeOfInterestId = spanEquipment.NodesOfInterestIds[spanSegmentWithIndexInfo.SpanSegment.ToNodeOfInterestIndex];
-
-                if (dummyTerminalNodeOfInterestId == Guid.Parse("020c3eb8-13cc-4c0e-a331-c7610f996a52") && spanSegmentWithIndexInfo.StructureIndex == 1)
-                {
-
-                }
-
+ 
                 var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), dummyTerminalNodeOfInterestId);
                 trans.Add(dummyTerminal);
 
@@ -249,12 +247,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentId, existingFromTerminal, dummyTerminal, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
                 trans.Update(newSegmentGraphElement);
 
+                trans.Commit();
                 UpdateDict(spanSegmentId, newSegmentGraphElement);
             }
             else
-                throw new ApplicationException($"Cannot find any connection to termian with id: {terminalId} in span segment with id: {spanSegmentId} in span equipment with id: {spanEquipment.Id}");
-
-            trans.Commit();
+                throw new ApplicationException($"Cannot find any connection to terminal with id: {terminalId} in span segment with id: {spanSegmentId} in span equipment with id: {spanEquipment.Id}");
         }
 
         public SpanSegmentTraceResult TraceSegment(Guid id)
