@@ -110,22 +110,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
                new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipment })
-               {
-                   EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
-                   {
-                       IncludeRouteNetworkTrace = true
-                   }
-               }
             );
 
             var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
               new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipment })
-              {
-                  EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
-                  {
-                      IncludeRouteNetworkTrace = true
-                  }
-              }
             );
 
             // Assert
@@ -150,19 +138,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Second connection
             connection2fromSegment.ToTerminalId.Should().NotBeEmpty();
             connection2toSegment.FromTerminalId.Should().Be(connection2fromSegment.ToTerminalId);
-
-            // Check trace functionality
-            /*
-            TODO: Create connectivity projection logic
-            fromEquipmentAfterConnect.Traces.Should().NotBeNull();
-            fromEquipmentAfterConnect.Traces[fromEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].Id].Upstream.Length.Should().Be(1);
-            */
         }
-
-
-
-
-
 
         [Fact, Order(20)]
         public async void TestConnectAlreadyConnectedSegment_ShouldFail()
