@@ -22,51 +22,59 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
             _utilityNetwork = utilityNetwork;
         }
 
-        public TraceInfo GetTraceInfo(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToTrace)
+        public TraceInfo? GetTraceInfo(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToTrace)
         {
+            if (spanEquipmentsToTrace.Count == 0)
+                return null;
+
             var intermidiateTraceResult = GatherNetworkGraphTraceInformation(spanEquipmentsToTrace);
 
-            var routeNetworkInformation = GatherRouteNetworkInformation(intermidiateTraceResult.InterestList);
-
-            if (routeNetworkInformation.Interests == null)
-                throw new ApplicationException("Failed to query route network interest information. Interest information is null");
-
-            Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> traceIdRefBySpanEquipmentId = new();
-
-            // Find unique route network traces
-            List<RouteNetworkTrace> routeNetworkTraces = new();
-
-            foreach (var segmentWalksBySpanEquipmentId in intermidiateTraceResult.SegmentWalksBySpanEquipmentId)
+            if (intermidiateTraceResult.InterestList.Count > 0)
             {
-                foreach (var segmentWalk in segmentWalksBySpanEquipmentId.Value)
+                var routeNetworkInformation = GatherRouteNetworkInformation(intermidiateTraceResult.InterestList);
+
+                if (routeNetworkInformation.Interests == null)
+                    throw new ApplicationException("Failed to query route network interest information. Interest information is null");
+
+                Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> traceIdRefBySpanEquipmentId = new();
+
+                // Find unique route network traces
+                List<RouteNetworkTrace> routeNetworkTraces = new();
+
+                foreach (var segmentWalksBySpanEquipmentId in intermidiateTraceResult.SegmentWalksBySpanEquipmentId)
                 {
-                    List<Guid> segmentIds = new();
-
-                    foreach (var segmentHop in segmentWalk.Hops)
+                    foreach (var segmentWalk in segmentWalksBySpanEquipmentId.Value)
                     {
-                        var walkIds = routeNetworkInformation.Interests[segmentHop.WalkOfInterestId].RouteNetworkElementRefs;
+                        List<Guid> segmentIds = new();
 
-                        segmentIds.AddRange(GetRouteSegmentsBetweenNodes(walkIds, segmentHop.FromNodeId, segmentHop.ToNodeId));
+                        foreach (var segmentHop in segmentWalk.Hops)
+                        {
+                            var walkIds = routeNetworkInformation.Interests[segmentHop.WalkOfInterestId].RouteNetworkElementRefs;
+
+                            segmentIds.AddRange(GetRouteSegmentsBetweenNodes(walkIds, segmentHop.FromNodeId, segmentHop.ToNodeId));
+                        }
+
+                        Guid fromNodeId = segmentWalk.Hops.First().FromNodeId;
+                        string? fromNodeName = routeNetworkInformation.RouteNetworkElements[fromNodeId].NamingInfo?.Name;
+
+                        Guid toNodeId = segmentWalk.Hops.Last().ToNodeId;
+                        string? toNodeName = routeNetworkInformation.RouteNetworkElements[toNodeId].NamingInfo?.Name;
+
+                        Guid traceId = FindOrCreateRouteNetworkTrace(routeNetworkTraces, segmentIds, fromNodeId, toNodeId, fromNodeName, toNodeName);
+
+                        SpanSegmentRouteNetworkTraceRef traceRef = new SpanSegmentRouteNetworkTraceRef(segmentWalk.SpanEquipmentOrSegmentId, traceId);
+
+                        if (!traceIdRefBySpanEquipmentId.ContainsKey(segmentWalksBySpanEquipmentId.Key))
+                            traceIdRefBySpanEquipmentId[segmentWalksBySpanEquipmentId.Key] = new List<SpanSegmentRouteNetworkTraceRef>() { traceRef };
+                        else
+                            traceIdRefBySpanEquipmentId[segmentWalksBySpanEquipmentId.Key].Add(traceRef);
                     }
-
-                    Guid fromNodeId = segmentWalk.Hops.First().FromNodeId;
-                    string? fromNodeName = routeNetworkInformation.RouteNetworkElements[fromNodeId].NamingInfo?.Name;
-
-                    Guid toNodeId = segmentWalk.Hops.Last().ToNodeId;
-                    string? toNodeName = routeNetworkInformation.RouteNetworkElements[toNodeId].NamingInfo?.Name;
-
-                    Guid traceId = FindOrCreateRouteNetworkTrace(routeNetworkTraces, segmentIds, fromNodeId, toNodeId, fromNodeName, toNodeName);
-
-                    SpanSegmentRouteNetworkTraceRef traceRef = new SpanSegmentRouteNetworkTraceRef(segmentWalk.SpanEquipmentOrSegmentId, traceId);
-
-                    if (!traceIdRefBySpanEquipmentId.ContainsKey(segmentWalksBySpanEquipmentId.Key))
-                        traceIdRefBySpanEquipmentId[segmentWalksBySpanEquipmentId.Key] = new List<SpanSegmentRouteNetworkTraceRef>() { traceRef };
-                    else
-                        traceIdRefBySpanEquipmentId[segmentWalksBySpanEquipmentId.Key].Add(traceRef);
                 }
-            }
 
-            return new TraceInfo(routeNetworkTraces, traceIdRefBySpanEquipmentId);
+                return new TraceInfo(routeNetworkTraces, traceIdRefBySpanEquipmentId);
+            }
+            else
+                return null;
         }
 
         private Guid FindOrCreateRouteNetworkTrace(List<RouteNetworkTrace> routeNetworkTraces, List<Guid> segmentIds, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)

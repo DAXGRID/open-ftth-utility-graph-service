@@ -98,12 +98,17 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
             var traceInfo = traceBuilder.GetTraceInfo(spanEquipmentsToReturn);
 
-            foreach (var spanEquipment in spanEquipmentsToReturn)
+            if (traceInfo != null)
             {
-                spanEquipment.RouteNetworkTraceRefs = traceInfo.SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId[spanEquipment.Id].ToArray();
-            }
+                foreach (var spanEquipment in spanEquipmentsToReturn)
+                {
+                    spanEquipment.RouteNetworkTraceRefs = traceInfo.SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId[spanEquipment.Id].ToArray();
+                }
 
-            return new LookupCollection<RouteNetworkTrace>(traceInfo.RouteNetworkTraces);
+                return new LookupCollection<RouteNetworkTrace>(traceInfo.RouteNetworkTraces);
+            }
+            else
+                return new LookupCollection<RouteNetworkTrace>();
         }
 
         private Result<List<SpanEquipmentWithRelatedInfo>> GetSpanEquipmentsById(EquipmentIdList equipmentIdsToFetch)
