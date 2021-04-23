@@ -49,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
         public GetEquipmentDetails(InterestIdList interestIds)
         {
             if (interestIds == null || interestIds.Count == 0)
-                throw new ArgumentException("At least one interest id must be specified");
+                throw new ArgumentException($"At least one interest id must be specified: {interestIds?.Count}");
 
             this.EquipmentIdsToQuery = new EquipmentIdList();
 
