@@ -63,7 +63,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Check route network traces
             var routeNetworkTraces = traceQueryResult.Value.RouteNetworkTraces;
 
-            routeNetworkTraces.Count.Should().Be(5);
+            routeNetworkTraces.Count.Should().Be(7);
             routeNetworkTraces.Any(t => t.FromRouteNodeId == TestRouteNetwork.CO_1 && t.ToRouteNodeId == TestRouteNetwork.CC_1 && t.RouteSegmentIds.Length == 3).Should().BeTrue();
             routeNetworkTraces.Any(t => t.FromRouteNodeId == TestRouteNetwork.CO_1 && t.ToRouteNodeId == TestRouteNetwork.SP_1 && t.RouteSegmentIds.Length == 4).Should().BeTrue();
             routeNetworkTraces.Any(t => t.FromRouteNodeId == TestRouteNetwork.CC_1 && t.ToRouteNodeId == TestRouteNetwork.SP_1 && t.RouteSegmentIds.Length == 1).Should().BeTrue();
@@ -72,7 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Check sut 1 trace refs
             var spanEquipment1TraceRefs = traceQueryResult.Value.SpanEquipment[sutSpanEquipmentId1].RouteNetworkTraceRefs;
-            spanEquipment1TraceRefs.Length.Should().Be(8);
+            spanEquipment1TraceRefs.Length.Should().Be(15);
             spanEquipment1TraceRefs.Count(tr => tr.SpanEquipmentOrSegmentId == sutSpanEquipmentId1).Should().Be(1);
 
             // Check that all segments that is connected has a reference to a trace
@@ -89,6 +89,65 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             foreach (var spanStructure in sutSpanEquipment2.SpanStructures)
                 foreach (var spanSegment in spanStructure.SpanSegments.Where(s => s.FromTerminalId != Guid.Empty || s.ToTerminalId != Guid.Empty))
                     spanEquipment1TraceRefs.Count(tr => tr.SpanEquipmentOrSegmentId == spanSegment.Id).Should().Be(1);
+        }
+
+        [Fact, Order(2)]
+        public async void CutInnerConduit10In10x10inCC1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_10x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
+
+            // Cut inner conduit 10 in CC 1
+            var cutCmd = new CutSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.CC_1,
+                spanSegmentsToCut: new Guid[] {
+                    spanEquipmentBeforeCut.SpanStructures[0].SpanSegments[0].Id,
+                    spanEquipmentBeforeCut.SpanStructures[10].SpanSegments[0].Id
+                }
+            );
+
+            var cutResult = await _commandDispatcher.HandleAsync<CutSpanSegmentsAtRouteNode, Result>(cutCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentAfterCut);
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment })
+            );
+
+            equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                    new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment })
+                    {
+                        EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                        {
+                            IncludeRouteNetworkTrace = true
+                        }
+                    }
+                );
+
+            // Assert
+            cutResult.IsSuccess.Should().BeTrue();
+            traceQueryResult.IsSuccess.Should().BeTrue();
+
+            // Check route network traces
+            var routeNetworkTraces = traceQueryResult.Value.RouteNetworkTraces;
+
+            routeNetworkTraces.Count.Should().Be(3); // one coveringt the whole conduit and 2 covering the two pieces left from cut of inner conduit 10
+
+            var firstSpanTrace = routeNetworkTraces.First(rt => rt.FromRouteNodeId == TestRouteNetwork.HH_1 && rt.ToRouteNodeId == TestRouteNetwork.CC_1);
+            var secondSpanTrace = routeNetworkTraces.First(rt => rt.FromRouteNodeId == TestRouteNetwork.CC_1 && rt.ToRouteNodeId == TestRouteNetwork.HH_10);
+
+            var spanEquipmentTraceRefs = traceQueryResult.Value.SpanEquipment[sutSpanEquipment].RouteNetworkTraceRefs;
+
+            var segment1TraceRef = spanEquipmentTraceRefs.First(tr => tr.SpanEquipmentOrSegmentId == spanEquipmentAfterCut.SpanStructures[10].SpanSegments[0].Id).TraceId;
+            var segment2TraceRef = spanEquipmentTraceRefs.First(tr => tr.SpanEquipmentOrSegmentId == spanEquipmentAfterCut.SpanStructures[10].SpanSegments[1].Id).TraceId;
+
+            segment1TraceRef.Should().Be(firstSpanTrace.Id);
+            segment2TraceRef.Should().Be(secondSpanTrace.Id);
         }
     }
 }

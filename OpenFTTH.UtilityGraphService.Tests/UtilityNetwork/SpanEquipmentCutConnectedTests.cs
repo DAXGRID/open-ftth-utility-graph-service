@@ -113,7 +113,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.SP_1);
 
 
-            // Check that inner conduit 5 is connected correctly in graph
+            // Check that inner conduit 5 segment 1 is connected correctly in graph
             var innerConduit5Segment1Id = spanEquipmentAfterCut.SpanStructures[5].SpanSegments[0].Id;
 
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(innerConduit5Segment1Id, out var conduit5segment1utilityGraphElement);
@@ -126,6 +126,14 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CC_1);
 
             ((UtilityGraphConnectedSegment)traceResult.Downstream.First()).StructureIndex.Should().Be(5);
+
+            // Check that inner conduit 5 segment 2 is connected correctly in graph
+            var innerConduit5Segment2Id = spanEquipmentAfterCut.SpanStructures[5].SpanSegments[1].Id;
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(innerConduit5Segment2Id, out var conduit5segment2utilityGraphElement);
+
+            traceResult = utilityNetwork.Graph.TraceSegment(innerConduit5Segment2Id);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CC_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.HH_10);
 
         }
 
@@ -292,9 +300,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.SP_1);
 
         }
-
-
-
     }
 }
 

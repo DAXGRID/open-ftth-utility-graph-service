@@ -81,8 +81,9 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_CO_1_to_HH_1, NodeContainer_HH_1, NodeContainerSideEnum.North);
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_HH_1_to_HH_10, NodeContainer_HH_1, NodeContainerSideEnum.North);
 
-                // Affix 5x10 and 3x10 in CC 1
+                // Affix 5x10 10x10 and 3x10 in CC 1
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_HH_1_to_HH_10, NodeContainer_CC_1, NodeContainerSideEnum.West);
+                AffixSpanEquipmentToContainer(MultiConduit_10x10_HH_1_to_HH_10, NodeContainer_CC_1, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(MultiConduit_3x10_CC_1_to_SP_1, NodeContainer_CC_1, NodeContainerSideEnum.North);
 
                 // Affix 3x10 in J_1
