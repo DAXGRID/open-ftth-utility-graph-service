@@ -215,6 +215,86 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         }
 
+        [Fact, Order(5)]
+        public async void DisconnectInnerConduit1InHH2_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
+
+            // Connect inner conduit 1
+            var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.HH_2,
+                spanSegmentsToDisconnect: new Guid[] {
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[1].Id
+                }
+            );
+
+            var disconnectResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsAtRouteNode, Result>(disconnectCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentAfterConnect);
+
+            // Assert
+            disconnectResult.IsSuccess.Should().BeTrue();
+
+            // Check that inner conduit 1 is connected correctly in graph
+            var innerConduit1Segment1Id = spanEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].Id;
+
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(innerConduit1Segment1Id, out var conduit1segment1UtilityGraphElement);
+
+            conduit1segment1UtilityGraphElement.Should().NotBeNull();
+
+            var traceResult = utilityNetwork.Graph.TraceSegment(innerConduit1Segment1Id);
+
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.HH_2);
+
+        }
+
+        [Fact, Order(6)]
+        public async void ReconnectInnerConduit1AgainInHH2_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
+
+            // Connect inner conduit 1
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.HH_2,
+                spanSegmentsToConnect: new Guid[] {
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[1].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentAfterConnect);
+
+            // Assert
+            connectResult.IsSuccess.Should().BeTrue();
+
+            // Check that inner conduit 1 is connected correctly in graph
+            var innerConduit1Segment1Id = spanEquipmentAfterConnect.SpanStructures[1].SpanSegments[0].Id;
+
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(innerConduit1Segment1Id, out var conduit1segment1UtilityGraphElement);
+
+            conduit1segment1UtilityGraphElement.Should().NotBeNull();
+
+            var traceResult = utilityNetwork.Graph.TraceSegment(innerConduit1Segment1Id);
+
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.SP_1);
+
+        }
+
+
+
     }
 }
 

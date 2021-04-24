@@ -243,7 +243,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), dummyTerminalNodeOfInterestId);
                 trans.Add(dummyTerminal);
 
-                var existingFromTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).OutV(version);
+                var existingFromTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).InV(version);
                 var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentId, existingFromTerminal, dummyTerminal, spanEquipment.Id, spanSegmentWithIndexInfo.StructureIndex, spanSegmentWithIndexInfo.SegmentIndex);
                 trans.Update(newSegmentGraphElement);
 
