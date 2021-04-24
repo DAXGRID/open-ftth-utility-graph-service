@@ -56,16 +56,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                             new SpanSegment(
                                 id: spanSegmentCutInfo.NewSpanSegmentId1,
                                 fromNodeOfInterestIndex: fromNodeOfInterestIndexToUse,
-                                toNodeOfInterestIndex: spanSegmentsCutEvent.CutNodeOfInterestIndex)
-                            );
+                                toNodeOfInterestIndex: spanSegmentsCutEvent.CutNodeOfInterestIndex
+                            )
+                            {
+                                FromTerminalId = existingSegment.FromTerminalId
+                            }
+                        );
 
                         // Add the second segment
                         newSegments.Add(
                             new SpanSegment(
                                 id: spanSegmentCutInfo.NewSpanSegmentId2,
                                 fromNodeOfInterestIndex: spanSegmentsCutEvent.CutNodeOfInterestIndex,
-                                toNodeOfInterestIndex: toNodeOfInterestIndexToUse)
-                            );
+                                toNodeOfInterestIndex: toNodeOfInterestIndexToUse
+                            )
+                            {
+                                ToTerminalId = existingSegment.ToTerminalId
+                            }
+                        );
                     }
                     // If no cut info exists
                     else
