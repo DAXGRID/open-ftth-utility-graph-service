@@ -95,42 +95,71 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (sharedTerminalId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENTS_ARE_NOT_CONNECTED, $"The span segment with id: {firstSpanSegment.Id} and The span segment with id: {secondSpanSegment.Id} is not connected in route node: {command.RouteNodeId}. Please check command arguments.")));
 
+            if (firstSpanEquipment.Id != secondSpanEquipment.Id)
+            {
 
-            // Disconnect the first span equipment from the terminal
-            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.Id);
+                // Disconnect the first span equipment from the terminal
+                var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.Id);
 
-            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.DisconnectSegmentFromTerminal(
-                spanSegmentId: firstSpanSegment.Id,
-                terminalId: sharedTerminalId
-            );
+                var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.DisconnectSegmentFromTerminal(
+                    spanSegmentId: firstSpanSegment.Id,
+                    terminalId: sharedTerminalId
+                );
 
-            if (!firstSpanEquipmentConnectResult.IsSuccess)
-                return Task.FromResult(firstSpanEquipmentConnectResult);
+                if (!firstSpanEquipmentConnectResult.IsSuccess)
+                    return Task.FromResult(firstSpanEquipmentConnectResult);
 
-            // Disconnect the second span equipment from the terminal
-            var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.Id);
+                // Disconnect the second span equipment from the terminal
+                var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.Id);
 
-            var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.DisconnectSegmentFromTerminal(
-                spanSegmentId: secondSpanSegment.Id,
-                terminalId: sharedTerminalId
-            );
+                var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.DisconnectSegmentFromTerminal(
+                    spanSegmentId: secondSpanSegment.Id,
+                    terminalId: sharedTerminalId
+                );
 
-            if (!secondSpanEquipmentConnectResult.IsSuccess)
-                return Task.FromResult(secondSpanEquipmentConnectResult);
+                if (!secondSpanEquipmentConnectResult.IsSuccess)
+                    return Task.FromResult(secondSpanEquipmentConnectResult);
 
-            _eventStore.Aggregates.Store(firstSpanEquipmentAR);
-            _eventStore.Aggregates.Store(secondSpanEquipmentAR);
+                _eventStore.Aggregates.Store(firstSpanEquipmentAR);
+                _eventStore.Aggregates.Store(secondSpanEquipmentAR);
 
-            NotifyExternalServicesAboutChange(firstSpanEquipment.Id, secondSpanEquipment.Id, command.RouteNodeId);
+                NotifyExternalServicesAboutChange(command.RouteNodeId, new Guid[] { firstSpanEquipment.Id, secondSpanEquipment.Id });
+            }
+            else
+            {
+                // Disconnect the first span equipment from the terminal
+                var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.Id);
+
+                var firstConnectResult = spanEquipmentAR.DisconnectSegmentFromTerminal(
+                    spanSegmentId: firstSpanSegment.Id,
+                    terminalId: sharedTerminalId
+                );
+
+                if (!firstConnectResult.IsSuccess)
+                    return Task.FromResult(firstConnectResult);
+           
+                var secondConnectResult = spanEquipmentAR.DisconnectSegmentFromTerminal(
+                    spanSegmentId: secondSpanSegment.Id,
+                    terminalId: sharedTerminalId
+                );
+
+                if (!secondConnectResult.IsSuccess)
+                    return Task.FromResult(secondConnectResult);
+
+                _eventStore.Aggregates.Store(spanEquipmentAR);
+
+                NotifyExternalServicesAboutChange(command.RouteNodeId, new Guid[] { spanEquipmentAR.Id });
+
+            }
 
             return Task.FromResult(Result.Ok());
         }
 
-        private async void NotifyExternalServicesAboutChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId)
+        private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid[] spanEquipmentIds)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
-                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { firstSpanEquipmentId, secondSpanEquipmentId })
+                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, spanEquipmentIds)
             };
 
             var updatedEvent =

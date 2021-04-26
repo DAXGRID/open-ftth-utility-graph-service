@@ -284,18 +284,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 connect.ConnectInfo.TerminalId = junctionId;
             }
 
-            // Connect the first span equipment to terminals
-            var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipmentToConnect.SpanEquipment.Id);
+            // Connect span equipment to terminals
+            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipmentToConnect.SpanEquipment.Id);
 
-            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+            var spanEquipmentConnectResult = spanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
                 routeNodeId: routeNodeId,
                 connects: spanEquipmentToConnect.Connects.Select(c => c.ConnectInfo).ToArray()
             );
 
-            if (firstSpanEquipmentConnectResult.IsFailed)
-                return firstSpanEquipmentConnectResult;
+            if (spanEquipmentConnectResult.IsFailed)
+                return spanEquipmentConnectResult;
 
-            _eventStore.Aggregates.Store(firstSpanEquipmentAR);
+            _eventStore.Aggregates.Store(spanEquipmentAR);
 
             NotifyExternalServicesAboutConnectivityChange(spanEquipmentToConnect.SpanEquipment.Id, routeNodeId);
 
