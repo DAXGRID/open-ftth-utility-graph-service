@@ -12,7 +12,7 @@
     <PackageReference Include="OpenFTTH.Core" Version="1.0.1" />
     <PackageReference Include="OpenFTTH.CQRS" Version="1.0.3" />
     <PackageReference Include="OpenFTTH.Events" Version="2.5.0" />
-    <PackageReference Include="OpenFTTH.RouteNetwork.API" Version="1.2.1" />
+    <PackageReference Include="OpenFTTH.RouteNetwork.API" Version="1.2.2" />
   </ItemGroup>
 
 </Project>

@@ -985,6 +985,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             Guid[] result = new Guid[_spanEquipment.NodesOfInterestIds.Length];
 
+            for (int i = 0; i < _spanEquipment.NodesOfInterestIds.Length; i++)
+                result[i] = _spanEquipment.NodesOfInterestIds[i];
+
             result[0] = newWalk.FromNodeId;
             result[^1] = newWalk.ToNodeId;
 
