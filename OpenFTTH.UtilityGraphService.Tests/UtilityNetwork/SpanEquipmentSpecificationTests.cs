@@ -1,5 +1,5 @@
-﻿using CSharpFunctionalExtensions;
-using FluentAssertions;
+﻿using FluentAssertions;
+using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
@@ -107,7 +107,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
 
             // Assert
-            addSpanEquipmentSpecificationCommandResult.IsFailure.Should().BeTrue();
+            addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
 
         }
 
@@ -134,7 +134,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
 
             // Assert
-            addSpanEquipmentSpecificationCommandResult.IsFailure.Should().BeTrue();
+            addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
 
         }
 
@@ -162,7 +162,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
 
             // Assert
-            addSpanEquipmentSpecificationCommandResult.IsFailure.Should().BeTrue();
+            addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
 
         }
 
@@ -180,7 +180,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
 
             // Assert
-            addSpanEquipmentSpecificationCommandResult.IsFailure.Should().BeTrue();
+            addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
 
         }
 

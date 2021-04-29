@@ -1,4 +1,4 @@
-﻿using CSharpFunctionalExtensions;
+﻿using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
@@ -24,7 +24,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             var spanEquipmentSpecificationsProjection = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>();
 
             return Task.FromResult(
-                Result.Success<LookupCollection<SpanEquipmentSpecification>>(
+                Result.Ok<LookupCollection<SpanEquipmentSpecification>>(
                     spanEquipmentSpecificationsProjection.Specifications
                 )
             );

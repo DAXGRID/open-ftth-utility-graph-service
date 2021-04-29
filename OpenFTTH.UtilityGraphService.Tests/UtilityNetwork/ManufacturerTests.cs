@@ -1,5 +1,5 @@
-﻿using CSharpFunctionalExtensions;
-using FluentAssertions;
+﻿using FluentAssertions;
+using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
@@ -54,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var cmdResult = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
 
             // Assert
-            cmdResult.IsFailure.Should().BeTrue();
+            cmdResult.IsFailed.Should().BeTrue();
         }
 
         [Fact]
@@ -69,8 +69,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var cmdResult2 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu2));
 
             // Assert
-            cmdResult1.IsFailure.Should().BeFalse();
-            cmdResult2.IsFailure.Should().BeTrue();
+            cmdResult1.IsFailed.Should().BeFalse();
+            cmdResult2.IsFailed.Should().BeTrue();
         }
 
         [Fact]
@@ -85,8 +85,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var cmdResult2 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu2));
 
             // Assert
-            cmdResult1.IsFailure.Should().BeFalse();
-            cmdResult2.IsFailure.Should().BeTrue();
+            cmdResult1.IsFailed.Should().BeFalse();
+            cmdResult2.IsFailed.Should().BeTrue();
         }
 
     }

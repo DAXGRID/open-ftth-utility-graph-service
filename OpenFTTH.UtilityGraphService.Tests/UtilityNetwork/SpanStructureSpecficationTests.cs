@@ -1,5 +1,5 @@
-﻿using CSharpFunctionalExtensions;
-using FluentAssertions;
+﻿using FluentAssertions;
+using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;

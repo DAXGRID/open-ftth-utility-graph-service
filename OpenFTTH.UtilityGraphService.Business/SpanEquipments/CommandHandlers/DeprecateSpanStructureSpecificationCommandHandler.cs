@@ -1,4 +1,4 @@
-﻿using CSharpFunctionalExtensions;
+﻿using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -23,7 +23,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             _eventStore.Aggregates.Store(aggreate);
 
-            return Task.FromResult(Result.Success());
+            return Task.FromResult(Result.Ok());
         }
     }
 }

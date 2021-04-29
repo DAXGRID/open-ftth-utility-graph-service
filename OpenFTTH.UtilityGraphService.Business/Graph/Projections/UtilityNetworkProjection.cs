@@ -196,6 +196,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
 
+            if (spanEquipment.Id == Guid.Parse("49aef63a-1295-4094-a436-6d45f83a6210"))
+            {
+
+            }
+
             // Re-index segments cut
             foreach (var spanSegmentCut in @event.Cuts)
             {
