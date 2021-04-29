@@ -3,7 +3,6 @@ using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
@@ -25,7 +24,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _manufacturer.Add(@event.Manufacturer);
         }
 
-        public void AddManufacturer(Manufacturer manufacturer)
+        public void AddManufacturer(CommandContext cmdContext, Manufacturer manufacturer)
         {
             if (String.IsNullOrEmpty(manufacturer.Name))
                 throw new ArgumentException($"Manufacturer name cannot be null or empty");
@@ -36,7 +35,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (_manufacturer.Any(m => m.Name == manufacturer.Name))
                 throw new ArgumentException($"A manufacturer with name: {manufacturer.Name} already exists");
 
-            RaiseEvent(new ManufacturerAdded(manufacturer));
+            RaiseEvent(
+                new ManufacturerAdded(manufacturer)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
         }
     }
 }

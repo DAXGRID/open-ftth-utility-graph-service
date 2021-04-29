@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenFTTH.Events;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
-    public record SpanSegmentsConnectedToSimpleTerminals
+    public record SpanSegmentsConnectedToSimpleTerminals : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
         public SpanSegmentToSimpleTerminalConnectInfo[] Connects { get; }

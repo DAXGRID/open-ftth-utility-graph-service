@@ -44,6 +44,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #region Place Span Equipment
         public Result PlaceSpanEquipmentInRouteNetwork(
+            CommandContext cmdContext,
             LookupCollection<SpanEquipment> spanEquipments,
             LookupCollection<SpanEquipmentSpecification> spanEquipmentSpecifications,
             Guid spanEquipmentId, 
@@ -77,7 +78,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 markingInfo: markingInfo
              );
 
-            RaiseEvent(new SpanEquipmentPlacedInRouteNetwork(spanEquipment));
+            RaiseEvent(
+                new SpanEquipmentPlacedInRouteNetwork(spanEquipment)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
 
             return Result.Ok();
         }
@@ -131,6 +139,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #region Affix To Node Container
         public Result AffixToNodeContainer(
+            CommandContext cmdContext,
             LookupCollection<NodeContainer> nodeContainers,
             RouteNetworkInterest spanEquipmentInterest,
             Guid nodeContainerRouteNodeId,
@@ -163,7 +172,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 nodeContainerIngoingSide: nodeContainerIngoingSide
             );
 
-            RaiseEvent(new SpanEquipmentAffixedToContainer(this.Id, affix));
+            RaiseEvent(
+                new SpanEquipmentAffixedToContainer(this.Id, affix)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
 
             return Result.Ok();
         }
@@ -195,7 +211,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Detach From Node Container
-        public Result DetachFromNodeContainer(NodeContainer nodeContainer)
+        public Result DetachFromNodeContainer(CommandContext cmdContext, NodeContainer nodeContainer)
         {
             if (!IsAffixedToNodeContainer(nodeContainer.Id))
             {
@@ -210,7 +226,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (canBeDetachedResult.IsFailed)
                 return canBeDetachedResult;
 
-            RaiseEvent(new SpanEquipmentDetachedFromContainer(this.Id, nodeContainer.Id));
+            RaiseEvent(
+                new SpanEquipmentDetachedFromContainer(this.Id, nodeContainer.Id)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
 
             return Result.Ok();
         }
@@ -285,6 +308,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #region Cut Span Segments
         public Result CutSpanSegments(
+            CommandContext cmdContext,
             RouteNetworkInterest spanEquipmentWalkOfInterest, 
             Guid routeNodeId, 
             Guid[] spanSegmentsToCut)
@@ -343,7 +367,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 cutNodeOfInterestId: routeNodeId,
                 cutNodeOfInterestIndex: GetCutNodeOfInterestIndex(routeNodeId, spanEquipmentWalkOfInterest),
                 cuts: CreateCuts(spanSegmentsToCut)
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -506,7 +535,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Connect Span Segments To Simple Terminals
-        public Result ConnectSpanSegmentsToSimpleTerminals(Guid routeNodeId,SpanSegmentToSimpleTerminalConnectInfo[] connects)
+        public Result ConnectSpanSegmentsToSimpleTerminals(CommandContext cmdContext, Guid routeNodeId,SpanSegmentToSimpleTerminalConnectInfo[] connects)
         {
             if (routeNodeId == Guid.Empty)
                 return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_ROUTE_NODE_ID_CANNOT_BE_EMPTY, "Route node id cannot be empty."));
@@ -529,7 +558,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new SpanSegmentsConnectedToSimpleTerminals(
                 spanEquipmentId: this.Id,
                 connects: connects
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -622,7 +656,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Disconnect Span Segment From Terminal
-        public Result DisconnectSegmentFromTerminal(Guid spanSegmentId, Guid terminalId)
+        public Result DisconnectSegmentFromTerminal(CommandContext cmdContext, Guid spanSegmentId, Guid terminalId)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -641,7 +675,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                spanEquipmentId: this.Id,
                spanSegmentId: spanSegmentId,
                terminalId: terminalId
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -667,7 +706,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Add Additional Structures
-        public Result AddAdditionalStructures(SpanEquipmentSpecification specification, LookupCollection<SpanStructureSpecification> structureSpecifications, Guid[] structureSpecificationIdsToAdd)
+        public Result AddAdditionalStructures(CommandContext cmdContext, SpanEquipmentSpecification specification, LookupCollection<SpanStructureSpecification> structureSpecifications, Guid[] structureSpecificationIdsToAdd)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -727,7 +766,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new AdditionalStructuresAddedToSpanEquipment(
                spanEquipmentId: this.Id,
                spanStructuresToAdd: spanStructuresToInclude.ToArray()
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -746,7 +790,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #region Remove Span Structure
 
-        public Result RemoveSpanStructure(SpanEquipmentSpecification specification, ushort structureIndex)
+        public Result RemoveSpanStructure(CommandContext cmdContext, SpanEquipmentSpecification specification, ushort structureIndex)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -779,7 +823,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new SpanStructureRemoved(
                spanEquipmentId: this.Id,
                spanStructureId: spanStructureToRemove.Id
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -813,7 +862,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Remove
-        public Result Remove()
+        public Result Remove(CommandContext cmdContext)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -828,7 +877,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             var @event = new SpanEquipmentRemoved(
                spanEquipmentId: this.Id
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -863,7 +917,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Move
-        public Result Move(ValidatedRouteNetworkWalk newWalk, ValidatedRouteNetworkWalk existingWalk)
+        public Result Move(CommandContext cmdContext, ValidatedRouteNetworkWalk newWalk, ValidatedRouteNetworkWalk existingWalk)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -952,7 +1006,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new SpanEquipmentMoved(
               spanEquipmentId: this.Id,
               nodesOfInterestIds: CreateNewNodesOfInterestIdList(newWalk)
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -1030,7 +1089,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Merge
-        public Result Merge(Guid routeNodeId, SpanEquipment spanEquipmentToMergeWith)
+        public Result Merge(CommandContext cmdContext, Guid routeNodeId, SpanEquipment spanEquipmentToMergeWith)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -1108,7 +1167,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new SpanEquipmentMerged(
               spanEquipmentId: this.Id,
               nodesOfInterestIds: updatedNodeOfInterestIds
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -1126,7 +1190,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Change Marking Info
-        public Result ChangeMarkingInfo(MarkingInfo? markingInfo)
+        public Result ChangeMarkingInfo(CommandContext cmdContext, MarkingInfo? markingInfo)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -1142,7 +1206,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new SpanEquipmentMarkingInfoChanged(
               spanEquipmentId: this.Id,
               markingInfo: markingInfo
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -1160,7 +1229,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Change Manufacturer
-        public Result ChangeManufacturer(Guid manufacturerId)
+        public Result ChangeManufacturer(CommandContext cmdContext, Guid manufacturerId)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -1176,7 +1245,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var @event = new SpanEquipmentManufacturerChanged(
               spanEquipmentId: this.Id,
               manufacturerId: manufacturerId
-            );
+            )
+            {
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(@event);
 
@@ -1194,7 +1268,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Change Specification
-        public Result ChangeSpecification(SpanEquipmentSpecification currentSpecification, SpanEquipmentSpecification newSpecification)
+        public Result ChangeSpecification(CommandContext cmdContext, SpanEquipmentSpecification currentSpecification, SpanEquipmentSpecification newSpecification)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -1228,7 +1302,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                   spanEquipmentId: this.Id,
                   newSpecificationId: newSpecification.Id,
                   structureModificationInstructions: new StructureModificationInstruction[] { updateOuterSpanStructureInstruction }
-                );
+                )
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                };
 
                 RaiseEvent(@event);
 
@@ -1316,7 +1395,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                   spanEquipmentId: this.Id,
                   newSpecificationId: newSpecification.Id,
                   structureModificationInstructions: structureModificationInstructions.ToArray()
-                );
+                )
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                };
 
                 RaiseEvent(@event);
 

@@ -1,9 +1,10 @@
-﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+﻿using OpenFTTH.Events;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
-    public record SpanEquipmentSpecificationChanged
+    public record SpanEquipmentSpecificationChanged : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
 

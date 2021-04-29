@@ -56,12 +56,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (interestQueryResult.IsFailed)
                 throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment while processing the RemoveSpanStructureFromSpanEquipment command: " + JsonConvert.SerializeObject(command));
 
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
 
             // If outer conduit, that remove entire span equipment
             if (spanSegmentGraphElement.StructureIndex == 0)
             {
                 var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
-                var removeSpanEquipment = spanEquipmentAR.Remove();
+                var removeSpanEquipment = spanEquipmentAR.Remove(commandContext);
 
                 if (removeSpanEquipment.IsSuccess)
                 {
@@ -83,7 +84,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
-                var removeSpanStructure = spanEquipmentAR.RemoveSpanStructure(specification, spanSegmentGraphElement.StructureIndex);
+                var removeSpanStructure = spanEquipmentAR.RemoveSpanStructure(commandContext, specification, spanSegmentGraphElement.StructureIndex);
 
                 if (removeSpanStructure.IsSuccess)
                 {

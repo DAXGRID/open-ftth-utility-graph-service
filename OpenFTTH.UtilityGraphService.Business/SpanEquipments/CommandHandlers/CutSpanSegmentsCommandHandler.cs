@@ -60,7 +60,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+
             var cuteSpanEquipmentsResult = spanEquipmentAR.CutSpanSegments(
+                cmdContext: commandContext,
                 spanEquipmentWalkOfInterest: interestQueryResult.Value.Interests.First(),
                 routeNodeId: command.RouteNodeId, 
                 spanSegmentsToCut: command.SpanSegmentsToCut

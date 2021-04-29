@@ -95,6 +95,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (sharedTerminalId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENTS_ARE_NOT_CONNECTED, $"The span segment with id: {firstSpanSegment.Id} and The span segment with id: {secondSpanSegment.Id} is not connected in route node: {command.RouteNodeId}. Please check command arguments.")));
 
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+
             if (firstSpanEquipment.Id != secondSpanEquipment.Id)
             {
 
@@ -102,6 +104,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.Id);
 
                 var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.DisconnectSegmentFromTerminal(
+                    cmdContext: commandContext,
                     spanSegmentId: firstSpanSegment.Id,
                     terminalId: sharedTerminalId
                 );
@@ -113,6 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.Id);
 
                 var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.DisconnectSegmentFromTerminal(
+                    cmdContext: commandContext,
                     spanSegmentId: secondSpanSegment.Id,
                     terminalId: sharedTerminalId
                 );
@@ -131,6 +135,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.Id);
 
                 var firstConnectResult = spanEquipmentAR.DisconnectSegmentFromTerminal(
+                    cmdContext: commandContext,
                     spanSegmentId: firstSpanSegment.Id,
                     terminalId: sharedTerminalId
                 );
@@ -139,6 +144,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     return Task.FromResult(firstConnectResult);
            
                 var secondConnectResult = spanEquipmentAR.DisconnectSegmentFromTerminal(
+                    cmdContext: commandContext,
                     spanSegmentId: secondSpanSegment.Id,
                     terminalId: sharedTerminalId
                 );

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenFTTH.Events;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
-    public record SpanEquipmentMerged
+    public record SpanEquipmentMerged : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
         public Guid[] NodesOfInterestIds { get; }

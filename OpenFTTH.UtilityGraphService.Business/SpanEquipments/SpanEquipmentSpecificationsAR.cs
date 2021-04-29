@@ -30,7 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _spanEquipmentSpecifications.Add(@event.Specification);
         }
 
-        public void AddSpecification(SpanEquipmentSpecification spanEquipmentSpecification, LookupCollection<SpanStructureSpecification> spanStructureSpecifications, LookupCollection<Manufacturer> manufacturer)
+        public void AddSpecification(CommandContext cmdContext, SpanEquipmentSpecification spanEquipmentSpecification, LookupCollection<SpanStructureSpecification> spanStructureSpecifications, LookupCollection<Manufacturer> manufacturer)
         {
             if (_spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecification.Id))
                 throw new ArgumentException($"A span equipment specification with id: {spanEquipmentSpecification.Id} already exists");
@@ -39,7 +39,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             ValidateManufacturerReferences(spanEquipmentSpecification, manufacturer);
             ValidateSpanStructureLevelAndPosition(spanEquipmentSpecification, spanStructureSpecifications);
 
-            RaiseEvent(new SpanEquipmentSpecificationAdded(spanEquipmentSpecification));
+            RaiseEvent(
+                new SpanEquipmentSpecificationAdded(spanEquipmentSpecification)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
         }
 
         private static void ValidateSpanStructureSpecificationReferences(SpanEquipmentSpecification spanEquipmentSpecification, LookupCollection<SpanStructureSpecification> spanStructureSpecifications)
@@ -103,12 +110,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             }
         }
 
-        public void DeprecatedSpecification(Guid specificationId)
+        public void DeprecatedSpecification(CommandContext cmdContext, Guid specificationId)
         {
             if (!_spanEquipmentSpecifications.ContainsKey(specificationId))
                 throw new ArgumentException($"Cannot find span equipment specification with id: {specificationId}");
 
-            RaiseEvent(new SpanEquipmentSpecificationDeprecated(specificationId));
+            RaiseEvent(
+                new SpanEquipmentSpecificationDeprecated(specificationId)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
         }
 
     }

@@ -1,9 +1,10 @@
-﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+﻿using OpenFTTH.Events;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
 {
-    public record SpanEquipmentAffixedToContainer
+    public record SpanEquipmentAffixedToContainer : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
         public SpanEquipmentNodeContainerAffix Affix { get; }

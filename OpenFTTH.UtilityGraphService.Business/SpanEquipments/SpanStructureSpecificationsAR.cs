@@ -32,20 +32,34 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _spanStructureSpecifications.Add(@event.Specification);
         }
 
-        public void AddSpecification(SpanStructureSpecification spanStructureSpecification)
+        public void AddSpecification(CommandContext cmdContext, SpanStructureSpecification spanStructureSpecification)
         {
             if (_spanStructureSpecifications.ContainsKey(spanStructureSpecification.Id))
                 throw new ArgumentException($"A span structure specification with id: {spanStructureSpecification.Id} already exists.");
 
-            RaiseEvent(new SpanStructureSpecificationAdded(spanStructureSpecification));
+            RaiseEvent(
+                new SpanStructureSpecificationAdded(spanStructureSpecification)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
         }
 
-        public void DeprecatedSpecification(Guid specificationId)
+        public void DeprecatedSpecification(CommandContext cmdContext, Guid specificationId)
         {
             if (!_spanStructureSpecifications.ContainsKey(specificationId))
                 throw new ArgumentException($"Cannot find span structure specification with id: {specificationId}");
 
-            RaiseEvent(new SpanStructureSpecificationDeprecated(specificationId));
+            RaiseEvent(
+                new SpanStructureSpecificationDeprecated(specificationId)
+                {
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
         }
     }
 }

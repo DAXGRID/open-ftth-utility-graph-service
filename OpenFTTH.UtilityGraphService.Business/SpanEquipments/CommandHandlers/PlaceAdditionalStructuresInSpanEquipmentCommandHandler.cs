@@ -59,7 +59,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+
             var spanEquipmentAddStructuresResult = spanEquipmentAR.AddAdditionalStructures(
+                cmdContext: commandContext,
                 specification: specification,
                 structureSpecifications: spanStructureSpecifications,
                 structureSpecificationIdsToAdd: command.StructureSpecificationIds

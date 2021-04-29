@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenFTTH.Events;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
-    public record SpanStructureSpecificationDeprecated
+    public record SpanStructureSpecificationDeprecated : EventStoreBaseEvent
     {
         public Guid SpanStructureSpecificationId { get; }
 

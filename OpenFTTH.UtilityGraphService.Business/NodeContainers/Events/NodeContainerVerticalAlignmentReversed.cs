@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenFTTH.Events;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
-    public record NodeContainerVerticalAlignmentReversed
+    public record NodeContainerVerticalAlignmentReversed : EventStoreBaseEvent
     {
         public Guid NodeContainerId { get; }
 

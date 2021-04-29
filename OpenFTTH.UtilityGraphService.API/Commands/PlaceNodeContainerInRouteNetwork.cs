@@ -5,7 +5,7 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.API.Commands
 {
-    public record PlaceNodeContainerInRouteNetwork : ICommand<Result>
+    public record PlaceNodeContainerInRouteNetwork : BaseCommand, ICommand<Result>
     {
         public Guid NodeContainerId { get; }
         public Guid NodeContainerSpecificationId { get; }
@@ -14,6 +14,9 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
 
         public PlaceNodeContainerInRouteNetwork(Guid nodeContainerId, Guid nodeContainerSpecificationId, RouteNetworkInterest nodeOfInterest)
         {
+            this.CmdId = Guid.NewGuid();
+            this.Timestamp = DateTime.UtcNow;
+
             NodeContainerId = nodeContainerId;
             NodeContainerSpecificationId = nodeContainerSpecificationId;
             NodeOfInterest = nodeOfInterest;

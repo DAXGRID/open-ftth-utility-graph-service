@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenFTTH.Events;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
 {
-    public record SpanSegmentsCut
+    public record SpanSegmentsCut : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
         public Guid CutNodeOfInterestId { get; }

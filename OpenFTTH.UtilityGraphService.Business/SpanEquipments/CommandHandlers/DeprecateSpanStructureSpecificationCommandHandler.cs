@@ -19,7 +19,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             var aggreate = _eventStore.Aggregates.Load<SpanStructureSpecificationsAR>(SpanStructureSpecificationsAR.UUID);
 
-            aggreate.DeprecatedSpecification(command.SpanStructureSpecificationId);
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+
+            aggreate.DeprecatedSpecification(commandContext, command.SpanStructureSpecificationId);
 
             _eventStore.Aggregates.Store(aggreate);
 

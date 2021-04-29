@@ -49,12 +49,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Get interest information for span equipment
             var walk = GetInterestInformation(spanEquipment);
 
-            bool somethingChanged = false; 
+            bool somethingChanged = false;
+
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
 
             // Check if marking info has been updated
             if (command.MarkingInfo != null && !command.MarkingInfo.Equals(spanEquipment.MarkingInfo))
             {
                 var updateMarkingInfoResult = spanEquipmentAR.ChangeMarkingInfo(
+                    cmdContext: commandContext,
                     command.MarkingInfo
                 );
 
@@ -68,6 +71,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (command.ManufacturerId != null && !command.ManufacturerId.Equals(spanEquipment.ManufacturerId))
             {
                 var updateManufacturerInfoResult = spanEquipmentAR.ChangeManufacturer(
+                    cmdContext: commandContext,
                     command.ManufacturerId.Value
                 );
 
@@ -86,6 +90,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 }
 
                 var updateSpecificationResult = spanEquipmentAR.ChangeSpecification(
+                    cmdContext: commandContext,
                     spanEquipmentSpecifications[spanEquipment.SpecificationId],
                     spanEquipmentSpecifications[command.SpecificationId.Value]
                 );

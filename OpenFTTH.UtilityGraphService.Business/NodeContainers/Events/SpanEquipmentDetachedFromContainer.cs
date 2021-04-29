@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenFTTH.Events;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
 {
-    public record SpanEquipmentDetachedFromContainer
+    public record SpanEquipmentDetachedFromContainer : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
         public Guid NodeContainerId { get; }

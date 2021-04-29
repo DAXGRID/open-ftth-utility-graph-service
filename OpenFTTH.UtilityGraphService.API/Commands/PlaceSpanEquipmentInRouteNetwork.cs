@@ -7,7 +7,7 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.API.Commands
 {
-    public record PlaceSpanEquipmentInRouteNetwork : ICommand<Result>
+    public record PlaceSpanEquipmentInRouteNetwork : BaseCommand, ICommand<Result>
     {
         public Guid SpanEquipmentId { get; }
         public Guid SpanEquipmentSpecificationId { get; }
@@ -18,6 +18,9 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
 
         public PlaceSpanEquipmentInRouteNetwork(Guid spanEquipmentId, Guid spanEquipmentSpecificationId, RouteNetworkInterest interest)
         {
+            this.CmdId = Guid.NewGuid();
+            this.Timestamp = DateTime.UtcNow;
+
             this.SpanEquipmentId = spanEquipmentId;
             this.SpanEquipmentSpecificationId = spanEquipmentSpecificationId;
             this.Interest = interest;

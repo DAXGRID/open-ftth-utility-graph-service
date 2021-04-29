@@ -49,13 +49,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (spanEquipmentsToConnectBuilderResult.IsFailed)
                 return Task.FromResult(Result.Fail(spanEquipmentsToConnectBuilderResult.Errors.First()));
 
+            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+
             var spanEquipmentsToConnect = spanEquipmentsToConnectBuilderResult.Value;
 
             if (spanEquipmentsToConnect.Count == 1)
             {
                 var spanEquipmentToConnect = spanEquipmentsToConnect.Values.First();
 
-                var connectResult = ConnectSameEquipment(command.RouteNodeId, spanEquipmentToConnect);
+                var connectResult = ConnectSameEquipment(commandContext, command.RouteNodeId, spanEquipmentToConnect);
 
                 return Task.FromResult(connectResult);
             }
@@ -84,14 +86,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 // Check if a merge should be done instead of connecting the individually spans using junctions/terminals
                 if (ShouldBeMerged(firstSpanEquipment, secondSpanEquipment))
                 {
-                    var mergeResult = MergeSpanEquipment(command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
+                    var mergeResult = MergeSpanEquipment(commandContext, command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
 
                     return Task.FromResult(mergeResult);
                 }
                 else
                 {
                     // Connect the individual spans using junctions/terminals
-                    var connectResult = ConnectTwoSpanEquipment(command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
+                    var connectResult = ConnectTwoSpanEquipment(commandContext, command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
 
                     return Task.FromResult(connectResult);
                 }
@@ -107,12 +109,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
         }
 
-        private Result MergeSpanEquipment(Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        private Result MergeSpanEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
         {
             // Merge the first span equipment with the second one
             var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.SpanEquipment.Id);
 
             var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.Merge(
+                cmdContext: cmdContext,
                 routeNodeId: routeNodeId,
                 secondSpanEquipment.SpanEquipment
             );
@@ -134,7 +137,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             // Remove the second span equipment
             var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
-            var removeSpanEquipment = secondSpanEquipmentAR.Remove();
+            var removeSpanEquipment = secondSpanEquipmentAR.Remove(cmdContext);
 
             if (removeSpanEquipment.IsSuccess)
             {
@@ -192,7 +195,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return result;
         }
 
-        private Result ConnectTwoSpanEquipment(Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        private Result ConnectTwoSpanEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
         {
             // Create junction/terminal ids used to connect span segments
             for (int i = 0; i < firstSpanEquipment.Connects.Count; i++)
@@ -210,6 +213,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.SpanEquipment.Id);
 
             var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+                cmdContext: cmdContext,
                 routeNodeId: routeNodeId,
                 connects: firstSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
             );
@@ -221,6 +225,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
 
             var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+                cmdContext: cmdContext,
                 routeNodeId: routeNodeId,
                 connects: secondSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
             );
@@ -236,7 +241,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return Result.Ok();
         }
 
-        private Result ConnectSameEquipment(Guid routeNodeId, SpanEquipmentWithConnectsHolder spanEquipmentToConnect)
+        private Result ConnectSameEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder spanEquipmentToConnect)
         {
             if (spanEquipmentToConnect.Connects.Count != 2)
             {
@@ -288,6 +293,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipmentToConnect.SpanEquipment.Id);
 
             var spanEquipmentConnectResult = spanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+                cmdContext: cmdContext,
                 routeNodeId: routeNodeId,
                 connects: spanEquipmentToConnect.Connects.Select(c => c.ConnectInfo).ToArray()
             );
