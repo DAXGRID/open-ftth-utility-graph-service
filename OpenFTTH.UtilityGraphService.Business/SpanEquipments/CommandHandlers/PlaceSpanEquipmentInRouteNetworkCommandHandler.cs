@@ -45,6 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 command.Interest,
                 command.ManufacturerId,
                 command.NamingInfo,
+                command.LifecycleInfo,
                 command.MarkingInfo
             );
 

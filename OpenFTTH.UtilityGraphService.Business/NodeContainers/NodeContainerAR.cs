@@ -33,6 +33,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Guid nodeContainerId, 
             Guid nodeContainerSpecificationId,
             RouteNetworkInterest nodeOfInterest,
+            NamingInfo? namingInfo,
+            LifecycleInfo? lifecycleInfo,
             Guid? manufacturerId
         )
         {
@@ -55,7 +57,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             var nodeContainer = new NodeContainer(nodeContainerId, nodeContainerSpecificationId, nodeOfInterest.Id, nodeOfInterest.RouteNetworkElementRefs[0])
             {
-                ManufacturerId = manufacturerId
+                ManufacturerId = manufacturerId,
+                NamingInfo = namingInfo, 
+                LifecycleInfo = lifecycleInfo
             };
 
             var nodeContainerPlaceInRouteNetworkEvent = new NodeContainerPlacedInRouteNetwork(nodeContainer)

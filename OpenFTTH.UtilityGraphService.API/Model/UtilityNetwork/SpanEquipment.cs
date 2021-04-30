@@ -14,6 +14,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 
         public Guid? ManufacturerId { get; init; }
         public NamingInfo? NamingInfo { get; init; }
+        public LifecycleInfo? LifecycleInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
 
         public SpanEquipmentNodeContainerAffix[]? NodeContainerAffixes { get; init; }

@@ -43,6 +43,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 command.NodeContainerId,
                 command.NodeContainerSpecificationId,
                 command.NodeOfInterest,
+                command.NamingInfo,
+                command.LifecycleInfo,
                 command.ManufacturerId
             );
 

@@ -14,6 +14,7 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public RouteNetworkInterest Interest { get; }
         public Guid? ManufacturerId { get; init; }
         public NamingInfo? NamingInfo { get; init; }
+        public LifecycleInfo? LifecycleInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
 
         public PlaceSpanEquipmentInRouteNetwork(Guid spanEquipmentId, Guid spanEquipmentSpecificationId, RouteNetworkInterest interest)

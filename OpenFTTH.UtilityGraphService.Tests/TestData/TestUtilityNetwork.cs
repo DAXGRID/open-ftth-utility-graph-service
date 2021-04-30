@@ -37,6 +37,7 @@ namespace OpenFTTH.TestData
         public static Guid NodeContainer_HH_1;
         public static Guid NodeContainer_CC_1;
         public static Guid NodeContainer_J_1;
+        public static Guid NodeContainer_SDU_1;
 
         public TestUtilityNetwork(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
@@ -76,6 +77,7 @@ namespace OpenFTTH.TestData
                 NodeContainer_HH_1 = PlaceNodeContainer(TestSpecifications.Well_Fiberpowertech_37_EK_378_400x800, TestSpecifications.Manu_Fiberpowertech, TestRouteNetwork.HH_1);
                 NodeContainer_CC_1 = PlaceNodeContainer(TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, TestSpecifications.Manu_Emtelle, TestRouteNetwork.CC_1);
                 NodeContainer_J_1 = PlaceNodeContainer(TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, TestSpecifications.Manu_Emtelle, TestRouteNetwork.J_1);
+                NodeContainer_SDU_1 = PlaceNodeContainer(TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, TestSpecifications.Manu_Emtelle, TestRouteNetwork.SDU_1);
 
                 // Affix the two 5x10 in HH 1
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_CO_1_to_HH_1, NodeContainer_HH_1, NodeContainerSideEnum.North);
@@ -93,6 +95,10 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(FlexConduit_40_Red_SDU_1_to_SDU_2, NodeContainer_J_1, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(MultiConduit_3x10_SDU_1_to_SDU_2, NodeContainer_J_1, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_SDU_2_to_J_1, NodeContainer_J_1, NodeContainerSideEnum.West);
+
+                // Affix 3x10 in SDU 1
+                
+
 
                 Thread.Sleep(100);
 

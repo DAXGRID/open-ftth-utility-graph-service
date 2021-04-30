@@ -1,4 +1,4 @@
-﻿using OpenFTTH.Core;
+﻿using OpenFTTH.Events.Core.Infos;
 using System;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
@@ -10,6 +10,8 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid InterestId { get;  }
         public Guid RouteNodeId { get;  }
         public Guid? ManufacturerId { get; init; }
+        public NamingInfo? NamingInfo { get; init; }
+        public LifecycleInfo? LifecycleInfo { get; init; }
         public NodeContainerVerticalContentAlignmentEnum VertialContentAlignmemt { get; init; }
 
         public string? Name => null;
