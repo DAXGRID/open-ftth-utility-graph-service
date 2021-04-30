@@ -17,9 +17,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             SegmentIndex = segmentIndex;
         }
 
+        public UtilityGraphConnectedSegment(Guid id, Guid spanEquipmentId, UInt16 structureIndex, UInt16 segmentIndex) : base(id, null, null)
+        {
+            SpanEquipmentId = spanEquipmentId;
+            StructureIndex = structureIndex;
+            SegmentIndex = segmentIndex;
+        }
+
         public IUtilityGraphSegmentRef CreateWithNewSegmentIndex(ushort newSegmentIndex)
         {
-            var newSegment = new UtilityGraphConnectedSegment(Id, null, null, SpanEquipmentId, StructureIndex, newSegmentIndex);
+            var newSegment = new UtilityGraphConnectedSegment(Id, SpanEquipmentId, StructureIndex, newSegmentIndex);
             CopyNodeRelationshipsTo(newSegment);
             return newSegment;
         }

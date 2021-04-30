@@ -22,7 +22,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
     public class SpanEquipmentAR : AggregateBase
     {
         private SpanEquipment? _spanEquipment;
-        private bool _removed;
 
         public SpanEquipmentAR()
         {
@@ -81,6 +80,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(
                 new SpanEquipmentPlacedInRouteNetwork(spanEquipment)
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -175,6 +175,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(
                 new SpanEquipmentAffixedToContainer(this.Id, affix)
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -229,6 +230,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(
                 new SpanEquipmentDetachedFromContainer(this.Id, nodeContainer.Id)
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -369,6 +371,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 cuts: CreateCuts(spanSegmentsToCut)
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -560,6 +563,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 connects: connects
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -677,6 +681,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                terminalId: terminalId
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -768,6 +773,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                spanStructuresToAdd: spanStructuresToInclude.ToArray()
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -825,6 +831,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                spanStructureId: spanStructureToRemove.Id
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -879,6 +886,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                spanEquipmentId: this.Id
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -893,8 +901,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
-
-            _removed = true;
         }
 
         private bool IsAnySpanSegmentsConnected()
@@ -1008,6 +1014,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
               nodesOfInterestIds: CreateNewNodesOfInterestIdList(newWalk)
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -1169,6 +1176,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
               nodesOfInterestIds: updatedNodeOfInterestIds
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -1208,6 +1216,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
               markingInfo: markingInfo
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -1247,6 +1256,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
               manufacturerId: manufacturerId
             )
             {
+                CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
                 UserName = cmdContext.UserContext?.UserName,
                 WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -1304,6 +1314,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                   structureModificationInstructions: new StructureModificationInstruction[] { updateOuterSpanStructureInstruction }
                 )
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -1397,6 +1408,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                   structureModificationInstructions: structureModificationInstructions.ToArray()
                 )
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId

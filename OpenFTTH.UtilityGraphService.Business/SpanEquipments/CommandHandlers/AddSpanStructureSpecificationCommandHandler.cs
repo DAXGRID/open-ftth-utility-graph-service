@@ -20,7 +20,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             var aggreate = _eventStore.Aggregates.Load<SpanStructureSpecificationsAR>(SpanStructureSpecificationsAR.UUID);
 
-            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
             try
             {

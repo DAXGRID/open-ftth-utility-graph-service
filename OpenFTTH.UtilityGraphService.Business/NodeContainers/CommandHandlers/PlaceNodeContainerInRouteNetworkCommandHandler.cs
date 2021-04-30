@@ -34,7 +34,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var nodeContainerAR = new NodeContainerAR();
 
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
+
             var placeSpanEquipmentResult = nodeContainerAR.PlaceNodeContainerInRouteNetworkNode(
+                commandContext,
                 nodeContainers,
                 nodeContainerSpecifications, 
                 command.NodeContainerId,

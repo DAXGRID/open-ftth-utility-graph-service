@@ -68,7 +68,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Try to do the move of the span equipment
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
-            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
             var moveSpanEquipmentResult = spanEquipmentAR.Move(commandContext, newWalk, existingWalk);
 
@@ -81,7 +81,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var updateWalkOfInterestCommand = new UpdateWalkOfInterest(spanEquipment.WalkOfInterestId, newSegmentIds)
             {
-                CmdId = commandContext.CmdId,
                 UserContext = commandContext.UserContext
             };
 

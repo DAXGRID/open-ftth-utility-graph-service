@@ -49,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (spanEquipmentsToConnectBuilderResult.IsFailed)
                 return Task.FromResult(Result.Fail(spanEquipmentsToConnectBuilderResult.Errors.First()));
 
-            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
             var spanEquipmentsToConnect = spanEquipmentsToConnectBuilderResult.Value;
 
@@ -326,9 +326,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                     spanEquipmentsToConnect.Add(
                        spanEquipment.Id,
-                        new SpanEquipmentWithConnectsHolder()
+                        new SpanEquipmentWithConnectsHolder(spanEquipment)
                         {
-                            SpanEquipment = spanEquipment,
                             Connects = new List<SpanSegmentConnectHolder> {
                                 new SpanSegmentConnectHolder(
                                     new SpanSegmentToSimpleTerminalConnectInfo(
@@ -502,8 +501,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private class SpanEquipmentWithConnectsHolder
         {
-            public SpanEquipment SpanEquipment { get; set; }
+            public SpanEquipment SpanEquipment { get; }
             public List<SpanSegmentConnectHolder> Connects { get; set; }
+
+            public SpanEquipmentWithConnectsHolder(SpanEquipment spanEquipment)
+            {
+                SpanEquipment = spanEquipment;
+                Connects = new();
+            }
         }
 
         private class SpanSegmentConnectHolder

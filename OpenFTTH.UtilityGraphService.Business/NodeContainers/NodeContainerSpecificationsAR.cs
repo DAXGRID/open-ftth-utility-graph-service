@@ -23,12 +23,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _nodeContainerSpecifications.Add(@event.Specification);
         }
 
-        public void AddSpecification(NodeContainerSpecification nodeContainerSpecifiation, LookupCollection<Manufacturer> manufacturer)
+        public void AddSpecification(CommandContext cmdContext, NodeContainerSpecification nodeContainerSpecifiation, LookupCollection<Manufacturer> manufacturer)
         {
             if (_nodeContainerSpecifications.ContainsKey(nodeContainerSpecifiation.Id))
                 throw new ArgumentException($"A node container specification with id: {nodeContainerSpecifiation.Id} already exists");
 
-            RaiseEvent(new NodeContainerSpecificationAdded(nodeContainerSpecifiation));
+            RaiseEvent(
+                new NodeContainerSpecificationAdded(nodeContainerSpecifiation)
+                {
+                    CorrelationId = cmdContext.CorrelationId,
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
         }
     }
 }

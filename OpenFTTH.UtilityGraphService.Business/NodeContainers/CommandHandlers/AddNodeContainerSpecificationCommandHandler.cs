@@ -23,9 +23,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var manufacturer = _eventStore.Projections.Get<ManufacturerProjection>().Manufacturer;
 
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
+
             try
             {
-                aggreate.AddSpecification(command.Specification, manufacturer);
+                aggreate.AddSpecification(commandContext, command.Specification, manufacturer);
             }
             catch (ArgumentException ex)
             {

@@ -12,7 +12,6 @@ namespace OpenFTTH.TestData
 {
     public class TestSpecifications
     {
-        private static bool _specificationsCreated = false;
         private static readonly object _myLock = new object();
 
         private ICommandDispatcher _commandDispatcher;
@@ -152,8 +151,6 @@ namespace OpenFTTH.TestData
                 AddSpanEquipmentSpecifications();
 
                 Thread.Sleep(100);
-
-                _specificationsCreated = true;
 
                 return FluentResults.Result.Ok(this);
             }

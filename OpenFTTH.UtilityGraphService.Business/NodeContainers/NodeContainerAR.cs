@@ -27,6 +27,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         public Result PlaceNodeContainerInRouteNetworkNode(
+            CommandContext cmdContext,
             LookupCollection<NodeContainer> nodeContainers,
             LookupCollection<NodeContainerSpecification> nodeContainerSpecifications,
             Guid nodeContainerId, 
@@ -57,7 +58,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 ManufacturerId = manufacturerId
             };
 
-            var nodeContainerPlaceInRouteNetworkEvent = new NodeContainerPlacedInRouteNetwork(nodeContainer);
+            var nodeContainerPlaceInRouteNetworkEvent = new NodeContainerPlacedInRouteNetwork(nodeContainer)
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(nodeContainerPlaceInRouteNetworkEvent);
 
@@ -71,12 +78,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
 
-        public Result ReverseVerticalContentAlignment()
+        public Result ReverseVerticalContentAlignment(CommandContext cmdContext)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
 
-            var reverseEvent = new NodeContainerVerticalAlignmentReversed(this.Id);
+            var reverseEvent = new NodeContainerVerticalAlignmentReversed(this.Id)
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
 
             RaiseEvent(reverseEvent);
 

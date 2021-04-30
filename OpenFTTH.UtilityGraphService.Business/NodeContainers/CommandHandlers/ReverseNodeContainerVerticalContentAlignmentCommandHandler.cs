@@ -30,7 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         public Task<Result> HandleAsync(ReverseNodeContainerVerticalContentAlignment command)
         {
             var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
-            var nodeContainerSpecifications = _eventStore.Projections.Get<NodeContainerSpecificationsProjection>().Specifications;
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
             if (!nodeContainers.TryGetValue(command.NodeContainerId, out var nodeContainer))
             {
@@ -39,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var nodeContainerAR = _eventStore.Aggregates.Load<NodeContainerAR>(command.NodeContainerId);
 
-            var reverseResult = nodeContainerAR.ReverseVerticalContentAlignment();
+            var reverseResult = nodeContainerAR.ReverseVerticalContentAlignment(commandContext);
 
             if (reverseResult.IsSuccess)
             {

@@ -42,6 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(
                 new SpanEquipmentSpecificationAdded(spanEquipmentSpecification)
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId
@@ -118,6 +119,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(
                 new SpanEquipmentSpecificationDeprecated(specificationId)
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId

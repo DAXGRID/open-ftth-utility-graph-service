@@ -38,6 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(
                 new ManufacturerAdded(manufacturer)
                 {
+                    CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,
                     UserName = cmdContext.UserContext?.UserName,
                     WorkTaskId = cmdContext.UserContext?.WorkTaskId

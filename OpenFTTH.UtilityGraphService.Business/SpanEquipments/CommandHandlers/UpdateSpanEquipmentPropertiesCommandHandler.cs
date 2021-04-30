@@ -51,7 +51,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             bool somethingChanged = false;
 
-            var commandContext = new CommandContext(command.CmdId, command.UserContext);
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
             // Check if marking info has been updated
             if (command.MarkingInfo != null && !command.MarkingInfo.Equals(spanEquipment.MarkingInfo))

@@ -13,6 +13,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         {
             SpanEquipmentOrSegmentId = spanEquipmentOrSegmentId;
             RouteNodeId = routeNodeId;
+
+            CmdId = Guid.NewGuid();
         }
     }
 }
