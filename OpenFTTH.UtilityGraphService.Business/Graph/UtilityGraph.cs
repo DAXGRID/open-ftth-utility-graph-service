@@ -254,6 +254,59 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ApplicationException($"Cannot find any connection to terminal with id: {terminalId} in span segment with id: {spanSegmentId} in span equipment with id: {spanEquipment.Id}");
         }
 
+        internal void ApplyChangeSegmentFromTerminalToNewNodeOfInterest(Guid spanSegmentId, Guid newNodeOfInterestId)
+        {
+            if (!TryGetGraphElement<UtilityGraphConnectedSegment>(spanSegmentId, out var existingSegmentGraphElement))
+                throw new ApplicationException($"Cannot find connected span segment graph element with id: {spanSegmentId} processing segment to terminal disconnect.");
+
+            var version = _objectManager.GetLatestCommitedVersion();
+
+            var trans = _objectManager.CreateTransaction();
+
+            try
+            {
+                var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), newNodeOfInterestId);
+                trans.Add(dummyTerminal);
+
+                var existingToTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).OutV(version);
+                var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentId, dummyTerminal, existingToTerminal, existingSegmentGraphElement.SpanEquipmentId, existingSegmentGraphElement.StructureIndex, existingSegmentGraphElement.SegmentIndex);
+                trans.Update(newSegmentGraphElement);
+
+                UpdateDict(spanSegmentId, newSegmentGraphElement);
+            }
+            finally
+            {
+                trans.Commit();
+            }
+        }
+
+        internal void ApplyChangeSegmentToTerminalToNewNodeOfInterest(Guid spanSegmentId, Guid newNodeOfInterestId)
+        {
+            if (!TryGetGraphElement<UtilityGraphConnectedSegment>(spanSegmentId, out var existingSegmentGraphElement))
+                throw new ApplicationException($"Cannot find connected span segment graph element with id: {spanSegmentId} processing segment to terminal disconnect.");
+
+            var version = _objectManager.GetLatestCommitedVersion();
+
+            var trans = _objectManager.CreateTransaction();
+
+            try
+            {
+                var dummyTerminal = new UtilityGraphConnectedTerminal(Guid.NewGuid(), newNodeOfInterestId);
+                trans.Add(dummyTerminal);
+
+                var existingFromTerminal = (UtilityGraphConnectedTerminal)((UtilityGraphConnectedSegment)existingSegmentGraphElement).InV(version);
+                var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegmentId, existingFromTerminal, dummyTerminal, existingSegmentGraphElement.SpanEquipmentId, existingSegmentGraphElement.StructureIndex, existingSegmentGraphElement.SegmentIndex);
+                trans.Update(newSegmentGraphElement);
+
+                UpdateDict(spanSegmentId, newSegmentGraphElement);
+            }
+            finally
+            {
+                trans.Commit();
+            }
+        }
+
+
         public SpanSegmentTraceResult TraceSegment(Guid id)
         {
             var result = new SpanSegmentTraceResult() { SpanSegmentId = id };
@@ -288,7 +341,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             return result;
         }
-
 
         private void UpdateDict(Guid segmentId, IUtilityGraphSegmentRef newUtilityGraphSegmentRef)
         {

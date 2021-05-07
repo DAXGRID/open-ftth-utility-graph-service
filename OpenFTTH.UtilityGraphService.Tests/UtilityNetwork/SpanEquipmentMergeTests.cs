@@ -39,6 +39,51 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
+        [Fact, Order(1)]
+        public async void ConnectConduitInSDU1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment1 = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
+            var sutSpanEquipment2 = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment1, out var spanEquipment1BeforeConnect);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment2, out var spanEquipment2BeforeConnect);
+
+            // Connect inner conduit 1
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.SDU_1,
+                spanSegmentsToConnect: new Guid[] {
+                    spanEquipment1BeforeConnect.SpanStructures[1].SpanSegments[0].Id,
+                    spanEquipment2BeforeConnect.SpanStructures[1].SpanSegments[0].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectResult.IsSuccess.Should().BeTrue();
+
+            // Assert trace is correct
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                   new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment2 })
+                   {
+                       EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                       {
+                           IncludeRouteNetworkTrace = true
+                       }
+                   }
+               );
+
+            traceQueryResult.IsSuccess.Should().BeTrue();
+
+            var innerConduit1TraceId = traceQueryResult.Value.SpanEquipment[sutSpanEquipment2].RouteNetworkTraceRefs.First(tr => tr.SpanEquipmentOrSegmentId == spanEquipment2BeforeConnect.SpanStructures[1].SpanSegments[0].Id).TraceId;
+            var routeNetworkTraces = traceQueryResult.Value.RouteNetworkTraces[innerConduit1TraceId];
+
+            routeNetworkTraces.FromRouteNodeId.Should().Be(TestRouteNetwork.J_1);
+            routeNetworkTraces.ToRouteNodeId.Should().Be(TestRouteNetwork.SDU_2);
+        }
+
         [Fact, Order(10)]
         public async void MergeTheTwo12x7inJ_1_ShouldSucceed()
         {
@@ -111,6 +156,25 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.SDU_1);
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.SDU_2);
+
+            // Assert trace is correct
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                   new GetEquipmentDetails(new EquipmentIdList() { sutFromSpanEquipmentId })
+                   {
+                       EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                       {
+                           IncludeRouteNetworkTrace = true
+                       }
+                   }
+               );
+
+            traceQueryResult.IsSuccess.Should().BeTrue();
+
+            var innerConduit1TraceId = traceQueryResult.Value.SpanEquipment[sutFromSpanEquipmentId].RouteNetworkTraceRefs.First(tr => tr.SpanEquipmentOrSegmentId == fromSpanEquipmentBeforeConnect.SpanStructures[1].SpanSegments[0].Id).TraceId;
+
+            var routeNetworkTraces = traceQueryResult.Value.RouteNetworkTraces[innerConduit1TraceId];
+            routeNetworkTraces.FromRouteNodeId.Should().Be(TestRouteNetwork.SDU_2);
+            routeNetworkTraces.ToRouteNodeId.Should().Be(TestRouteNetwork.SDU_2);
         }
 
         [Fact, Order(11)]
@@ -235,6 +299,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             connectResult.IsSuccess.Should().BeTrue();
         }
+
+
 
 
 

@@ -97,8 +97,8 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_SDU_2_to_J_1, NodeContainer_J_1, NodeContainerSideEnum.West);
 
                 // Affix 3x10 in SDU 1
-                
-
+                AffixSpanEquipmentToContainer(MultiConduit_3x10_SDU_1_to_SDU_2, NodeContainer_SDU_1, NodeContainerSideEnum.East);
+                AffixSpanEquipmentToContainer(MultiConduit_12x7_SDU_1_to_J_1, NodeContainer_SDU_1, NodeContainerSideEnum.East);
 
                 Thread.Sleep(100);
 

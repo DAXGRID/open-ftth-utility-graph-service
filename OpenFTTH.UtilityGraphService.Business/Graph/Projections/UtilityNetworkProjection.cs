@@ -144,7 +144,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanEquipmentMerged @event):
-                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+                    ProcessSpanEquipmentMerge(@event);
                     break;
 
                 case (SpanEquipmentMarkingInfoChanged @event):
@@ -309,6 +309,45 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 if (structureToBeAddedInstruction.NewStructureToBeInserted != null)
                 {
                     _utilityGraph.AddDisconnectedSegment(spanEquipmentAfterChange, structureToBeAddedInstruction.NewStructureToBeInserted.Position, 0);
+                }
+            }
+        }
+
+        private void ProcessSpanEquipmentMerge(SpanEquipmentMerged @event)
+        {
+            var spanEquipmentBeforeChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+
+            var spanEquipmentAfterChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+            // If from end is moved
+            if (@event.NodesOfInterestIds.First() != spanEquipmentBeforeChange.NodesOfInterestIds.First())
+            {
+                foreach (var spanStructure in spanEquipmentBeforeChange.SpanStructures)
+                {
+                    foreach (var spanSegment in spanStructure.SpanSegments)
+                    {
+                        if (spanSegment.ToTerminalId != Guid.Empty)
+                        {
+                            _utilityGraph.ApplyChangeSegmentFromTerminalToNewNodeOfInterest(spanSegment.Id, @event.NodesOfInterestIds.First());
+                        }
+                    }
+                }
+            }
+
+            // If to end is moved
+            if (@event.NodesOfInterestIds.Last() != spanEquipmentBeforeChange.NodesOfInterestIds.Last())
+            {
+                foreach (var spanStructure in spanEquipmentBeforeChange.SpanStructures)
+                {
+                    foreach (var spanSegment in spanStructure.SpanSegments)
+                    {
+                        if (spanSegment.FromTerminalId != Guid.Empty)
+                        {
+                            _utilityGraph.ApplyChangeSegmentToTerminalToNewNodeOfInterest(spanSegment.Id, @event.NodesOfInterestIds.Last());
+                        }
+                    }
                 }
             }
         }
