@@ -140,7 +140,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connection2toSegment.FromTerminalId.Should().Be(connection2fromSegment.ToTerminalId);
         }
 
-        [Fact, Order(20)]
+        [Fact, Order(12)]
         public async void TestConnectAlreadyConnectedSegment_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -166,6 +166,34 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectResult.IsFailed.Should().BeTrue();
             ((ConnectSpanSegmentsAtRouteNodeError)connectResult.Errors.First()).Code.Should().Be(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_ALREADY_CONNECTED);
         }
+
+        [Fact, Order(13)]
+        public async void TestConnectInnerToOuterConduit_ShouldFail()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
+
+            // Connect inner conduit 2 in 5x10 with inner conduit 1 in 3x10
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+                routeNodeId: TestRouteNetwork.CC_1,
+                spanSegmentsToConnect: new Guid[] {
+                    sutFromSpanEquipment.SpanStructures[2].SpanSegments[1].Id,
+                    sutToSpanEquipment.SpanStructures[0].SpanSegments[0].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectResult.IsFailed.Should().BeTrue();
+            ((ConnectSpanSegmentsAtRouteNodeError)connectResult.Errors.First()).Code.Should().Be(ConnectSpanSegmentsAtRouteNodeErrorCodes.OUTER_AND_INNER_SPANS_CANNOT_BE_CONNECTED);
+        }
+
 
         [Fact, Order(100)]
         public async void TestDetachConduitFromContainerInCC1_ShouldFalid()

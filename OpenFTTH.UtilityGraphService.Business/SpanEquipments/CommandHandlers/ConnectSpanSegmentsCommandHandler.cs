@@ -312,6 +312,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             Dictionary<Guid, SpanEquipmentWithConnectsHolder> spanEquipmentsToConnect = new Dictionary<Guid, SpanEquipmentWithConnectsHolder>();
 
+            // Check that no inner conduits are connected to outer conduits
+            bool innerSpansFound = false;
+            bool outerSpansFound = false;
+
             foreach (var spanSegmentToConnectId in command.SpanSegmentsToConnect)
             {
                 if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanSegmentToConnectId, out var spanSegmentGraphElement))
@@ -319,6 +323,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
                 var spanSegment = spanSegmentGraphElement.SpanSegment(_utilityNetwork);
+
+                // Check that the user tries to connect inner and outer spans
+                if (spanSegmentGraphElement.StructureIndex == 0)
+                    outerSpansFound = true;
+
+                if (spanSegmentGraphElement.StructureIndex > 0)
+                    innerSpansFound = true;
+
+                if (outerSpansFound && innerSpansFound)
+                {
+                    return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.OUTER_AND_INNER_SPANS_CANNOT_BE_CONNECTED, $"Connect command contains both inner and outer spans. This is not allowed. You cannot connect an outer span to an inner span or vice versa."));
+                }
 
                 if (!spanEquipmentsToConnect.ContainsKey(spanEquipment.Id))
                 {
