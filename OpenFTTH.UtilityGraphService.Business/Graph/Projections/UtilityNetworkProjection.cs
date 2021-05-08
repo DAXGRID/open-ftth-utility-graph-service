@@ -19,7 +19,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByEquipmentId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new();
 
-        private readonly UtilityGraph _utilityGraph = new();
+        private readonly UtilityGraph _utilityGraph;
 
         public UtilityGraph Graph => _utilityGraph;
 
@@ -27,8 +27,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public LookupCollection<SpanEquipment> SpanEquipments => new LookupCollection<SpanEquipment>(_spanEquipmentByEquipmentId.Values);
         
-        public UtilityNetworkProjection(IExternalEventProducer externalEventProducer)
+        public UtilityNetworkProjection()
         {
+            _utilityGraph = new(this);
+
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
             ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
             ProjectEvent<SpanEquipmentDetachedFromContainer>(Project);
@@ -315,6 +317,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private void ProcessSpanEquipmentMerge(SpanEquipmentMerged @event)
         {
+            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+            /*
             var spanEquipmentBeforeChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
 
             TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
@@ -350,6 +354,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     }
                 }
             }
+            */
         }
 
         private void TryUpdate(SpanEquipment newSpanEquipmentState)

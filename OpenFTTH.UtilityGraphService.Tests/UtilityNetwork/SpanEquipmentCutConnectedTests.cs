@@ -131,12 +131,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var innerConduit5Segment2Id = spanEquipmentAfterCut.SpanStructures[5].SpanSegments[1].Id;
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(innerConduit5Segment2Id, out var conduit5segment2utilityGraphElement);
 
+            // Trace on segment two should be empty now, because it's not connected to anything anymore
             traceResult = utilityNetwork.Graph.TraceSegment(innerConduit5Segment2Id);
-            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CC_1);
-            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.HH_10);
-
+            traceResult.Downstream.Should().BeEmpty();
+            traceResult.Upstream.Should().BeEmpty();
         }
-
 
         [Fact, Order(3)]
         public async void CutInnerConduit1InHH2_ShouldSucceed()
