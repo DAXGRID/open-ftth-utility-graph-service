@@ -275,13 +275,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     if (lastUpstreamObject is UtilityGraphConnectedSegment lastUpstreamSegment)
                     {
-                        if (lastUpstreamSegment.InV(version) == null)
-                        {
-                            upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
-                        }
-                        else if (lastUpstreamSegment.OutV(version) == null)
+                        if (lastUpstreamSegment.OutV(version) == null)
                         {
                             upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                        }
+                        else if (lastUpstreamSegment.InV(version) == null)
+                        {
+                            upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                         }
                         else
                         {
