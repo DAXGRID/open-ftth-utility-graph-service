@@ -61,6 +61,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             else
                 Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, spanEquipmentsByIdResult.Errors.First().Message));
 
+            // Get eventually single span segment request
+            var traceThisSpanSegmentIdOnly = GetSingleSpanSegmentTraceOnlyIdIfSpecificed(query.EquipmentIdsToQuery);
 
             // Fetch equipment by interest id
             foreach (var interestId in query.InterestIdsToQuery)
@@ -84,7 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             var result = new GetEquipmentDetailsResult() {
                 SpanEquipment = new LookupCollection<SpanEquipmentWithRelatedInfo>(spanEquipmentsToReturn),
                 NodeContainers = new LookupCollection<NodeContainer>(nodeContainersToReturn),
-                RouteNetworkTraces = query.EquipmentDetailsFilter.IncludeRouteNetworkTrace ? AddTraceRefsToSpanEquipments(spanEquipmentsToReturn) : null
+                RouteNetworkTraces = query.EquipmentDetailsFilter.IncludeRouteNetworkTrace ? AddTraceRefsToSpanEquipments(spanEquipmentsToReturn, traceThisSpanSegmentIdOnly) : null
             };
     
             return Task.FromResult(
@@ -92,11 +94,24 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             );
         }
 
-        private LookupCollection<RouteNetworkTrace> AddTraceRefsToSpanEquipments(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn)
+        private Guid? GetSingleSpanSegmentTraceOnlyIdIfSpecificed(EquipmentIdList equipmentIdsToQuery)
+        {
+            if (equipmentIdsToQuery.Count == 1)
+            {
+                var spanEquipmentOrSegmentId = equipmentIdsToQuery[0];
+
+                if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentOrSegmentId, out var _))
+                    return spanEquipmentOrSegmentId;
+            }
+
+            return null;
+        }
+
+        private LookupCollection<RouteNetworkTrace> AddTraceRefsToSpanEquipments(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn, Guid? traceThisSpanSegmentIdOnly)
         {
             var traceBuilder = new RouteNetworkTraceResultBuilder(_queryDispatcher, _utilityNetwork);
 
-            var traceInfo = traceBuilder.GetTraceInfo(spanEquipmentsToReturn);
+            var traceInfo = traceBuilder.GetTraceInfo(spanEquipmentsToReturn, traceThisSpanSegmentIdOnly);
 
             if (traceInfo != null)
             {

@@ -149,6 +149,42 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             segment1TraceRef.Should().Be(firstSpanTrace.Id);
             segment2TraceRef.Should().Be(secondSpanTrace.Id);
         }
+
+
+        [Fact, Order(3)]
+        public async void Trace5x10_HH_1_to_HH_10_SingleSpanSegment_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId1 = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId1, out var sutSpanEquipment1);
+
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment1.SpanStructures[1].SpanSegments[0].Id })
+                {
+                    EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                    {
+                        IncludeRouteNetworkTrace = true
+                    }
+                }
+            );
+
+            // Assert
+            traceQueryResult.IsSuccess.Should().BeTrue();
+
+            // Check route network traces
+            var routeNetworkTraces = traceQueryResult.Value.RouteNetworkTraces;
+
+            routeNetworkTraces.Count.Should().Be(1);
+            routeNetworkTraces.Any(t => t.FromRouteNodeId == TestRouteNetwork.CO_1 && t.ToRouteNodeId == TestRouteNetwork.SP_1 && t.RouteSegmentIds.Length == 4).Should().BeTrue();
+
+            // Check sut 1 trace refs
+            var spanEquipment1TraceRefs = traceQueryResult.Value.SpanEquipment[sutSpanEquipmentId1].RouteNetworkTraceRefs;
+            spanEquipment1TraceRefs.Length.Should().Be(1);
+            spanEquipment1TraceRefs.Count(tr => tr.SpanEquipmentOrSegmentId == sutSpanEquipment1.SpanStructures[1].SpanSegments[0].Id).Should().Be(1);
+
+        }
     }
 }
 
