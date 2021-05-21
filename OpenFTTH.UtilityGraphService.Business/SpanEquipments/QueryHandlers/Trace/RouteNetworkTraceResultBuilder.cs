@@ -45,14 +45,27 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                 {
                     foreach (var segmentWalk in segmentWalksBySpanEquipmentId.Value)
                     {
-                        List<Guid> segmentIds = new();
 
+                        // Find the segments covered by trace
+                        List<Guid> segmentIds = new();
+                        
                         foreach (var segmentHop in segmentWalk.Hops)
                         {
                             var walkIds = routeNetworkInformation.Interests[segmentHop.WalkOfInterestId].RouteNetworkElementRefs;
-
                             segmentIds.AddRange(GetRouteSegmentsBetweenNodes(walkIds, segmentHop.FromNodeId, segmentHop.ToNodeId));
                         }
+
+                        // Get the geometry of the segments
+                        List<string> segmentGeometries = new();
+                        
+                        foreach (var segmentId in segmentIds)
+                        {
+                            var segment = routeNetworkInformation.RouteNetworkElements[segmentId];
+
+                            if (segment.Coordinates != null)
+                                segmentGeometries.Add(segment.Coordinates);
+                        }
+
 
                         Guid fromNodeId = segmentWalk.Hops.First().FromNodeId;
                         string? fromNodeName = routeNetworkInformation.RouteNetworkElements[fromNodeId].NamingInfo?.Name;
@@ -60,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                         Guid toNodeId = segmentWalk.Hops.Last().ToNodeId;
                         string? toNodeName = routeNetworkInformation.RouteNetworkElements[toNodeId].NamingInfo?.Name;
 
-                        Guid traceId = FindOrCreateRouteNetworkTrace(routeNetworkTraces, segmentIds, fromNodeId, toNodeId, fromNodeName, toNodeName);
+                        Guid traceId = FindOrCreateRouteNetworkTrace(routeNetworkTraces, segmentIds, segmentGeometries, fromNodeId, toNodeId, fromNodeName, toNodeName);
 
                         SpanSegmentRouteNetworkTraceRef traceRef = new SpanSegmentRouteNetworkTraceRef(segmentWalk.SpanEquipmentOrSegmentId, traceId);
 
@@ -77,7 +90,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                 return null;
         }
 
-        private Guid FindOrCreateRouteNetworkTrace(List<RouteNetworkTrace> routeNetworkTraces, List<Guid> segmentIds, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)
+        private Guid FindOrCreateRouteNetworkTrace(List<RouteNetworkTrace> routeNetworkTraces, List<Guid> segmentIds, List<string> segmentGeometries, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)
         {
             foreach (var routeNetworkTrace in routeNetworkTraces)
             {
@@ -85,7 +98,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                     return routeNetworkTrace.Id;
             }
 
-            var newRouteNetworkTrace = new RouteNetworkTrace(Guid.NewGuid(), fromNodeId, toNodeId, segmentIds.ToArray(), fromNodeName, toNodeName);
+            var newRouteNetworkTrace = new RouteNetworkTrace(Guid.NewGuid(), fromNodeId, toNodeId, segmentIds.ToArray(), fromNodeName, toNodeName, segmentGeometries.ToArray());
 
             routeNetworkTraces.Add(newRouteNetworkTrace);
 
@@ -128,7 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
             var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
                 new GetRouteNetworkDetails(interestIdList)
                 {
-                    RouteNetworkElementFilter = new RouteNetworkElementFilterOptions() { IncludeNamingInfo = true }
+                    RouteNetworkElementFilter = new RouteNetworkElementFilterOptions() { IncludeNamingInfo = true, IncludeCoordinates = true }
                 }
             ).Result;
 
