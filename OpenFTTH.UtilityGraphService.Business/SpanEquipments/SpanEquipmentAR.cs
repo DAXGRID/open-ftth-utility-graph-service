@@ -1311,6 +1311,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     StructureSpecificationIdToBeUpdated = newSpecification.RootTemplate.SpanStructureSpecificationId
                 };
 
+
+                // Check that no segments are connected in existing structure, because they will be removed when changed to a non fixed (empty
+                for (int existingStructureIndex = 0; existingStructureIndex < _spanEquipment.SpanStructures.Length; existingStructureIndex++)
+                {
+                    var existingStructure = _spanEquipment.SpanStructures[existingStructureIndex];
+
+                    if (IsAnySpanSegmentsInStructureConnected((ushort)existingStructureIndex))
+                    {
+                        return Result.Fail(new UpdateSpanEquipmentPropertiesError(
+                            UpdateSpanEquipmentPropertiesErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
+                            $"The new specification contains less span structure that the old one. But cannot remove span structure at index: {existingStructureIndex} because some of its segments are connected.")
+                        );
+                    }
+                }
+
                 var @event = new SpanEquipmentSpecificationChanged(
                   spanEquipmentId: this.Id,
                   newSpecificationId: newSpecification.Id,
