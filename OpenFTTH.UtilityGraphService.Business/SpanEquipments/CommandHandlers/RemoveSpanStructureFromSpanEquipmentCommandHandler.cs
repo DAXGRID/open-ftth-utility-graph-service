@@ -70,7 +70,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (removeSpanEquipment.IsSuccess)
                 {
                     // Remember to remove the walk of interest as well
-                    var unregisterInterestCmd = new UnregisterInterest(spanEquipment.WalkOfInterestId);
+                    var unregisterInterestCmd = new UnregisterInterest(spanEquipment.WalkOfInterestId)
+                    {
+                        CorrelationId = commandContext.CorrelationId,
+                        UserContext = commandContext.UserContext
+                    };
+
                     var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
 
                     if (unregisterInterestCmdResult.IsFailed)
