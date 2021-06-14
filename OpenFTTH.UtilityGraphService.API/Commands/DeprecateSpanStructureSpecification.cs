@@ -8,11 +8,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     {
         public Guid SpanStructureSpecificationId { get; }
 
-        public DeprecateSpanStructureSpecification(Guid spanStructureSpecificationId)
+        public DeprecateSpanStructureSpecification(Guid correlationId, UserContext userContext, Guid spanStructureSpecificationId) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             SpanStructureSpecificationId = spanStructureSpecificationId;
         }
     }

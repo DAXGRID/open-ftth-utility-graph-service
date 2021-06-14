@@ -43,10 +43,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             };
 
             // Act
-            var cmd1 = new AddSpanStructureSpecification(spec1);
+            var cmd1 = new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec1);
             Result cmd1Result = await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(cmd1);
 
-            var cmd2 = new AddSpanStructureSpecification(spec2);
+            var cmd2 = new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec2);
             Result cmd2Result = await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(cmd2);
 
             var spanStructureSpecificationsQueryResult = await _queryDispatcher.HandleAsync<GetSpanStructureSpecifications, Result<LookupCollection<SpanStructureSpecification>>>(new GetSpanStructureSpecifications());
@@ -77,9 +77,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             };
 
             // Act
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(spec1));
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(spec2));
-            await _commandDispatcher.HandleAsync<DeprecateSpanStructureSpecification, Result>(new DeprecateSpanStructureSpecification(spec2.Id));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec1));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec2));
+            await _commandDispatcher.HandleAsync<DeprecateSpanStructureSpecification, Result>(new DeprecateSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec2.Id));
 
             var spanStructureSpecificationsQueryResult = await _queryDispatcher.HandleAsync<GetSpanStructureSpecifications, Result<LookupCollection<SpanStructureSpecification>>>(new GetSpanStructureSpecifications());
 

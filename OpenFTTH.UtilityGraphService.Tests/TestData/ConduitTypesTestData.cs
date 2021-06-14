@@ -173,7 +173,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
 
         private async void AddSpecification(SpanEquipmentSpecification spec)
         {
-            var cmd = new AddSpanEquipmentSpecification(spec);
+            var cmd = new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec);
             var cmdResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(cmd);
 
             if (cmdResult.IsFailed)
@@ -182,7 +182,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
 
         private async void AddSpecification(SpanStructureSpecification spec)
         {
-            var cmd = new AddSpanStructureSpecification(spec);
+            var cmd = new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec);
             var cmdResult = await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(cmd);
 
             if (cmdResult.IsFailed)
@@ -191,7 +191,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
 
         private async void AddManufacturer(Manufacturer manufacturer)
         {
-            var cmd = new AddManufacturer(manufacturer);
+            var cmd = new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer);
             var cmdResult = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(cmd);
 
             if (cmdResult.IsFailed)

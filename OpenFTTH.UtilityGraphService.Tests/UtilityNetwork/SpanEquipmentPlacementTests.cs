@@ -39,10 +39,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
             var walkOfInterestId = Guid.NewGuid();
-            var registerWalkOfInterestCommand = new RegisterWalkOfInterest(walkOfInterestId, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
+            var registerWalkOfInterestCommand = new RegisterWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), walkOfInterestId, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
             var registerWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterWalkOfInterest, Result<RouteNetworkInterest>>(registerWalkOfInterestCommand).Result;
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, registerWalkOfInterestCommandResult.Value)
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, registerWalkOfInterestCommandResult.Value)
             {
                 NamingInfo = new NamingInfo("Hans", "Grethe"),
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
@@ -100,7 +100,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);
 
             // Act
             var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);
@@ -126,7 +126,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);
 
             // Act
             var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand);

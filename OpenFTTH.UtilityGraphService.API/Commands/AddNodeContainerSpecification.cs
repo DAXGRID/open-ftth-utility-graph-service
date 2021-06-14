@@ -9,11 +9,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     {
         public NodeContainerSpecification Specification { get; }
 
-        public AddNodeContainerSpecification(NodeContainerSpecification specification)
+        public AddNodeContainerSpecification(Guid correlationId, UserContext userContext, NodeContainerSpecification specification) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             Specification = specification;
         }
     }

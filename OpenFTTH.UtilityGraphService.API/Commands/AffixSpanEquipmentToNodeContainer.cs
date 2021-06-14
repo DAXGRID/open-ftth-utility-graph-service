@@ -11,11 +11,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public Guid NodeContainerId { get; }
         public NodeContainerSideEnum NodeContainerIngoingSide { get; }
 
-        public AffixSpanEquipmentToNodeContainer(Guid spanEquipmentOrSegmentId, Guid nodeContainerId, NodeContainerSideEnum nodeContainerIngoingSide)
+        public AffixSpanEquipmentToNodeContainer(Guid correlationId, UserContext userContext, Guid spanEquipmentOrSegmentId, Guid nodeContainerId, NodeContainerSideEnum nodeContainerIngoingSide) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             SpanEquipmentOrSegmentId = spanEquipmentOrSegmentId;
             NodeContainerId = nodeContainerId;
             NodeContainerIngoingSide = nodeContainerIngoingSide;

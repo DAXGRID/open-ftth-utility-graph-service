@@ -47,7 +47,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
 
             // Cut the outer conduit and 4 inner conduit
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
+            var cutCmd = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToCut: new Guid[] { 
                     spanEquipment.SpanStructures[0].SpanSegments[0].Id,
@@ -98,7 +98,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.MultiConduit_3x10_CC_1_to_HH_11, out var spanEquipment);
 
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
+            var cutCmd = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_2,
                 spanSegmentsToCut: new Guid[] { spanEquipment.SpanStructures[1].SpanSegments[0].Id }
             );
@@ -116,7 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.MultiConduit_3x10_CC_1_to_HH_11, out var spanEquipment);
 
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
+            var cutCmd = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToCut: new Guid[] { spanEquipment.SpanStructures[1].SpanSegments[0].Id }
             );
@@ -134,7 +134,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.MultiConduit_3x10_CC_1_to_HH_11, out var spanEquipment);
 
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
+            var cutCmd = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToCut: new Guid[] { 
                     Guid.NewGuid() // This one defiantly will not exists
@@ -154,7 +154,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.MultiConduit_3x10_CC_1_to_HH_11, out var spanEquipment1);
 
-            var cutCmd1 = new CutSpanSegmentsAtRouteNode(
+            var cutCmd1 = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToCut: new Guid[] {
                     spanEquipment1.SpanStructures[0].SpanSegments[0].Id,
@@ -166,7 +166,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(TestUtilityNetwork.MultiConduit_3x10_CC_1_to_HH_11, out var spanEquipment2);
 
-            var cutCmd2 = new CutSpanSegmentsAtRouteNode(
+            var cutCmd2 = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                routeNodeId: TestRouteNetwork.J_1,
                spanSegmentsToCut: new Guid[] {
                     spanEquipment2.SpanStructures[0].SpanSegments[0].Id
@@ -190,7 +190,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var nodeContainerId = testConduit.NodeContainerAffixes.First(n => n.RouteNodeId == TestRouteNetwork.CC_1).NodeContainerId;
 
-            var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(
+            var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 testConduit.SpanStructures[1].SpanSegments[0].Id,
                 routeNodeId: TestRouteNetwork.CC_1
             );

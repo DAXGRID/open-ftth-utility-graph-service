@@ -8,11 +8,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     {
         public Guid NodeContainerId { get; }
 
-        public ReverseNodeContainerVerticalContentAlignment(Guid nodeContainerId)
+        public ReverseNodeContainerVerticalContentAlignment(Guid correlationId, UserContext userContext, Guid nodeContainerId) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             NodeContainerId = nodeContainerId;
         }
     }

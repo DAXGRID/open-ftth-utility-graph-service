@@ -9,11 +9,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     {
         public Manufacturer Manufacturer { get; }
 
-        public AddManufacturer(Manufacturer manufacturer)
+        public AddManufacturer(Guid correlationId, UserContext userContext, Manufacturer manufacturer) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             Manufacturer = manufacturer;
         }
     }

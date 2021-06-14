@@ -101,7 +101,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
 
             // Cut inner conduit 10 in CC 1
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
+            var cutCmd = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToCut: new Guid[] {
                     spanEquipmentBeforeCut.SpanStructures[0].SpanSegments[0].Id,

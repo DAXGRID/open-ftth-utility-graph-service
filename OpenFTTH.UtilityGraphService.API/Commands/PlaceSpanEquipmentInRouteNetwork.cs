@@ -17,11 +17,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public LifecycleInfo? LifecycleInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
 
-        public PlaceSpanEquipmentInRouteNetwork(Guid spanEquipmentId, Guid spanEquipmentSpecificationId, RouteNetworkInterest interest)
+        public PlaceSpanEquipmentInRouteNetwork(Guid correlationId, UserContext userContext, Guid spanEquipmentId, Guid spanEquipmentSpecificationId, RouteNetworkInterest interest) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             this.SpanEquipmentId = spanEquipmentId;
             this.SpanEquipmentSpecificationId = spanEquipmentSpecificationId;
             this.Interest = interest;

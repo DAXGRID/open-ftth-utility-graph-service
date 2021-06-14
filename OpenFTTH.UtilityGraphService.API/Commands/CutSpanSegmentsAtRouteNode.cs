@@ -9,11 +9,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public Guid RouteNodeId { get; }
         public Guid[] SpanSegmentsToCut { get; }
 
-        public CutSpanSegmentsAtRouteNode(Guid routeNodeId, Guid[] spanSegmentsToCut)
+        public CutSpanSegmentsAtRouteNode(Guid correlationId, UserContext userContext, Guid routeNodeId, Guid[] spanSegmentsToCut) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             RouteNodeId = routeNodeId;
             SpanSegmentsToCut = spanSegmentsToCut;
         }

@@ -15,11 +15,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public NamingInfo? NamingInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
 
-        public UpdateSpanEquipmentProperties(Guid spanEquipmentOrSegmentId)
+        public UpdateSpanEquipmentProperties(Guid correlationId, UserContext userContext, Guid spanEquipmentOrSegmentId) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             SpanEquipmentOrSegmentId = spanEquipmentOrSegmentId;
         }
     }

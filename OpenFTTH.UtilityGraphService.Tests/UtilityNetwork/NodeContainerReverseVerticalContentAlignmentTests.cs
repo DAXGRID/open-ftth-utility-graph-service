@@ -48,7 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerBeforeFlip);
 
-            var reverseCmd = new ReverseNodeContainerVerticalContentAlignment(sutNodeContainerId);
+            var reverseCmd = new ReverseNodeContainerVerticalContentAlignment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutNodeContainerId);
             var reverseResult = await _commandDispatcher.HandleAsync<ReverseNodeContainerVerticalContentAlignment, Result>(reverseCmd);
 
             var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
@@ -77,7 +77,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerBeforeFlip);
 
-            var reverseCmd = new ReverseNodeContainerVerticalContentAlignment(sutNodeContainerId);
+            var reverseCmd = new ReverseNodeContainerVerticalContentAlignment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutNodeContainerId);
             var reverseResult = await _commandDispatcher.HandleAsync<ReverseNodeContainerVerticalContentAlignment, Result>(reverseCmd);
 
             var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(

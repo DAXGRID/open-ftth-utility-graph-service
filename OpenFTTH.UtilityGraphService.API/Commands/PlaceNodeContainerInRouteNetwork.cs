@@ -15,11 +15,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public LifecycleInfo? LifecycleInfo { get; init; }
         public Guid? ManufacturerId { get; init; }
 
-        public PlaceNodeContainerInRouteNetwork(Guid nodeContainerId, Guid nodeContainerSpecificationId, RouteNetworkInterest nodeOfInterest)
+        public PlaceNodeContainerInRouteNetwork(Guid correlationId, UserContext userContext, Guid nodeContainerId, Guid nodeContainerSpecificationId, RouteNetworkInterest nodeOfInterest) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             NodeContainerId = nodeContainerId;
             NodeContainerSpecificationId = nodeContainerSpecificationId;
             NodeOfInterest = nodeOfInterest;

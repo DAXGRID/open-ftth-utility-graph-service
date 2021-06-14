@@ -9,11 +9,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     {
         public SpanEquipmentSpecification Specification { get; }
 
-        public AddSpanEquipmentSpecification(SpanEquipmentSpecification specification)
+        public AddSpanEquipmentSpecification(Guid correlationId, UserContext userContext, SpanEquipmentSpecification specification) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             Specification = specification;
         }
     }

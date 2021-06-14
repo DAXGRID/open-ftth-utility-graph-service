@@ -34,8 +34,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manu2 = new Manufacturer(Guid.NewGuid(), "Manu 2");
 
             // Act
-            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
-            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu2));
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu1));
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu2));
 
             var manufacturerQueryResult = await _queryDispatcher.HandleAsync<GetManufacturer, Result<LookupCollection<Manufacturer>>>(new GetManufacturer());
 
@@ -51,7 +51,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manu1 = new Manufacturer(Guid.NewGuid(),"");
 
             // Act
-            var cmdResult = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
+            var cmdResult = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu1));
 
             // Assert
             cmdResult.IsFailed.Should().BeTrue();
@@ -65,8 +65,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manu2 = new Manufacturer(Guid.NewGuid(), "Hans");
 
             // Act
-            var cmdResult1 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
-            var cmdResult2 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu2));
+            var cmdResult1 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu1));
+            var cmdResult2 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu2));
 
             // Assert
             cmdResult1.IsFailed.Should().BeFalse();
@@ -81,8 +81,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manu2 = new Manufacturer(manu1.Id, "Bent");
 
             // Act
-            var cmdResult1 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu1));
-            var cmdResult2 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manu2));
+            var cmdResult1 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu1));
+            var cmdResult2 = await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manu2));
 
             // Assert
             cmdResult1.IsFailed.Should().BeFalse();

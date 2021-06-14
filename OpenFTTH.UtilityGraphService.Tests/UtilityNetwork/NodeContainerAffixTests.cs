@@ -47,7 +47,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
-            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
+            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
                 nodeContainerIngoingSide: NodeContainerSideEnum.West
@@ -79,7 +79,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var nodeContainerId = testConduit.NodeContainerAffixes.First(n => n.RouteNodeId == TestRouteNetwork.HH_2).NodeContainerId;
 
-            var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(
+            var detachConduitFromNodeContainer = new DetachSpanEquipmentFromNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 testConduit.SpanStructures[1].SpanSegments[0].Id,
                 routeNodeId: TestRouteNetwork.HH_2
             );
@@ -117,7 +117,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var utilityNetworkNotificationsBeforeAct = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
             var nodeContainerId = utilityNetworkNotificationsBeforeAct.First(n => n.AffectedRouteNetworkElementIds.Contains(TestRouteNetwork.HH_2) && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.ObjectType == "NodeContainer" && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification)).IdChangeSets.First(c => c.ObjectType == "NodeContainer").IdList[0];
 
-            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
+            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
                 nodeContainerIngoingSide: NodeContainerSideEnum.West
@@ -150,7 +150,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
-            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
+            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: nodeContainerId,
                 nodeContainerIngoingSide: NodeContainerSideEnum.West
@@ -173,10 +173,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var nodeContainerId = Guid.NewGuid();
             var nodeOfInterestId = Guid.NewGuid();
-            var registerNodeOfInterestCommand = new RegisterNodeOfInterest(nodeOfInterestId, routeNodeId);
+            var registerNodeOfInterestCommand = new RegisterNodeOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), nodeOfInterestId, routeNodeId);
             var registerNodeOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand).Result;
 
-            var placeNodeContainerCommand = new PlaceNodeContainerInRouteNetwork(nodeContainerId, TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult.Value)
+            var placeNodeContainerCommand = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), nodeContainerId, TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult.Value)
             {
                 ManufacturerId = TestSpecifications.Manu_Emtelle
             };

@@ -31,7 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Node Container Manufacturer");
-            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manufacturer));
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
             // Setup a node equipment container specification
             var newNodeContainerSpecification = new NodeContainerSpecification(Guid.NewGuid(), "ManHoles", "Draka xyz")
@@ -41,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             };
 
             // Act
-            var addNodeSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddNodeContainerSpecification, Result>(new AddNodeContainerSpecification(newNodeContainerSpecification));
+            var addNodeSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddNodeContainerSpecification, Result>(new AddNodeContainerSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), newNodeContainerSpecification));
 
             var nodeContainerSpecificationsQueryResult = await _queryDispatcher.HandleAsync<GetNodeContainerSpecifications, Result<LookupCollection<NodeContainerSpecification>>>(new GetNodeContainerSpecifications());
 

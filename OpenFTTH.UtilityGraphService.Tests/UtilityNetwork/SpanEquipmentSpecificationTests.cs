@@ -31,7 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Super Manufacturer");
-            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(manufacturer));
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
 
             // Setup some span structure specifications to be used in the span equipment specification
@@ -40,21 +40,21 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 OuterDiameter = 50,
                 InnerDiameter = 45
             };
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(outerConduitSpanStructureSpec1));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), outerConduitSpanStructureSpec1));
 
             var innerConduitSpanStructureSpec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø12/10", "Red")
             {
                 OuterDiameter = 12,
                 InnerDiameter = 10
             };
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(innerConduitSpanStructureSpec1));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), innerConduitSpanStructureSpec1));
 
             var innerConduitSpanStructureSpec2 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø12/10", "Blue")
             {
                 OuterDiameter = 12,
                 InnerDiameter = 10
             };
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(innerConduitSpanStructureSpec2));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), innerConduitSpanStructureSpec2));
                        
 
             // Setup a span equipment specification with 2 levels
@@ -72,7 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             };
 
             // Act
-            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
+            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentSpecification));
 
             var spanEqipmentSpecificationsQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentSpecifications, Result<LookupCollection<SpanEquipmentSpecification>>>(new GetSpanEquipmentSpecifications());
 
@@ -92,7 +92,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 OuterDiameter = 50,
                 InnerDiameter = 45
             };
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(outerConduitSpanStructureSpec1));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), outerConduitSpanStructureSpec1));
 
 
             // Setup a span equipment specification with level 0 in root span template. 
@@ -104,7 +104,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 ));
 
             // Act
-            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
+            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentSpecification));
 
             // Assert
             addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
@@ -120,7 +120,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 OuterDiameter = 50,
                 InnerDiameter = 45
             };
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(outerConduitSpanStructureSpec1));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), outerConduitSpanStructureSpec1));
 
             // Add span equipment specification with child templates as level 2 set to level 3
             var spanEquipmentSpecification = new SpanEquipmentSpecification(Guid.NewGuid(), "Conduit", "Ø50 2x12",
@@ -131,7 +131,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 ));
 
             // Act
-            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
+            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentSpecification));
 
             // Assert
             addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
@@ -147,7 +147,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 OuterDiameter = 50,
                 InnerDiameter = 45
             };
-            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(outerConduitSpanStructureSpec1));
+            await _commandDispatcher.HandleAsync<AddSpanStructureSpecification, Result>(new AddSpanStructureSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), outerConduitSpanStructureSpec1));
 
             // Add span equipment specification with two child template having same level and position
             var spanEquipmentSpecification = new SpanEquipmentSpecification(Guid.NewGuid(), "Conduit", "Ø50 2x12",
@@ -159,7 +159,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 ));
 
             // Act
-            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
+            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentSpecification));
 
             // Assert
             addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();
@@ -177,7 +177,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 ));
 
             // Act
-            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(spanEquipmentSpecification));
+            var addSpanEquipmentSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddSpanEquipmentSpecification, Result>(new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentSpecification));
 
             // Assert
             addSpanEquipmentSpecificationCommandResult.IsFailed.Should().BeTrue();

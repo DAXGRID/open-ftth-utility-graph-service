@@ -49,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var existingWalk = GetInterestInformation(spanEquipment);
 
             // Validate the new walk
-            var newWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(command.NewWalkIds)).Result;
+            var newWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), command.NewWalkIds)).Result;
 
             // If the new walk fails to validate, return the error to the client
             if (newWalkValidationResult.IsFailed)
@@ -79,10 +79,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var newSegmentIds = new RouteNetworkElementIdList();
             newSegmentIds.AddRange(newWalk.SegmentIds);
 
-            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(spanEquipment.WalkOfInterestId, newSegmentIds)
-            {
-                UserContext = commandContext.UserContext
-            };
+            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, spanEquipment.WalkOfInterestId, newSegmentIds);
 
             var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
 

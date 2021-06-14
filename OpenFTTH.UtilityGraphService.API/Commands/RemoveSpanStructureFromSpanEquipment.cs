@@ -8,11 +8,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
     {
         public Guid SpanSegmentId { get; }
 
-        public RemoveSpanStructureFromSpanEquipment(Guid spanSegmentId)
+        public RemoveSpanStructureFromSpanEquipment(Guid correlationId, UserContext userContext, Guid spanSegmentId) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             SpanSegmentId = spanSegmentId;
         }
     }

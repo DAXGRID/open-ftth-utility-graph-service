@@ -9,11 +9,8 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public Guid RouteNodeId { get; }
         public Guid[] SpanSegmentsToDisconnect { get; }
 
-        public DisconnectSpanSegmentsAtRouteNode(Guid routeNodeId, Guid[] spanSegmentsToDisconnect)
+        public DisconnectSpanSegmentsAtRouteNode(Guid correlationId, UserContext userContext, Guid routeNodeId, Guid[] spanSegmentsToDisconnect) : base(correlationId, userContext)
         {
-            this.CmdId = Guid.NewGuid();
-            this.Timestamp = DateTime.UtcNow;
-
             RouteNodeId = routeNodeId;
             SpanSegmentsToDisconnect = spanSegmentsToDisconnect;
         }

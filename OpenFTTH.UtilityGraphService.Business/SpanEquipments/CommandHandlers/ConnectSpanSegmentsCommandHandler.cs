@@ -129,7 +129,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Update interest of the first span equipment to cover both span equipments
             var newSegmentIds = MergeWalks(firstSpanEquipmentWalk, secondSpanEquipmentWalk);
 
-            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(firstSpanEquipment.SpanEquipment.WalkOfInterestId, newSegmentIds);
+            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), firstSpanEquipment.SpanEquipment.WalkOfInterestId, newSegmentIds);
             var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
 
             if (updateWalkOfInterestCommandResult.IsFailed)
@@ -142,11 +142,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (removeSpanEquipment.IsSuccess)
             {
                 // Remember to remove the walk of interest as well
-                var unregisterInterestCmd = new UnregisterInterest(secondSpanEquipment.SpanEquipment.WalkOfInterestId)
-                {
-                    CorrelationId = cmdContext.CorrelationId,
-                    UserContext = cmdContext.UserContext
-                };
+                var unregisterInterestCmd = new UnregisterInterest(cmdContext.CorrelationId, cmdContext.UserContext, secondSpanEquipment.SpanEquipment.WalkOfInterestId);
 
                 var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
 

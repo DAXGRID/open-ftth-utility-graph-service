@@ -46,7 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipment);
 
-            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(
+            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentId: sutSpanEquipmentId,
                 structureSpecificationIds: new Guid[] { TestSpecifications.Ø10_Red, TestSpecifications.Ø10_Violet }
             );
@@ -92,7 +92,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipment);
 
-            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(
+            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentId: sutSpanEquipment.SpanStructures[0].SpanSegments[0].Id,
                 structureSpecificationIds: new Guid[] { TestSpecifications.Ø10_Turquoise }
             );
@@ -120,7 +120,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipment);
 
-            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(
+            var addStructure = new PlaceAdditionalStructuresInSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentId: sutSpanEquipment.SpanStructures[0].SpanSegments[0].Id,
                 structureSpecificationIds: new Guid[] { TestSpecifications.Ø10_Turquoise }
             );

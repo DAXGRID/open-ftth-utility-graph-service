@@ -51,7 +51,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment2, out var spanEquipment2BeforeConnect);
 
             // Connect inner conduit 1
-            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.SDU_1,
                 spanSegmentsToConnect: new Guid[] {
                     spanEquipment1BeforeConnect.SpanStructures[1].SpanSegments[0].Id,
@@ -97,7 +97,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutToSpanEquipmentId, out var toSpanEquipmentBeforeConnect);
 
             // Connect the two outer conduits, which should result in a merge of the two span equipments
-            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToConnect: new Guid[] {
                     fromSpanEquipmentBeforeConnect.SpanStructures[0].SpanSegments[0].Id,
@@ -184,7 +184,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
-            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(
+            var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
                 nodeContainerId: TestUtilityNetwork.NodeContainer_J_1,
                 nodeContainerIngoingSide: NodeContainerSideEnum.West
@@ -207,7 +207,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
 
             // Cut the outer conduit and 4 inner conduit
-            var cutCmd = new CutSpanSegmentsAtRouteNode(
+            var cutCmd = new CutSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToCut: new Guid[] {
                     spanEquipment.SpanStructures[0].SpanSegments[0].Id,
@@ -234,7 +234,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
 
             // Connect inner conduit 1
-            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToConnect: new Guid[] {
                     spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
@@ -260,7 +260,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
 
             // Connect inner conduit 1
-            var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(
+            var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToDisconnect: new Guid[] {
                     spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
@@ -284,7 +284,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
 
             // Connect inner conduit 1
-            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToConnect: new Guid[] {
                     spanEquipmentBeforeCut.SpanStructures[1].SpanSegments[0].Id,
@@ -319,7 +319,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutToSpanEquipmentId, out var toSpanEquipmentBeforeConnect);
 
             // Connect the two outer conduits, which should result in a merge of the two span equipments
-            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.J_1,
                 spanSegmentsToConnect: new Guid[] {
                     fromSpanEquipmentBeforeConnect.SpanStructures[0].SpanSegments[0].Id,
@@ -346,7 +346,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutToSpanEquipmentId, out var toSpanEquipmentBeforeConnect);
 
             // Connect the two outer conduits, which should result in a merge of the two span equipments
-            var connectCmd = new ConnectSpanSegmentsAtRouteNode(
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.SDU_1,
                 spanSegmentsToConnect: new Guid[] {
                     fromSpanEquipmentBeforeConnect.SpanStructures[0].SpanSegments[0].Id,
