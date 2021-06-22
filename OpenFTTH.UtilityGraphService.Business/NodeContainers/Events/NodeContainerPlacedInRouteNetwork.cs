@@ -1,7 +1,7 @@
 ﻿using OpenFTTH.Events;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
+namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
 {
     public record NodeContainerPlacedInRouteNetwork : EventStoreBaseEvent
     {

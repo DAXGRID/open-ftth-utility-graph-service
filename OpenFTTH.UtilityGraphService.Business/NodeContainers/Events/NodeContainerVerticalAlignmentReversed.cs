@@ -1,7 +1,7 @@
 ﻿using OpenFTTH.Events;
 using System;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
+namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
 {
     public record NodeContainerVerticalAlignmentReversed : EventStoreBaseEvent
     {

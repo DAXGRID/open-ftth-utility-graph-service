@@ -6,7 +6,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     public record NodeContainer : IEquipment
     {
         public Guid Id { get; }
-        public Guid SpecificationId { get; }
+        public Guid SpecificationId { get; init; }
         public Guid InterestId { get;  }
         public Guid RouteNodeId { get;  }
         public Guid? ManufacturerId { get; init; }

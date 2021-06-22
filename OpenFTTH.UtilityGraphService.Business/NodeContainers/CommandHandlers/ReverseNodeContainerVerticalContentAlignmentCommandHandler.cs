@@ -6,7 +6,7 @@ using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.Business.Graph;
-using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

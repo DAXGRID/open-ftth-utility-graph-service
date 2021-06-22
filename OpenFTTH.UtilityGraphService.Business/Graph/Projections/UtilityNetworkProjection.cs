@@ -45,6 +45,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentMarkingInfoChanged>(Project);
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
+            ProjectEvent<NodeContainerManufacturerChanged>(Project);
+            ProjectEvent<NodeContainerSpecificationChanged>(Project);
 
 
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
@@ -161,11 +163,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessSpanEquipmentSpecificationChange(@event);
                     break;
 
+
                 case (NodeContainerPlacedInRouteNetwork @event):
                     StoreAndIndexVirginContainerEquipment(@event.Container);
                     break;
 
                 case (NodeContainerVerticalAlignmentReversed @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerManufacturerChanged @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerSpecificationChanged @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
             }

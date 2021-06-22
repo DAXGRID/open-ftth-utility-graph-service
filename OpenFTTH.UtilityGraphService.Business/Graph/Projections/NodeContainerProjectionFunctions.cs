@@ -1,5 +1,5 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 {
@@ -12,6 +12,22 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             return existingSpanEquipment with
             {
                 VertialContentAlignmemt = newAllignment
+            };
+        }
+
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerManufacturerChanged @event)
+        {
+            return existingEquipment with
+            {
+                ManufacturerId = @event.ManufacturerId
+            };
+        }
+
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerSpecificationChanged @event)
+        {
+            return existingEquipment with
+            {
+                SpecificationId = @event.NewSpecificationId,
             };
         }
 
