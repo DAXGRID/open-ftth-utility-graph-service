@@ -1,5 +1,6 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 {
