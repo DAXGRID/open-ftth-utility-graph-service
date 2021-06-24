@@ -35,6 +35,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
             ProjectEvent<SpanEquipmentDetachedFromContainer>(Project);
             ProjectEvent<SpanSegmentsCut>(Project);
+            ProjectEvent<SpanEquipmentCutReverted>(Project);
             ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
             ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
             ProjectEvent<AdditionalStructuresAddedToSpanEquipment>(Project);
@@ -131,6 +132,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcesstSegmentCuts(@event);
                     break;
 
+                case (SpanEquipmentCutReverted @event):
+                    ProcesstSpanEquipmentCutReverted(@event);
+                    break;
+
                 case (SpanSegmentsConnectedToSimpleTerminals @event):
                     ProcessSegmentConnects(@event);
                     break;
@@ -162,7 +167,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (SpanEquipmentSpecificationChanged @event):
                     ProcessSpanEquipmentSpecificationChange(@event);
                     break;
-
 
                 case (NodeContainerPlacedInRouteNetwork @event):
                     StoreAndIndexVirginContainerEquipment(@event.Container);
@@ -210,23 +214,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             TryUpdate(after);
 
             UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+        }
 
-            /*
-            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+        private void ProcesstSpanEquipmentCutReverted(SpanEquipmentCutReverted @event)
+        {
+            var before = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+            var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
+            TryUpdate(after);
 
-            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
-
-            if (spanEquipment.Id == Guid.Parse("49aef63a-1295-4094-a436-6d45f83a6210"))
-            {
-
-            }
-
-            // Re-index segments cut
-            foreach (var spanSegmentCut in @event.Cuts)
-            {
-                _utilityGraph.ApplySegmentCut(spanEquipment, spanSegmentCut);
-            }
-            */
+            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcessSegmentConnects(SpanSegmentsConnectedToSimpleTerminals @event)
@@ -236,19 +232,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             TryUpdate(after);
 
             UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
-
-            /*
-
-            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
-
-            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
-
-            // Re-index segments connect
-            foreach (var spanSegmentToConnect in @event.Connects)
-            {
-                _utilityGraph.ApplySegmentConnect(spanEquipment, spanSegmentToConnect);
-            }
-            */
         }
 
         private void ProcessSegmentDisconnects(SpanSegmentDisconnectedFromTerminal @event)
@@ -258,14 +241,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             TryUpdate(after);
 
             UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
-
-            /*
-            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
-
-            var spanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
-
-            _utilityGraph.ApplySegmentDisconnect(spanEquipment, @event.SpanSegmentId, @event.TerminalId);
-            */
         }
 
         private void ProcessAdditionalStructures(AdditionalStructuresAddedToSpanEquipment @event)
@@ -313,39 +288,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             TryUpdate(after);
 
             UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
-
-            /*
-
-            var spanEquipmentBeforeChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
-
-            TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
-
-            var spanEquipmentAfterChange = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
-
-            var structuresToBeDeleted = @event.StructureModificationInstructions.Where(i => i.StructureToBeDeleted).ToDictionary(i => i.StructureId);
-            var structuresToBeAdded = @event.StructureModificationInstructions.Where(i => i.NewStructureToBeInserted != null).ToDictionary(i => i.StructureId);
-
-            // Deleted span segments from the graph
-            foreach (var spanStructure in spanEquipmentBeforeChange.SpanStructures)
-            {
-                if (structuresToBeDeleted.ContainsKey(spanStructure.Id))
-                {
-                    foreach (var spanSegment in spanStructure.SpanSegments)
-                    {
-                        _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
-                    }
-                }
-            }
-
-            // Add structures
-            foreach (var structureToBeAddedInstruction in @event.StructureModificationInstructions.Where(i => i.NewStructureToBeInserted != null))
-            {
-                if (structureToBeAddedInstruction.NewStructureToBeInserted != null)
-                {
-                    _utilityGraph.AddDisconnectedSegment(spanEquipmentAfterChange, structureToBeAddedInstruction.NewStructureToBeInserted.Position, 0);
-                }
-            }
-            */
         }
 
         private void ProcessSpanEquipmentMerge(SpanEquipmentMerged @event)

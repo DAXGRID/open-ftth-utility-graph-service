@@ -22,7 +22,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             Dictionary<Guid, SpanSegmentCutInfo> spanSegmentCutInfoBySegmentId = spanSegmentsCutEvent.Cuts.ToDictionary(c => c.OldSpanSegmentId);
 
             // First create a new nodes of interest list with the cut node added
-            Guid[] newNodeOfInterestIdList = CreateNewNodeOfInterestIdListWith(existingSpanEquipment, spanSegmentsCutEvent.CutNodeOfInterestId, spanSegmentsCutEvent.CutNodeOfInterestIndex);
+            Guid[] newNodeOfInterestIdList = CreateNewNodeOfInterestIdListWithExtraNode(existingSpanEquipment, spanSegmentsCutEvent.CutNodeOfInterestId, spanSegmentsCutEvent.CutNodeOfInterestIndex);
 
             bool nodeOfInterestAlreadyExists = existingSpanEquipment.NodesOfInterestIds.Contains(spanSegmentsCutEvent.CutNodeOfInterestId);
 
@@ -104,6 +104,78 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentCutReverted spanEquipmentCutReverted)
+        {
+            UInt16 uncutNodeOfInterestIndex = (UInt16) Array.IndexOf(existingSpanEquipment.NodesOfInterestIds, spanEquipmentCutReverted.CutNodeOfInterestId);
+
+            var newNodeOfInterestIdList = CreateNewNodeOfInterestIdListWithRemovedNode(existingSpanEquipment, spanEquipmentCutReverted.CutNodeOfInterestId);
+
+            List<SpanStructure> newStructures = new List<SpanStructure>();
+
+            // Loop though all span structures
+            for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
+            {
+                var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
+
+                List<SpanSegment> newSegments = new List<SpanSegment>();
+
+                // Loop through all span segments
+                SpanSegment? previousSegment = null;
+
+                foreach (var existingSegment in existingSpanStructure.SpanSegments)
+                {
+                    UInt16 fromNodeOfInterestIndexToUse = existingSegment.FromNodeOfInterestIndex;
+                    UInt16 toNodeOfInterestIndexToUse = existingSegment.ToNodeOfInterestIndex;
+
+                    if (fromNodeOfInterestIndexToUse > uncutNodeOfInterestIndex)
+                        fromNodeOfInterestIndexToUse--;
+
+                    if (toNodeOfInterestIndexToUse > uncutNodeOfInterestIndex)
+                        toNodeOfInterestIndexToUse--;
+
+                    if (existingSegment.ToNodeOfInterestIndex == uncutNodeOfInterestIndex)
+                    {
+                        // We're dealing with the left part segment of the cut to be reverted - we just skip/delete this one
+                    }
+                    else if (existingSegment.FromNodeOfInterestIndex == uncutNodeOfInterestIndex)
+                    {
+                        // We're dealing with the right part segment of the cut to be reverted - now it's time to do stuff
+
+                        if (previousSegment == null)
+                            throw new ApplicationException($"Invalid span structure! Found segment: {existingSegment.Id} connected *from* node: {spanEquipmentCutReverted.CutNodeOfInterestId}, but no segments found connected *to* that node in the span structure: {existingSpanStructure.Id}");
+
+                        var newSegment = new SpanSegment(Guid.NewGuid(), previousSegment.FromNodeOfInterestIndex, toNodeOfInterestIndexToUse)
+                        {
+                            FromTerminalId = previousSegment.FromTerminalId,
+                            ToTerminalId = existingSegment.ToTerminalId
+                        };
+
+                        newSegments.Add(newSegment);
+                    }
+                    else  
+                    {
+                        // We're dealing with an segment not referencing the node to be reverted
+                        var newSegment = existingSegment with { FromNodeOfInterestIndex = fromNodeOfInterestIndexToUse, ToNodeOfInterestIndex = toNodeOfInterestIndexToUse };
+                        newSegments.Add(newSegment);
+                    }
+
+                    previousSegment = existingSegment;
+                }
+
+                newStructures.Add(
+                    existingSpanStructure with
+                    {
+                        SpanSegments = newSegments.ToArray()
+                    });
+            }
+
+            return existingSpanEquipment with
+            {
+                NodesOfInterestIds = newNodeOfInterestIdList,
+                SpanStructures = newStructures.ToArray()
+            };
+        }
+
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAffixedToContainer spanEquipmentAffixedToContainer)
         {
             var newListOfAffixes = new List<SpanEquipmentNodeContainerAffix>();
@@ -141,7 +213,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
-        private static Guid[] CreateNewNodeOfInterestIdListWith(SpanEquipment existingSpanEquipment, Guid cutNodeOfInterestId, UInt16 newNodeOfInterestIndex)
+        private static Guid[] CreateNewNodeOfInterestIdListWithExtraNode(SpanEquipment existingSpanEquipment, Guid cutNodeOfInterestId, UInt16 newNodeOfInterestIndex)
         {
             if (existingSpanEquipment.NodesOfInterestIds.Contains(cutNodeOfInterestId))
                 return existingSpanEquipment.NodesOfInterestIds;
@@ -158,6 +230,19 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             for (UInt16 i = newNodeOfInterestIndex; i < existingSpanEquipment.NodesOfInterestIds.Length; i++)
             {
                 result.Add(existingSpanEquipment.NodesOfInterestIds[i]);
+            }
+
+            return result.ToArray();
+        }
+
+        private static Guid[] CreateNewNodeOfInterestIdListWithRemovedNode(SpanEquipment existingSpanEquipment, Guid uncutNodeOfInterestId)
+        {
+            var result = new List<Guid>();
+
+            for (UInt16 i = 0; i < existingSpanEquipment.NodesOfInterestIds.Length; i++)
+            {
+                if (existingSpanEquipment.NodesOfInterestIds[i] != uncutNodeOfInterestId)
+                    result.Add(existingSpanEquipment.NodesOfInterestIds[i]);
             }
 
             return result.ToArray();

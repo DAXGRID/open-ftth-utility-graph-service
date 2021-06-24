@@ -28,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentPlacedInRouteNetwork>(Apply);
             Register<SpanEquipmentAffixedToContainer>(Apply);
             Register<SpanSegmentsCut>(Apply);
+            Register<SpanEquipmentCutReverted>(Apply);
             Register<SpanSegmentsConnectedToSimpleTerminals>(Apply);
             Register<SpanSegmentDisconnectedFromTerminal>(Apply);
             Register<SpanEquipmentDetachedFromContainer>(Apply);
@@ -384,6 +385,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             return Result.Ok();
         }
+
         private UInt16 GetCutNodeOfInterestIndex(Guid routeNodeId, RouteNetworkInterest walkOfInterest)
         {
             if (_spanEquipment == null)
@@ -531,6 +533,98 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         private void Apply(SpanSegmentsCut @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
+        #region Undo Cut 
+
+        public Result RevertCut(CommandContext cmdContext, Guid routeNodeId, Guid spanEquipmentId)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            // If outer span is not cut, do nothing
+            if (!_spanEquipment.SpanStructures[0].SpanSegments.Any(s =>
+                _spanEquipment.NodesOfInterestIds[s.FromNodeOfInterestIndex] == routeNodeId ||
+                _spanEquipment.NodesOfInterestIds[s.ToNodeOfInterestIndex] == routeNodeId))
+            {
+                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_REVERT_SPAN_EQUIPMENT_CUT_DUE_TO_NOT_BEING_CUT, $"Cannot revert cut of span equipment with id: {this.Id} in node: {routeNodeId} because span equipment has not yet been cut in that node."));
+            }
+
+
+            var validUndoCutResult = IsUndoCutValid(routeNodeId);
+
+            if (validUndoCutResult.IsFailed)
+                return validUndoCutResult;
+
+            var @event = new SpanEquipmentCutReverted(
+              spanEquipmentId: this.Id,
+              cutNodeOfInterestId: routeNodeId
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private Result IsUndoCutValid(Guid routeNodeId)
+        {
+            HashSet<Guid> spanSegmentsCutValidatedOk = new HashSet<Guid>();
+
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            // Check that no span segments cut are connected to other span equipments
+            foreach (var structure in _spanEquipment.SpanStructures)
+            {
+                foreach (var segment in structure.SpanSegments)
+                {
+                    // If span segment is left to a cut
+                    if (_spanEquipment.NodesOfInterestIds[segment.ToNodeOfInterestIndex] == routeNodeId)
+                    {
+                        // If connected
+                        if (segment.ToTerminalId != Guid.Empty)
+                        {
+                            // If not connected to a segment in same structure then we cannot revert
+                            if (!structure.SpanSegments.Any(s => s.FromTerminalId == segment.ToTerminalId))
+                            {
+                                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_REVERT_SPAN_EQUIPMENT_CUT_DUE_TO_CONNECTED_SEGMENT, $"Cannot revert cut of span equipment with id: {this.Id} in node: {routeNodeId} because span segment with id: {segment.Id} is connected in way that cannot be reverted."));
+                            }
+                        }
+                    }
+
+                    // If span segment is left to a cut
+                    if (_spanEquipment.NodesOfInterestIds[segment.FromNodeOfInterestIndex] == routeNodeId)
+                    {
+                        // If connected
+                        if (segment.FromTerminalId != Guid.Empty)
+                        {
+                            // If not connected to a segment in same structure then we cannot revert
+                            if (!structure.SpanSegments.Any(s => s.ToTerminalId == segment.FromTerminalId))
+                            {
+                                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.CANNOT_REVERT_SPAN_EQUIPMENT_CUT_DUE_TO_CONNECTED_SEGMENT, $"Cannot revert cut of span equipment with id: {this.Id} in node: {routeNodeId} because span segment with id: {segment.Id} is connected in way that cannot be reverted."));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentCutReverted @event)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");

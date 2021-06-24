@@ -57,9 +57,17 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 var spanEquipmentToConnect = spanEquipmentsToConnect.Values.First();
 
-                var connectResult = ConnectSameEquipment(commandContext, command.RouteNodeId, spanEquipmentToConnect);
-
-                return Task.FromResult(connectResult);
+                // If the user re-connects the outer span, the entire span equipment (both outer and all inner spans) will be uncut at the node
+                if (spanEquipmentToConnect.Connects.Count == 2 && spanEquipmentToConnect.Connects[0].StructureIndex == 0 && spanEquipmentToConnect.Connects[1].StructureIndex == 0)
+                {
+                    var connectResult = RevertSpanEquipmentCut(commandContext, command.RouteNodeId, spanEquipmentToConnect.SpanEquipment.Id);
+                    return Task.FromResult(connectResult);
+                }
+                else
+                {
+                    var connectResult = ConnectSpanSegmentsInSameEquipment(commandContext, command.RouteNodeId, spanEquipmentToConnect);
+                    return Task.FromResult(connectResult);
+                }
             }
             else if (spanEquipmentsToConnect.Count == 2)
             {
@@ -93,7 +101,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 else
                 {
                     // Connect the individual spans using junctions/terminals
-                    var connectResult = ConnectTwoSpanEquipment(commandContext, command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
+                    var connectResult = ConnectSpanSegmentsFromTwoSpanEquipment(commandContext, command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
 
                     return Task.FromResult(connectResult);
                 }
@@ -196,7 +204,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return result;
         }
 
-        private Result ConnectTwoSpanEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        private Result ConnectSpanSegmentsFromTwoSpanEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
         {
             // Create junction/terminal ids used to connect span segments
             for (int i = 0; i < firstSpanEquipment.Connects.Count; i++)
@@ -237,12 +245,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             _eventStore.Aggregates.Store(firstSpanEquipmentAR);
             _eventStore.Aggregates.Store(secondSpanEquipmentAR);
 
-            NotifyExternalServicesAboutConnectivityChange(firstSpanEquipment.SpanEquipment.Id, secondSpanEquipment.SpanEquipment.Id, routeNodeId);
+            NotifyExternalServicesAboutConnectivityChange(firstSpanEquipment.SpanEquipment.Id, secondSpanEquipment.SpanEquipment.Id, routeNodeId, "EquipmentConnectivityModification.Connect");
 
             return Result.Ok();
         }
 
-        private Result ConnectSameEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder spanEquipmentToConnect)
+        private Result ConnectSpanSegmentsInSameEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder spanEquipmentToConnect)
         {
             if (spanEquipmentToConnect.Connects.Count != 2)
             {
@@ -304,10 +312,32 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             _eventStore.Aggregates.Store(spanEquipmentAR);
 
-            NotifyExternalServicesAboutConnectivityChange(spanEquipmentToConnect.SpanEquipment.Id, routeNodeId);
+            NotifyExternalServicesAboutConnectivityChange(spanEquipmentToConnect.SpanEquipment.Id, routeNodeId, "EquipmentConnectivityModification.Connect");
 
             return Result.Ok();
         }
+
+        private Result RevertSpanEquipmentCut(CommandContext cmdContext, Guid routeNodeId, Guid spanEquipmentId)
+        {
+            // Connect span equipment to terminals
+            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipmentId);
+
+            var spanEquipmentUncutResult = spanEquipmentAR.RevertCut(
+                cmdContext: cmdContext,
+                routeNodeId: routeNodeId,
+                spanEquipmentId: spanEquipmentId
+            );
+
+            if (spanEquipmentUncutResult.IsFailed)
+                return spanEquipmentUncutResult;
+
+            _eventStore.Aggregates.Store(spanEquipmentAR);
+
+            NotifyExternalServicesAboutConnectivityChange(spanEquipmentId, routeNodeId, "EquipmentModification.RevertCut");
+
+            return Result.Ok();
+        }
+
 
         private Result<Dictionary<Guid, SpanEquipmentWithConnectsHolder>> BuildSpanEquipmentsToConnect(ConnectSpanSegmentsAtRouteNode command)
         {
@@ -352,6 +382,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                                         terminalId: Guid.Empty
                                     )
                                 )
+                                {
+                                    StructureIndex = spanSegmentWithIndexInfo.StructureIndex
+                                }
                             }
                         }
                     );
@@ -367,6 +400,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                                 terminalId: Guid.Empty
                             )
                         )
+                        {
+                            StructureIndex = spanSegmentWithIndexInfo.StructureIndex
+                        }
                     );
                 }
             }
@@ -448,7 +484,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
         }
         
-        private async void NotifyExternalServicesAboutConnectivityChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId)
+        private async void NotifyExternalServicesAboutConnectivityChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId, string category)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
@@ -462,7 +498,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
                     applicationInfo: null,
-                    category: "EquipmentConnectivityModification.Connect",
+                    category: category,
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
@@ -470,7 +506,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             await _externalEventProducer.Produce(_topicName, updatedEvent);
         }
 
-        private async void NotifyExternalServicesAboutConnectivityChange(Guid spanEquipmentId, Guid routeNodeId)
+        private async void NotifyExternalServicesAboutConnectivityChange(Guid spanEquipmentId, Guid routeNodeId, string category)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
@@ -484,7 +520,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
                     applicationInfo: null,
-                    category: "EquipmentConnectivityModification.Connect",
+                    category: category,
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
@@ -532,7 +568,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             public SpanSegmentToSimpleTerminalConnectInfo ConnectInfo { get; }
             public Guid StructureSpecificationId { get; set; }
-
+            public ushort StructureIndex { get; set; }
             public SpanSegmentConnectHolder(SpanSegmentToSimpleTerminalConnectInfo connectInfo)
             {
                 ConnectInfo = connectInfo;

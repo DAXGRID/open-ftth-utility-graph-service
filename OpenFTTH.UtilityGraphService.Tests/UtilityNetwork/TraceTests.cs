@@ -17,7 +17,7 @@ using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-    [Order(5000)]
+    [Order(2500)]
     public class TraceTests
     {
         private readonly IEventStore _eventStore;
