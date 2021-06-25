@@ -23,11 +23,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
         public Guid OldSpanSegmentId2 { get; }
         public Guid NewSpanSegmentId { get; }
 
-        public SpanSegmentCutRevertInfo(Guid oldSpanSegmentId1, Guid oldSpanSegmentId2, Guid newSpanSegmentId1)
+        public SpanSegmentCutRevertInfo(Guid oldSpanSegmentId1, Guid oldSpanSegmentId2, Guid newSpanSegmentId)
         {
             OldSpanSegmentId1 = oldSpanSegmentId1;
             OldSpanSegmentId2 = oldSpanSegmentId2;
-            NewSpanSegmentId = newSpanSegmentId1;
+            NewSpanSegmentId = newSpanSegmentId;
         }
     }
 }

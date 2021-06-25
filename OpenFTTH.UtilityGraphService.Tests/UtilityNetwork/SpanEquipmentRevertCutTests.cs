@@ -105,6 +105,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.RevertCut" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.HH_2);
 
+            // Check utility graph
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(sutSpanEquipmentAfterUncut.SpanStructures[0].SpanSegments[0].Id, out var segment0afterConnect);
+
+
             // Check traces
             var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
                new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipmentId })
