@@ -112,6 +112,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
             List<SpanStructure> newStructures = new List<SpanStructure>();
 
+            Dictionary<Guid, SpanSegmentCutRevertInfo> revertInfoLookup = spanEquipmentCutReverted.Reverts.ToDictionary(r => r.OldSpanSegmentId2);
+
             // Loop though all span structures
             for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
             {
@@ -144,7 +146,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                         if (previousSegment == null)
                             throw new ApplicationException($"Invalid span structure! Found segment: {existingSegment.Id} connected *from* node: {spanEquipmentCutReverted.CutNodeOfInterestId}, but no segments found connected *to* that node in the span structure: {existingSpanStructure.Id}");
 
-                        var newSegment = new SpanSegment(Guid.NewGuid(), previousSegment.FromNodeOfInterestIndex, toNodeOfInterestIndexToUse)
+                        var revertInfo = revertInfoLookup[existingSegment.Id];
+
+                        var newSegment = new SpanSegment(revertInfo.NewSpanSegmentId, previousSegment.FromNodeOfInterestIndex, toNodeOfInterestIndexToUse)
                         {
                             FromTerminalId = previousSegment.FromTerminalId,
                             ToTerminalId = existingSegment.ToTerminalId

@@ -565,7 +565,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             var @event = new SpanEquipmentCutReverted(
               spanEquipmentId: this.Id,
-              cutNodeOfInterestId: routeNodeId
+              cutNodeOfInterestId: routeNodeId,
+              reverts: CreateCutReverts(routeNodeId)
             )
             {
                 CorrelationId = cmdContext.CorrelationId,
@@ -577,6 +578,36 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             RaiseEvent(@event);
 
             return Result.Ok();
+        }
+
+        private SpanSegmentCutRevertInfo[] CreateCutReverts(Guid routeNodeId)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            List<SpanSegmentCutRevertInfo> reverts = new List<SpanSegmentCutRevertInfo>();
+
+            // Check that no span segments cut are connected to other span equipments
+            foreach (var structure in _spanEquipment.SpanStructures)
+            {
+                SpanSegment? previousSegment = null;
+
+                foreach (var segment in structure.SpanSegments)
+                {
+                    // If span segment is right to a cut
+                    if (_spanEquipment.NodesOfInterestIds[segment.FromNodeOfInterestIndex] == routeNodeId)
+                    {
+                        if (previousSegment == null)
+                            throw new ApplicationException($"Invalid segment data in span equipment: {this.Id} structure with id: {structure.Id}");
+
+                        reverts.Add(new SpanSegmentCutRevertInfo(previousSegment.Id, segment.Id, Guid.NewGuid()));
+                    }
+
+                    previousSegment = segment;
+                }
+            }
+
+            return reverts.ToArray();
         }
 
         private Result IsUndoCutValid(Guid routeNodeId)
