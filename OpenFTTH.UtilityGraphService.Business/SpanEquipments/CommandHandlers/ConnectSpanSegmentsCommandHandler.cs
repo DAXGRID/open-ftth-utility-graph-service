@@ -356,7 +356,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 var spanSegment = spanSegmentGraphElement.SpanSegment(_utilityNetwork);
 
                 // Check that the user tries to connect inner and outer spans
-                if (spanSegmentGraphElement.StructureIndex == 0)
+                // NB: If only one span structure in the span equipment it's a single conduit, and its ok to connect to it
+                if (spanSegmentGraphElement.StructureIndex == 0 && spanEquipment.SpanStructures.Length > 1)
                     outerSpansFound = true;
 
                 if (spanSegmentGraphElement.StructureIndex > 0)

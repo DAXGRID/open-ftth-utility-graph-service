@@ -132,6 +132,9 @@ namespace OpenFTTH.TestData
         public static Guid SingleConduit_Ø12_Red = Guid.Parse("0b6be410-a6e3-4696-9964-3aff3e827dc8");
         public static Guid SingleConduit_Ø12_Orange = Guid.Parse("12c5e369-9fcc-49c7-81f5-208769501b7d");
 
+        // Customer span equipments
+        public static Guid CustomerConduit_Ø12_Orange = Guid.Parse("ddd86873-9d6c-4741-a406-084c628314db");
+
 
         public FluentResults.Result<TestSpecifications> Run()
         {
@@ -720,6 +723,15 @@ namespace OpenFTTH.TestData
                 IsMultiLevel = false
             });
 
+
+            // Ø12 customer conduit
+            AddSpecification(new SpanEquipmentSpecification(CustomerConduit_Ø12_Orange, "CustomerConduit", "Ø12", new SpanStructureTemplate(Ø12_Orange, 1, 1, Array.Empty<SpanStructureTemplate>()))
+            {
+                Description = "ø12/8 orange",
+                ManufacturerRefs = new Guid[] { Manu_GMPlast, Manu_Emtelle },
+                IsFixed = true,
+                IsMultiLevel = false
+            });
 
         }
 

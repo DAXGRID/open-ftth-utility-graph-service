@@ -34,6 +34,9 @@ namespace OpenFTTH.TestData
         public static Guid MultiConduit_12x7_SDU_1_to_J_1;
         public static Guid MultiConduit_12x7_SDU_2_to_J_1;
 
+        public static Guid CustomerConduit_SP_1_to_SDU_1;
+        public static Guid CustomerConduit_CC_1_to_SDU_1;
+
         public static Guid NodeContainer_HH_1;
         public static Guid NodeContainer_CC_1;
         public static Guid NodeContainer_J_1;
@@ -73,6 +76,10 @@ namespace OpenFTTH.TestData
                 MultiConduit_12x7_SDU_1_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_12x7, new RouteNetworkElementIdList() { TestRouteNetwork.S7 });
                 MultiConduit_12x7_SDU_2_to_J_1 = PlaceConduit(TestSpecifications.Multi_Ø40_12x7, new RouteNetworkElementIdList() { TestRouteNetwork.S8 });
 
+                // Place customer conduit
+                CustomerConduit_SP_1_to_SDU_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { TestRouteNetwork.S6, TestRouteNetwork.S7 });
+                CustomerConduit_CC_1_to_SDU_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S7 });
+
                 // Place node containers
                 NodeContainer_HH_1 = PlaceNodeContainer(TestSpecifications.Well_Fiberpowertech_37_EK_378_400x800, TestSpecifications.Manu_Fiberpowertech, TestRouteNetwork.HH_1);
                 NodeContainer_CC_1 = PlaceNodeContainer(TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, TestSpecifications.Manu_Emtelle, TestRouteNetwork.CC_1);
@@ -99,6 +106,10 @@ namespace OpenFTTH.TestData
                 // Affix 3x10 in SDU 1
                 AffixSpanEquipmentToContainer(MultiConduit_3x10_SDU_1_to_SDU_2, NodeContainer_SDU_1, NodeContainerSideEnum.East);
                 AffixSpanEquipmentToContainer(MultiConduit_12x7_SDU_1_to_J_1, NodeContainer_SDU_1, NodeContainerSideEnum.East);
+
+                // Affix customer conduit in CC_1
+                AffixSpanEquipmentToContainer(CustomerConduit_CC_1_to_SDU_1, NodeContainer_CC_1, NodeContainerSideEnum.North);
+
 
                 Thread.Sleep(100);
 
