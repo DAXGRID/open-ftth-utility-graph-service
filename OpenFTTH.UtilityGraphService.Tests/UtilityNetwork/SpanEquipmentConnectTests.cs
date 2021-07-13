@@ -268,7 +268,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             disconnectResult.IsSuccess.Should().BeTrue();
         }
 
-
         [Fact, Order(100)]
         public async void TestDetachConduitFromContainerInCC1_ShouldFalid()
         {

@@ -25,7 +25,9 @@ namespace OpenFTTH.TestData
         public static Guid FlexConduit_40_Red_HH_2_to_FP_2;
         public static Guid FlexConduit_40_Red_CC_1_to_SP_1;
         public static Guid MultiConduit_3x10_CC_1_to_SP_1;
+        public static Guid MultiConduit_5x10_CC_1_to_SP_1;
         public static Guid MultiConduit_3x10_CC_1_to_HH_11;
+        public static Guid MultiConduit_5x10_CC_1_to_HH_11;
         public static Guid FlexConduit_40_Red_SDU_1_to_SDU_2;
         public static Guid MultiConduit_5x10_SDU_1_to_SDU_2;
         public static Guid MultiConduit_3x10_SDU_1_to_SDU_2;
@@ -67,7 +69,9 @@ namespace OpenFTTH.TestData
                 FlexConduit_40_Red_HH_2_to_FP_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { TestRouteNetwork.S3 });
                 FlexConduit_40_Red_CC_1_to_SP_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { TestRouteNetwork.S5 });
                 MultiConduit_3x10_CC_1_to_SP_1 = PlaceConduit(TestSpecifications.Multi_Ø32_3x10, new RouteNetworkElementIdList() { TestRouteNetwork.S5 });
+                MultiConduit_5x10_CC_1_to_SP_1 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S5 });
                 MultiConduit_3x10_CC_1_to_HH_11 = PlaceConduit(TestSpecifications.Multi_Ø32_3x10, new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S9, TestRouteNetwork.S11 });
+                MultiConduit_5x10_CC_1_to_HH_11 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S9, TestRouteNetwork.S11 });
                 FlexConduit_40_Red_SDU_1_to_SDU_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { TestRouteNetwork.S7, TestRouteNetwork.S8 });
                 MultiConduit_5x10_SDU_1_to_SDU_2 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S7, TestRouteNetwork.S8 });
                 MultiConduit_3x10_SDU_1_to_SDU_2 = PlaceConduit(TestSpecifications.Multi_Ø32_3x10, new RouteNetworkElementIdList() { TestRouteNetwork.S7, TestRouteNetwork.S8 });
@@ -94,6 +98,10 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(MultiConduit_5x10_HH_1_to_HH_10, NodeContainer_CC_1, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(MultiConduit_10x10_HH_1_to_HH_10, NodeContainer_CC_1, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(MultiConduit_3x10_CC_1_to_SP_1, NodeContainer_CC_1, NodeContainerSideEnum.North);
+                AffixSpanEquipmentToContainer(MultiConduit_5x10_CC_1_to_SP_1, NodeContainer_CC_1, NodeContainerSideEnum.North);
+                AffixSpanEquipmentToContainer(MultiConduit_5x10_CC_1_to_HH_11, NodeContainer_CC_1, NodeContainerSideEnum.East);
+
+
 
                 // Affix 3x10 in J_1
                 AffixSpanEquipmentToContainer(MultiConduit_3x10_CC_1_to_HH_11, NodeContainer_J_1, NodeContainerSideEnum.West);
