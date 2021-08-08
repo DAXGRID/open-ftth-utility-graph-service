@@ -16,6 +16,7 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public NamingInfo? NamingInfo { get; init; }
         public LifecycleInfo? LifecycleInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
+        public AddressInfo? AddressInfo { get; init; }
 
         public PlaceSpanEquipmentInRouteNetwork(Guid correlationId, UserContext userContext, Guid spanEquipmentId, Guid spanEquipmentSpecificationId, RouteNetworkInterest interest) : base(correlationId, userContext)
         {

@@ -46,7 +46,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 command.ManufacturerId,
                 command.NamingInfo,
                 command.LifecycleInfo,
-                command.MarkingInfo
+                command.MarkingInfo,
+                command.AddressInfo
             );
 
             if (placeSpanEquipmentResult.IsSuccess)

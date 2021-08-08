@@ -53,7 +53,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Guid? manufacturerId,
             NamingInfo? namingInfo,
             LifecycleInfo? lifecycleInfo,
-            MarkingInfo? markingInfo)
+            MarkingInfo? markingInfo,
+            AddressInfo addressInfo)
         {
             this.Id = spanEquipmentId;
 
@@ -77,7 +78,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 manufacturerId: manufacturerId, 
                 namingInfo: namingInfo, 
                 lifecycleInfo: lifecycleInfo,
-                markingInfo: markingInfo
+                markingInfo: markingInfo,
+                addressInfo: addressInfo
              );
 
             RaiseEvent(
@@ -93,7 +95,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo)
+        private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo, AddressInfo? addressInfo)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
 
@@ -129,7 +131,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 ManufacturerId = manufacturerId == null ? Guid.Empty : manufacturerId,
                 NamingInfo = namingInfo,
                 LifecycleInfo = lifecycleInfo,
-                MarkingInfo = markingInfo
+                MarkingInfo = markingInfo,
+                AddressInfo = addressInfo
             };
 
             return spanEquipment;
