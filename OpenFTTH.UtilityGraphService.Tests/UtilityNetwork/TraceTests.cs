@@ -185,6 +185,34 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipment1TraceRefs.Count(tr => tr.SpanEquipmentOrSegmentId == sutSpanEquipment1.SpanStructures[1].SpanSegments[0].Id).Should().Be(1);
 
         }
+
+
+        [Fact, Order(3)]
+        public async void Trace_SDU1_SingleSpanSegment_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId1 = TestUtilityNetwork.CustomerConduit_CC_1_to_SDU_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId1, out var sutSpanEquipment1);
+
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment1.SpanStructures[0].SpanSegments[0].Id })
+                {
+                    EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                    {
+                        IncludeRouteNetworkTrace = true
+                    }
+                }
+            );
+
+            // Assert
+            traceQueryResult.IsSuccess.Should().BeTrue();
+
+            
+
+
+        }
     }
 }
 

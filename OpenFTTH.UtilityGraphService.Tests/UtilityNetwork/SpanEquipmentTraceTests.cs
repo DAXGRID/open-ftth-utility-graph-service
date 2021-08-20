@@ -62,6 +62,82 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             //equipmentQueryResult.Value.RouteNetworkTraces.Should().NotBeNull();
 
         }
+
+        [Fact, Order(2)]
+        public async void SDU1Trace_ShouldReturnCorrectAddressInfo()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.CustomerConduit_CC_1_to_SDU_1;
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment })
+                {
+                    EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                    {
+                        IncludeRouteNetworkTrace = true
+                    }
+                }
+            );
+
+            // Assert
+            equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+            equipmentQueryResult.Value.RouteNetworkTraces.Should().NotBeNull();
+
+            equipmentQueryResult.Value.RouteNetworkTraces.First().ToRouteNodeName.Should().StartWith("Engum");
+        }
+
+        [Fact, Order(2)]
+        public async void SDU2Trace_ShouldReturnCorrectAddressInfo()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.CustomerConduit_CC_1_to_SDU_2;
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment })
+                {
+                    EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                    {
+                        IncludeRouteNetworkTrace = true
+                    }
+                }
+            );
+
+            // Assert
+            equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+            equipmentQueryResult.Value.RouteNetworkTraces.Should().NotBeNull();
+
+            equipmentQueryResult.Value.RouteNetworkTraces.First().ToRouteNodeName.Should().StartWith("Vesterbrogade");
+        }
+
+        [Fact, Order(3)]
+        public async void SDU3Trace_ShouldReturnCorrectAddressInfo()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipment = TestUtilityNetwork.CustomerConduit_CC_1_to_SDU_3;
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { sutSpanEquipment })
+                {
+                    EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                    {
+                        IncludeRouteNetworkTrace = true
+                    }
+                }
+            );
+
+            // Assert
+            equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+            equipmentQueryResult.Value.RouteNetworkTraces.Should().NotBeNull();
+
+            equipmentQueryResult.Value.RouteNetworkTraces.First().ToRouteNodeName.Should().Contain("SDU 3");
+        }
+
     }
 }
 

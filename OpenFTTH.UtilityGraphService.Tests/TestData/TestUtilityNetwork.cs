@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.TestData;
@@ -38,6 +39,8 @@ namespace OpenFTTH.TestData
 
         public static Guid CustomerConduit_SP_1_to_SDU_1;
         public static Guid CustomerConduit_CC_1_to_SDU_1;
+        public static Guid CustomerConduit_CC_1_to_SDU_2;
+        public static Guid CustomerConduit_CC_1_to_SDU_3;
 
         public static Guid NodeContainer_HH_1;
         public static Guid NodeContainer_CC_1;
@@ -82,7 +85,28 @@ namespace OpenFTTH.TestData
 
                 // Place customer conduit
                 CustomerConduit_SP_1_to_SDU_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { TestRouteNetwork.S6, TestRouteNetwork.S7 });
-                CustomerConduit_CC_1_to_SDU_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S7 });
+
+                // Place customer conduit 1 (engum møllevej external unit address id)
+                CustomerConduit_CC_1_to_SDU_1 = PlaceConduit(
+                    TestSpecifications.CustomerConduit_Ø12_Orange,
+                    new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S7 },
+                    new AddressInfo() { UnitAddressId = Guid.Parse("0a3f50bc-aa89-32b8-e044-0003ba298018") }
+                );
+
+                // Place customer conduit 2 (Vesterbrogade 7A, Hedensted external access address id)
+                CustomerConduit_CC_1_to_SDU_2 = PlaceConduit(
+                    TestSpecifications.CustomerConduit_Ø12_Orange,
+                    new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S8 },
+                    new AddressInfo() { AccessAddressId = Guid.Parse("0a3f508f-8504-32b8-e044-0003ba298018") }
+                );
+
+                // Place customer conduit 3 (address remark)
+                CustomerConduit_CC_1_to_SDU_3 = PlaceConduit(
+                    TestSpecifications.CustomerConduit_Ø12_Orange,
+                    new RouteNetworkElementIdList() { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S9, TestRouteNetwork.S10 },
+                    new AddressInfo() { Remark = "This conduit and at SDU 3" }
+                );
+
 
                 // Place node containers
                 NodeContainer_HH_1 = PlaceNodeContainer(TestSpecifications.Well_Fiberpowertech_37_EK_378_400x800, TestSpecifications.Manu_Fiberpowertech, TestRouteNetwork.HH_1);
@@ -119,6 +143,7 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(CustomerConduit_CC_1_to_SDU_1, NodeContainer_CC_1, NodeContainerSideEnum.North);
 
 
+
                 Thread.Sleep(100);
 
                 _conduitsCreated = true;
@@ -127,7 +152,7 @@ namespace OpenFTTH.TestData
             return this;
         }
 
-        private Guid PlaceConduit(Guid specificationId, RouteNetworkElementIdList walkIds)
+        private Guid PlaceConduit(Guid specificationId, RouteNetworkElementIdList walkIds, AddressInfo? addressInfo = null)
         {
             // Register walk of interest
             var walkOfInterestId = Guid.NewGuid();
@@ -135,8 +160,12 @@ namespace OpenFTTH.TestData
             var registerWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterWalkOfInterest, Result<RouteNetworkInterest>>(registerWalkOfInterestCommand).Result;
 
             // Place conduit
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), specificationId, registerWalkOfInterestCommandResult.Value);
-            var placeSpanEquipmentResult =  _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand).Result;
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), specificationId, registerWalkOfInterestCommandResult.Value)
+            {
+                AddressInfo = addressInfo
+            };
+
+            var placeSpanEquipmentResult = _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand).Result;
 
             if (placeSpanEquipmentResult.IsFailed)
                 throw new ApplicationException(placeSpanEquipmentResult.Errors.First().Message);
