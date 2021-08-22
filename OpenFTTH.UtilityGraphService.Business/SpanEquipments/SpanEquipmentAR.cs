@@ -27,6 +27,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         {
             Register<SpanEquipmentPlacedInRouteNetwork>(Apply);
             Register<SpanEquipmentAffixedToContainer>(Apply);
+            Register<SpanEquipmentAffixSideChanged>(Apply);
             Register<SpanSegmentsCut>(Apply);
             Register<SpanEquipmentCutReverted>(Apply);
             Register<SpanSegmentsConnectedToSimpleTerminals>(Apply);
@@ -167,27 +168,45 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             if (IsAlreadyAffixedToNodeContainerInRouteNode(nodeContainers, nodeContainerRouteNodeId))
             {
-                return Result.Fail(new AffixSpanEquipmentToNodeContainerError(
-                        AffixSpanEquipmentToNodeContainerErrorCodes.SPAN_EQUIPMENT_ALREADY_AFFIXED_TO_NODE_CONTAINER,
-                        $"The span equipment with id: {this.Id} is already affixed to the node container place the route node with id: {nodeContainerRouteNodeId}")
-                    );
-            }
-
-            var affix = new SpanEquipmentNodeContainerAffix(
-                routeNodeId: nodeContainerRouteNodeId,
-                nodeContainerId: nodeContainerId,
-                nodeContainerIngoingSide: nodeContainerIngoingSide
-            );
-
-            RaiseEvent(
-                new SpanEquipmentAffixedToContainer(this.Id, affix)
+                if (SideHasChanged(nodeContainers, nodeContainerRouteNodeId, nodeContainerIngoingSide))
                 {
-                    CorrelationId = cmdContext.CorrelationId,
-                    IncitingCmdId = cmdContext.CmdId,
-                    UserName = cmdContext.UserContext?.UserName,
-                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                    RaiseEvent(
+                        new SpanEquipmentAffixSideChanged(this.Id, nodeContainerId, nodeContainerIngoingSide)
+                        {
+                            CorrelationId = cmdContext.CorrelationId,
+                            IncitingCmdId = cmdContext.CmdId,
+                            UserName = cmdContext.UserContext?.UserName,
+                            WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                        }
+                    );
                 }
-            );
+                else
+                {
+                    return Result.Fail(new AffixSpanEquipmentToNodeContainerError(
+                            AffixSpanEquipmentToNodeContainerErrorCodes.SPAN_EQUIPMENT_ALREADY_AFFIXED_TO_NODE_CONTAINER,
+                            $"The span equipment: {this.Id} is already affixed to side: {nodeContainerIngoingSide.ToString()} of node container: {nodeContainerId} in route node: {nodeContainerRouteNodeId}")
+                        );
+                }
+            }
+            else
+            {
+
+                var affix = new SpanEquipmentNodeContainerAffix(
+                    routeNodeId: nodeContainerRouteNodeId,
+                    nodeContainerId: nodeContainerId,
+                    nodeContainerIngoingSide: nodeContainerIngoingSide
+                );
+
+                RaiseEvent(
+                    new SpanEquipmentAffixedToContainer(this.Id, affix)
+                    {
+                        CorrelationId = cmdContext.CorrelationId,
+                        IncitingCmdId = cmdContext.CmdId,
+                        UserName = cmdContext.UserContext?.UserName,
+                        WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                    }
+                );
+            }
 
             return Result.Ok();
         }
@@ -209,6 +228,26 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return false;
         }
 
+        private bool SideHasChanged(LookupCollection<NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId, NodeContainerSideEnum nodeContainerIngoingSide)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (_spanEquipment.NodeContainerAffixes == null)
+                throw new ApplicationException($"Invalid internal state. NodeContainerAffixes property cannot be null. This method can only be called on span equipment that is already affixed to a node container side.");
+
+            foreach (var affix in _spanEquipment.NodeContainerAffixes)
+            {
+                if (nodeContainers[affix.NodeContainerId].RouteNodeId == nodeContainerRouteNodeId)
+                {
+                    if (affix.NodeContainerIngoingSide != nodeContainerIngoingSide)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         private void Apply(SpanEquipmentAffixedToContainer @event)
         {
             if (_spanEquipment == null)
@@ -216,6 +255,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
+
+        private void Apply(SpanEquipmentAffixSideChanged @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
         #endregion
 
         #region Detach From Node Container
