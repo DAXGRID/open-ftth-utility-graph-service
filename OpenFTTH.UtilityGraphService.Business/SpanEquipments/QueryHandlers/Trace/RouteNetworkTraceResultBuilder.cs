@@ -55,7 +55,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
 
                         // Find the segments covered by trace
                         List<Guid> segmentIds = new();
-                        
+
                         foreach (var segmentHop in segmentWalk.Hops)
                         {
                             var walkIds = routeNetworkInformation.Interests[segmentHop.WalkOfInterestId].RouteNetworkElementRefs;
@@ -64,7 +64,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
 
                         // Get the geometry of the segments
                         List<string> segmentGeometries = new();
-                        
+
                         foreach (var segmentId in segmentIds)
                         {
                             var segment = routeNetworkInformation.RouteNetworkElements[segmentId];
@@ -77,7 +77,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                         // Find from node id and name/description
                         Guid fromNodeId = segmentWalk.Hops.First().FromNodeId;
                         string? fromNodeName = routeNetworkInformation.RouteNetworkElements[fromNodeId].NamingInfo?.Name;
-                        
+
                         var lastHop = segmentWalk.Hops.Last();
 
                         Guid toNodeId = lastHop.ToNodeId;
@@ -151,14 +151,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
 
             if (startNodeIndex < endNodeIndex)
             {
-                for (int i = startNodeIndex + 1; i < endNodeIndex; i+=2)
+                for (int i = startNodeIndex + 1; i < endNodeIndex; i += 2)
                 {
                     result.Add(walkIds[i]);
                 }
             }
             else
             {
-                for (int i = startNodeIndex - 1; i > endNodeIndex; i-=2)
+                for (int i = startNodeIndex - 1; i > endNodeIndex; i -= 2)
                 {
                     result.Add(walkIds[i]);
                 }
@@ -181,7 +181,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
 
             if (interestQueryResult.IsFailed)
                 throw new ApplicationException("Failed to query route network information. Got error: " + interestQueryResult.Errors.First().Message);
-       
+
 
             return interestQueryResult.Value;
         }
@@ -225,7 +225,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                         var unitAddress = addressResult.Value.UnitAddresses[addressHit.RefId];
                         var accessAddress = addressResult.Value.AccessAddresses[unitAddress.AccessAddressId];
 
-                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseHumber;
+                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseNumber;
 
                         if (unitAddress.FloorName != null)
                             addressStr += (", " + unitAddress.FloorName);
@@ -239,7 +239,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                     {
                         var accessAddress = addressResult.Value.AccessAddresses[addressHit.RefId];
 
-                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseHumber;
+                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseNumber;
 
                         result.Add(addressHit.Key, addressStr);
                     }

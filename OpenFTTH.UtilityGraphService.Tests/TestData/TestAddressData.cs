@@ -21,7 +21,7 @@ namespace OpenFTTH.TestData
                         unitAddressIds: new Guid[] { Guid.Parse("d81c1428-1fe2-44bf-be71-57a5cfe8ac6c") }
                     )
                     {
-                        HouseHumber = "3",
+                        HouseNumber = "3",
                         PostDistrictCode = "7120",
                         PostDistrict = "Vejle Øst",
                         ExternalId = Guid.Parse("0a3f5090-b718-32b8-e044-0003ba298018"),
@@ -47,7 +47,7 @@ namespace OpenFTTH.TestData
                         unitAddressIds: new Guid[] { Guid.Parse("5d639c7c-64e7-42c7-828e-5f615a13424b") }
                     )
                     {
-                        HouseHumber = "7A",
+                        HouseNumber = "7A",
                         PostDistrictCode = "8722",
                         PostDistrict = "Hedensted",
                         ExternalId = Guid.Parse("0a3f508f-8504-32b8-e044-0003ba298018"),
@@ -69,7 +69,7 @@ namespace OpenFTTH.TestData
                     new AccessAddress(
                         id: Guid.Parse("0c5a203e-b989-4b88-ab90-283c6e7aafc7"),
                         addressPoint: new Point(553089.64, 6190980.39),
-                        unitAddressIds: new Guid[] { 
+                        unitAddressIds: new Guid[] {
                             Guid.Parse("9fe3d78b-0f22-48a2-afb4-fc76a9120e92"),
                             Guid.Parse("ea4d5132-c605-4c5a-9fc6-81f7935a16d9"),
                             Guid.Parse("5e6293be-b8f6-4eb4-b871-ed08541f5951"),
@@ -77,7 +77,7 @@ namespace OpenFTTH.TestData
                         }
                     )
                     {
-                        HouseHumber = "3",
+                        HouseNumber = "3",
                         PostDistrictCode = "8700",
                         PostDistrict = "Horsens",
                         ExternalId = Guid.Parse("6d66b677-5eea-43f2-afd1-354217159a81"),
@@ -94,7 +94,7 @@ namespace OpenFTTH.TestData
                         ExternalId = Guid.Parse("28a29822-3714-4285-ac71-f200027d5dda")
                     }
                 );
-                
+
                 // St (living floor)
                 result.Add(
                     new UnitAddress(Guid.Parse("ea4d5132-c605-4c5a-9fc6-81f7935a16d9"), Guid.Parse("0c5a203e-b989-4b88-ab90-283c6e7aafc7"))
