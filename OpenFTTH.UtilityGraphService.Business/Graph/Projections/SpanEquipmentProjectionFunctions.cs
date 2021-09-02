@@ -447,6 +447,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAddressInfoChanged @event)
+        {
+            return existingSpanEquipment with
+            {
+                AddressInfo = @event.AddressInfo
+            };
+        }
+
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentManufacturerChanged @event)
         {
             return existingSpanEquipment with

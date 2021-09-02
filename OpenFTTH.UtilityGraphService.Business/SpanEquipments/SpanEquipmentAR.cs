@@ -39,6 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentMoved>(Apply);
             Register<SpanEquipmentMerged>(Apply);
             Register<SpanEquipmentMarkingInfoChanged>(Apply);
+            Register<SpanEquipmentAddressInfoChanged>(Apply);
             Register<SpanEquipmentManufacturerChanged>(Apply);
             Register<SpanEquipmentSpecificationChanged>(Apply);
         }
@@ -1413,6 +1414,48 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
+
+        #endregion
+
+        #region Change Address Info
+        public Result ChangeAddressInfo(CommandContext cmdContext, AddressInfo? addressInfo)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if ((_spanEquipment.AddressInfo == null && addressInfo == null) || (_spanEquipment.AddressInfo != null && _spanEquipment.AddressInfo.Equals(addressInfo)))
+            {
+                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
+                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_ADDRESS_INFO,
+                       $"Will not update address info, because the provided value is equal the existing value.")
+                   );
+            }
+
+            var @event = new SpanEquipmentAddressInfoChanged(
+              spanEquipmentId: this.Id,
+              addressInfo: addressInfo
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentAddressInfoChanged @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+
 
         #endregion
 

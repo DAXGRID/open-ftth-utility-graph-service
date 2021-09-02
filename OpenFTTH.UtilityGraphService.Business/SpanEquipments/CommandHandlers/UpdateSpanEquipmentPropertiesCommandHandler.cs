@@ -67,6 +67,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 somethingChanged = true;
             }
 
+            // Check if address info has been updated
+            if (command.AddressInfo != null && !command.AddressInfo.Equals(spanEquipment.AddressInfo))
+            {
+                var updateAddressInfoResult = spanEquipmentAR.ChangeAddressInfo(
+                    cmdContext: commandContext,
+                    command.AddressInfo
+                );
+
+                if (updateAddressInfoResult.IsFailed)
+                    return Task.FromResult(Result.Fail(updateAddressInfoResult.Errors.First()));
+
+                somethingChanged = true;
+            }
+
+
             // Check if manufacturer as been updated
             if (command.ManufacturerId != null && !command.ManufacturerId.Equals(spanEquipment.ManufacturerId))
             {

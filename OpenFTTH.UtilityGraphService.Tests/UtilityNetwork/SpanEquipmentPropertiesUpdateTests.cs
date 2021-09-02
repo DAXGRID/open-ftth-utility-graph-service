@@ -2,6 +2,7 @@
 using FluentAssertions;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
@@ -140,6 +141,34 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             updateResult.IsSuccess.Should().BeTrue();
             spanEquipmentAfterUpdate.ManufacturerId.Should().Be(updateCmd.ManufacturerId);
+
+            // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification.PropertiesUpdated" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutSpanEquipmentId)));
+            utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
+        }
+
+        [Fact, Order(5)]
+        public async void UpdateAddressInfo_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
+
+            var updateCmd = new UpdateSpanEquipmentProperties(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentOrSegmentId: sutSpanEquipmentId)
+            {
+                AddressInfo = new AddressInfo() { Remark = "Hi", AccessAddressId = Guid.NewGuid(), UnitAddressId = Guid.Empty }
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateSpanEquipmentProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            spanEquipmentAfterUpdate.AddressInfo.Should().BeEquivalentTo(updateCmd.AddressInfo);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
             var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();

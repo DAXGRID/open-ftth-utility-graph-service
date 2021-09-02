@@ -45,6 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentMoved>(Project);
             ProjectEvent<SpanEquipmentMerged>(Project);
             ProjectEvent<SpanEquipmentMarkingInfoChanged>(Project);
+            ProjectEvent<SpanEquipmentAddressInfoChanged>(Project);
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
             ProjectEvent<NodeContainerManufacturerChanged>(Project);
@@ -162,6 +163,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanEquipmentMarkingInfoChanged @event):
+                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+                    break;
+
+                case (SpanEquipmentAddressInfoChanged @event):
                     TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
                     break;
 
