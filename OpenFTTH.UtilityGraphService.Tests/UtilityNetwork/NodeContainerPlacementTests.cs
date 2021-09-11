@@ -18,7 +18,7 @@ using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-    [Order(500)]
+    [Order(550)]
     public class NodeContainerPlacementTests
     {
         private readonly ICommandDispatcher _commandDispatcher;

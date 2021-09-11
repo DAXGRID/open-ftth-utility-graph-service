@@ -24,10 +24,13 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         public NodeContainerAR()
         {
             Register<NodeContainerPlacedInRouteNetwork>(Apply);
+            Register<NodeContainerRemovedFromRouteNetwork>(Apply);
             Register<NodeContainerVerticalAlignmentReversed>(Apply);
             Register<NodeContainerManufacturerChanged>(Apply);
             Register<NodeContainerSpecificationChanged>(Apply);
         }
+
+        #region Place in network
 
         public Result PlaceNodeContainerInRouteNetworkNode(
             CommandContext cmdContext,
@@ -84,7 +87,64 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             _container = obj.Container;
         }
 
+        #endregion
 
+        #region Remove from network
+        public Result Remove(CommandContext cmdContext, List<SpanEquipment> relatedSpanEquipments)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (IsAnySpanEquipmentIsAffixedToContainer(relatedSpanEquipments))
+            {
+                return Result.Fail(new RemoveNodeContainerFromRouteNetworkError(
+                    RemoveNodeContainerFromRouteNetworkErrorCodes.CANNOT_REMOVE_NODE_CONTAINER_WITH_AFFIXED_SPAN_EQUIPMENT,
+                    $"Cannot remove a node container when span equipment(s) are affixed to it")
+                );
+            }
+
+            var @event = new NodeContainerRemovedFromRouteNetwork(
+               nodeContainerId: this.Id
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private bool IsAnySpanEquipmentIsAffixedToContainer(List<SpanEquipment> relatedSpanEquipments)
+        {
+            foreach (var spanEquipment in relatedSpanEquipments)
+            {
+                if (spanEquipment.NodeContainerAffixes != null)
+                {
+                    foreach (var affix in spanEquipment.NodeContainerAffixes)
+                    {
+                        if (affix.NodeContainerId == this.Id)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private void Apply(NodeContainerRemovedFromRouteNetwork @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+        }
+
+
+        #endregion
+
+        #region Reverse vertical content alignment
         public Result ReverseVerticalContentAlignment(CommandContext cmdContext)
         {
             if (_container == null)
@@ -111,6 +171,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             _container = NodeContainerProjectionFunctions.Apply(_container, @event);
         }
 
+        #endregion
 
         #region Change Manufacturer
         public Result ChangeManufacturer(CommandContext cmdContext, Guid manufacturerId)

@@ -56,7 +56,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             NamingInfo? namingInfo,
             LifecycleInfo? lifecycleInfo,
             MarkingInfo? markingInfo,
-            AddressInfo addressInfo)
+            AddressInfo? addressInfo)
         {
             this.Id = spanEquipmentId;
 

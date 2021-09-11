@@ -48,11 +48,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentAddressInfoChanged>(Project);
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
-            ProjectEvent<NodeContainerManufacturerChanged>(Project);
-            ProjectEvent<NodeContainerSpecificationChanged>(Project);
-
 
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
+            ProjectEvent<NodeContainerRemovedFromRouteNetwork>(Project);
+            ProjectEvent<NodeContainerManufacturerChanged>(Project);
+            ProjectEvent<NodeContainerSpecificationChanged>(Project);
             ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
         }
 
@@ -182,6 +182,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     StoreAndIndexVirginContainerEquipment(@event.Container);
                     break;
 
+                case (NodeContainerRemovedFromRouteNetwork @event):
+                    ProcessNodeContainerRemoval(@event);
+                    break;
+
                 case (NodeContainerVerticalAlignmentReversed @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
@@ -276,7 +280,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             var existingSpanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
 
-            TryRemove(@event.SpanEquipmentId, existingSpanEquipment.WalkOfInterestId);
+            TryRemoveSpanEquipment(@event.SpanEquipmentId, existingSpanEquipment.WalkOfInterestId);
 
             // Remove span segments from the graph
             foreach (var spanStructure in existingSpanEquipment.SpanStructures)
@@ -289,6 +293,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     }
                 }
             }
+        }
+
+        private void ProcessNodeContainerRemoval(NodeContainerRemovedFromRouteNetwork @event)
+        {
+            var existingNodeContainer = _nodeContainerByEquipmentId[@event.NodeContainerId];
+
+            TryRemoveNodeContainer(@event.NodeContainerId, existingNodeContainer.InterestId);
         }
 
         private void ProcessSpanEquipmentSpecificationChange(SpanEquipmentSpecificationChanged @event)
@@ -328,13 +339,22 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ApplicationException($"Concurrency issue updating node container equipment interest index. Node container equipment id: {newNodeContainerState.Id} Please make sure that events are applied in sequence to the projection.");
         }
 
-        private void TryRemove(Guid spanEquipmentId, Guid spanEquipmentInterestId)
+        private void TryRemoveSpanEquipment(Guid spanEquipmentId, Guid spanEquipmentInterestId)
         {
             if (!_spanEquipmentByEquipmentId.TryRemove(spanEquipmentId, out _))
                 throw new ApplicationException($"Concurrency issue removing span equipment index. Span equipment id: {spanEquipmentId} Please make sure that events are applied in sequence to the projection.");
 
             if (!_spanEquipmentByInterestId.TryRemove(spanEquipmentInterestId, out _))
                 throw new ApplicationException($"Concurrency issue removing span equipment interest index. Span equipment id: {spanEquipmentId} Please make sure that events are applied in sequence to the projection.");
+        }
+
+        private void TryRemoveNodeContainer(Guid nodeContainertId, Guid nodeContainerInterestId)
+        {
+            if (!_nodeContainerByEquipmentId.TryRemove(nodeContainertId, out _))
+                throw new ApplicationException($"Concurrency issue removing node container from equipment dictionary. Node container with id: {nodeContainertId} Please make sure that events are applied in sequence to the projection.");
+
+            if (!_nodeContainerByInterestId.TryRemove(nodeContainerInterestId, out _))
+                throw new ApplicationException($"Concurrency issue removing node container from interest dictionary. Span equipment id: {nodeContainertId} Please make sure that events are applied in sequence to the projection.");
         }
     }
 }
