@@ -59,7 +59,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                         foreach (var segmentHop in segmentWalk.Hops)
                         {
                             var walkIds = routeNetworkInformation.Interests[segmentHop.WalkOfInterestId].RouteNetworkElementRefs;
-                            segmentIds.AddRange(GetRouteSegmentsBetweenNodes(walkIds, segmentHop.FromNodeId, segmentHop.ToNodeId));
+
+                            try
+                            {
+                                segmentIds.AddRange(GetRouteSegmentsBetweenNodes(walkIds, segmentHop.FromNodeId, segmentHop.ToNodeId));
+                            }
+                            catch (ApplicationException ex)
+                            {
+                                Log.Error($"Error collecting route segments between route node: {segmentHop.FromNodeId} and route node: {segmentHop.ToNodeId} in walk of interest: {segmentHop.WalkOfInterestId} while tracing span segment: {segmentWalk.SpanEquipmentOrSegmentId} in span equipment: {segmentWalksBySpanEquipmentId.Key}. Error: {ex.Message}");
+                            }
                         }
 
                         // Get the geometry of the segments
