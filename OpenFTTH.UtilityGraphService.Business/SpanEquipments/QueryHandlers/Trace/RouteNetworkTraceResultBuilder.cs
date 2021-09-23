@@ -136,7 +136,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
         {
             foreach (var routeNetworkTrace in routeNetworkTraces)
             {
-                if (routeNetworkTrace.RouteSegmentIds.SequenceEqual(segmentIds))
+                if (routeNetworkTrace.RouteSegmentIds.SequenceEqual(segmentIds) && routeNetworkTrace.FromRouteNodeName == fromNodeName && routeNetworkTrace.ToRouteNodeName == toNodeName)
                     return routeNetworkTrace.Id;
             }
 
