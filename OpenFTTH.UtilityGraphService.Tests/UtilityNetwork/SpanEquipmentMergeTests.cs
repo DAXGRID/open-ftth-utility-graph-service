@@ -313,7 +313,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // NB: Both span equipment have from node in J_1
             var sutFromSpanEquipmentId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
-            var sutToSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_SDU_1_to_J_1;
+            var sutToSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_SDU_1_to_J_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutFromSpanEquipmentId, out var fromSpanEquipmentBeforeConnect);
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutToSpanEquipmentId, out var toSpanEquipmentBeforeConnect);
@@ -340,8 +340,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             // NB: Both span equipment have from node in J_1
-            var sutFromSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_SDU_1_to_J_1;
-            var sutToSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutFromSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_SDU_1_to_J_1;
+            var sutToSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutFromSpanEquipmentId, out var fromSpanEquipmentBeforeConnect);
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutToSpanEquipmentId, out var toSpanEquipmentBeforeConnect);
 

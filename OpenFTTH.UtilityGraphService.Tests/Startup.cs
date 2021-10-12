@@ -33,7 +33,8 @@ namespace OpenFTTH.UtilityGraphService.Tests
             var businessAssemblies = new Assembly[] {
                 AppDomain.CurrentDomain.Load("OpenFTTH.RouteNetwork.Business"),
                 AppDomain.CurrentDomain.Load("OpenFTTH.UtilityGraphService.Business"),
-                AppDomain.CurrentDomain.Load("OpenFTTH.Address.Business")
+                AppDomain.CurrentDomain.Load("OpenFTTH.Address.Business"),
+                AppDomain.CurrentDomain.Load("OpenFTTH.Schematic.Business")
             };
 
             services.AddCQRS(businessAssemblies);

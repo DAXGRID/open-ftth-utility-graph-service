@@ -41,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId1 = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutSpanEquipmentId1 = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
             var sutSpanEquipmentId2 = TestUtilityNetwork.FlexConduit_40_Red_CC_1_to_SP_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId1, out var sutSpanEquipment1);
@@ -156,7 +156,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId1 = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutSpanEquipmentId1 = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId1, out var sutSpanEquipment1);
 

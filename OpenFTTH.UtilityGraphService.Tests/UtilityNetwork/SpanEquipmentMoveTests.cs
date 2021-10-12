@@ -46,7 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_SDU_1_to_J_1;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_SDU_1_to_J_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipment);
 

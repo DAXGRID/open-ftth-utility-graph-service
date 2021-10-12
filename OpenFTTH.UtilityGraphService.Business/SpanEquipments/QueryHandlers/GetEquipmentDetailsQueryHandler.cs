@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using RouteNetworkTrace = OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing.RouteNetworkTrace;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 {
@@ -120,7 +121,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                     spanEquipment.RouteNetworkTraceRefs = traceInfo.SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId[spanEquipment.Id].ToArray();
                 }
 
-                return new LookupCollection<RouteNetworkTrace>(traceInfo.RouteNetworkTraces);
+                return new LookupCollection<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace>(traceInfo.RouteNetworkTraces);
             }
             else
                 return new LookupCollection<RouteNetworkTrace>();

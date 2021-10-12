@@ -43,7 +43,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testNetwork = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
-            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
@@ -73,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact, Order(11)]
         public async void TestDetachConduitToContainer_ShouldSucceed()
         {
-            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
@@ -110,7 +110,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var testNetwork = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
-            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 
@@ -146,7 +146,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduits = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
-            var testConduitId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
 

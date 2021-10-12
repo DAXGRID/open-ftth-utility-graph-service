@@ -42,7 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipmentBeforeUncut);
 
@@ -89,7 +89,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             sutSpanEquipmentAfterUncut.SpanStructures[1].SpanSegments[1].ToTerminalId.Should().Be(sutSpanEquipmentBeforeUncut.SpanStructures[1].SpanSegments[2].ToTerminalId);
 
             // Assert that node indexes of the rest is correctly modified
-            for (int i = 2; i < sutSpanEquipmentAfterUncut.SpanStructures.Length; i++)
+            for (int i = 2; i < 6; i++)
             {
                 sutSpanEquipmentAfterUncut.SpanStructures[i].SpanSegments.Length.Should().Be(2);
 
@@ -138,7 +138,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipmentBeforeUncut);
 
@@ -169,7 +169,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var sutSpanEquipmentBeforeUncut);
 

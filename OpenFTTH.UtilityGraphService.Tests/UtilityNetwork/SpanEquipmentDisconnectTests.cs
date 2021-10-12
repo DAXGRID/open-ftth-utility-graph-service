@@ -44,7 +44,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
             var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
@@ -104,7 +104,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
             var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
@@ -141,7 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
             var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
@@ -176,7 +176,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipment);
 
@@ -195,7 +195,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             await _commandDispatcher.HandleAsync<CutSpanSegmentsAtRouteNode, Result>(cutCmd);
 
 
-            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_5x10_HH_1_to_HH_10;
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
             var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);

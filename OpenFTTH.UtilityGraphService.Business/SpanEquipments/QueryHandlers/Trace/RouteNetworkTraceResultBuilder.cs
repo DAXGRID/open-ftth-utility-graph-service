@@ -46,7 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                 Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> traceIdRefBySpanEquipmentId = new();
 
                 // Find unique route network traces
-                List<RouteNetworkTrace> routeNetworkTraces = new();
+                List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> routeNetworkTraces = new();
 
                 foreach (var segmentWalksBySpanEquipmentId in intermidiateTraceResult.SegmentWalksBySpanEquipmentId)
                 {
@@ -132,7 +132,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
             return null;
         }
 
-        private Guid FindOrCreateRouteNetworkTrace(List<RouteNetworkTrace> routeNetworkTraces, List<Guid> segmentIds, List<string> segmentGeometries, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)
+        private Guid FindOrCreateRouteNetworkTrace(List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> routeNetworkTraces, List<Guid> segmentIds, List<string> segmentGeometries, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)
         {
             foreach (var routeNetworkTrace in routeNetworkTraces)
             {
@@ -140,7 +140,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                     return routeNetworkTrace.Id;
             }
 
-            var newRouteNetworkTrace = new RouteNetworkTrace(Guid.NewGuid(), fromNodeId, toNodeId, segmentIds.ToArray(), fromNodeName, toNodeName, segmentGeometries.ToArray());
+            var newRouteNetworkTrace = new API.Model.UtilityNetwork.Tracing.RouteNetworkTrace(Guid.NewGuid(), fromNodeId, toNodeId, segmentIds.ToArray(), fromNodeName, toNodeName, segmentGeometries.ToArray());
 
             routeNetworkTraces.Add(newRouteNetworkTrace);
 
@@ -451,10 +451,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
 
     public class TraceInfo
     {
-        public List<RouteNetworkTrace> RouteNetworkTraces { get; }
+        public List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> RouteNetworkTraces { get; }
         public Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId { get; }
 
-        public TraceInfo(List<RouteNetworkTrace> routeNetworkTraces, Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> spanSegmentRouteNetworkTraceRefsBySpanEquipmentId)
+        public TraceInfo(List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> routeNetworkTraces, Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> spanSegmentRouteNetworkTraceRefsBySpanEquipmentId)
         {
             RouteNetworkTraces = routeNetworkTraces;
             SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId = spanSegmentRouteNetworkTraceRefsBySpanEquipmentId;
