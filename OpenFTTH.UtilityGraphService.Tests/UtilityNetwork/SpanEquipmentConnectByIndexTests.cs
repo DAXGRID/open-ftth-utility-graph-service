@@ -18,14 +18,14 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(901)]
-    public class SpanEquipmentConnectByIndexTests
+    public class T0901_SpanEquipmentConnectByIndexTests
     {
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly FakeExternalEventProducer _externalEventProducer;
 
-        public SpanEquipmentConnectByIndexTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public T0901_SpanEquipmentConnectByIndexTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;

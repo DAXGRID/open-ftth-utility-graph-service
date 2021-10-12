@@ -13,13 +13,13 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(100)]
-    public class ManufacturerTests
+    public class T0100_ManufacturerTests
     {
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
 
-        public ManufacturerTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public T0100_ManufacturerTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;

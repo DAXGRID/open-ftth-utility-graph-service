@@ -21,7 +21,7 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(520)]
-    public class NodeContainerRemovalTests
+    public class T0520_NodeContainerRemovalTests
     {
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
@@ -30,7 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         private static Guid _sutContainerId = Guid.NewGuid();
 
-        public NodeContainerRemovalTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public T0520_NodeContainerRemovalTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
