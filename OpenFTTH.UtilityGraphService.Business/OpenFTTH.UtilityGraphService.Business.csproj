@@ -16,7 +16,7 @@
     <PackageReference Include="OpenFTTH.CQRS" Version="1.5.2" />
     <PackageReference Include="OpenFTTH.Events" Version="2.8.0" />
     <PackageReference Include="OpenFTTH.EventSourcing" Version="1.4.0" />
-    <PackageReference Include="OpenFTTH.RouteNetwork.API" Version="1.6.3" />
+    <PackageReference Include="OpenFTTH.RouteNetwork.API" Version="1.6.4" />
   </ItemGroup>
 
   <ItemGroup>

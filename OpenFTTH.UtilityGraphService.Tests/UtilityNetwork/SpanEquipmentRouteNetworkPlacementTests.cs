@@ -19,13 +19,13 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(400)]
-    public class T0400_SpanEquipmentPlacementTests
+    public class T0400_SpanEquipmentRouteNetworkPlacementTests
     {
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly FakeExternalEventProducer _externalEventProducer;
 
-        public T0400_SpanEquipmentPlacementTests(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public T0400_SpanEquipmentRouteNetworkPlacementTests(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;

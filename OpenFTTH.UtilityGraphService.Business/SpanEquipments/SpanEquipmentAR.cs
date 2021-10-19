@@ -97,6 +97,54 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
+        public Result PlaceSpanEquipmentInUtilityNetwork(
+            CommandContext cmdContext, 
+            LookupCollection<SpanEquipment> spanEquipments, 
+            LookupCollection<SpanEquipmentSpecification> spanEquipmentSpecifications, 
+            Guid spanEquipmentId, Guid spanEquipmentSpecificationId,
+            Guid walkOfInterestId,
+            RouteNetworkElementIdList walk,
+            RoutingHop[] routingHops, Guid? manufacturerId, 
+            NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, 
+            MarkingInfo? markingInfo, 
+            AddressInfo? addressInfo)
+        {
+            this.Id = spanEquipmentId;
+
+            if (spanEquipmentId == Guid.Empty)
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_ID_CANNOT_BE_EMPTY, "Span equipment id cannot be empty. A unique id must be provided by client."));
+
+            if (spanEquipments.ContainsKey(spanEquipmentId))
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_ALREADY_EXISTS, $"A span equipment with id: {spanEquipmentId} already exists."));
+
+            if (!spanEquipmentSpecifications.ContainsKey(spanEquipmentSpecificationId))
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_SPECIFICATION_ID_NOT_FOUND, $"Cannot find span equipment specification with id: {spanEquipmentSpecificationId}"));
+
+            var spanEquipment = CreateSpanEquipmentFromSpecification(
+                spanEquipmentId: spanEquipmentId,
+                specification: spanEquipmentSpecifications[spanEquipmentSpecificationId],
+                walkOfInterestId: walkOfInterestId,
+                nodesOfInterestIds: new Guid[] { walk.First(), walk.Last() },
+                manufacturerId: manufacturerId,
+                namingInfo: namingInfo,
+                lifecycleInfo: lifecycleInfo,
+                markingInfo: markingInfo,
+                addressInfo: addressInfo
+             );
+
+            RaiseEvent(
+                new SpanEquipmentPlacedInRouteNetwork(spanEquipment)
+                {
+                    CorrelationId = cmdContext.CorrelationId,
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
+
+            return Result.Ok();
+        }
+
         private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo, AddressInfo? addressInfo)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();

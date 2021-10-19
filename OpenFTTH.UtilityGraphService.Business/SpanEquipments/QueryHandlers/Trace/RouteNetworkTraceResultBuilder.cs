@@ -26,7 +26,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
             _utilityNetwork = utilityNetwork;
         }
 
-        public TraceInfo? GetTraceInfo(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToTrace, Guid? traceThisSpanSegmentIdOnly)
+        public TraceInfo? GetTraceInfo(List<SpanEquipment> spanEquipmentsToTrace, Guid? traceThisSpanSegmentIdOnly)
         {
             if (spanEquipmentsToTrace.Count == 0)
                 return null;
@@ -263,7 +263,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
         }
 
 
-        private IntermidiateTraceResult GatherNetworkGraphTraceInformation(List<SpanEquipmentWithRelatedInfo> spanEquipmentsToTrace, Guid? traceThisSpanSegmentIdOnly)
+        private IntermidiateTraceResult GatherNetworkGraphTraceInformation(List<SpanEquipment> spanEquipmentsToTrace, Guid? traceThisSpanSegmentIdOnly)
         {
             IntermidiateTraceResult result = new();
 
@@ -405,7 +405,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
             return result;
         }
 
-        private static void AddWalkToResult(IntermidiateTraceResult result, SpanEquipmentWithRelatedInfo spanEquipment, SegmentWalk segmentWalk)
+        private static void AddWalkToResult(IntermidiateTraceResult result, SpanEquipment spanEquipment, SegmentWalk segmentWalk)
         {
             if (!result.SegmentWalksBySpanEquipmentId.ContainsKey(spanEquipment.Id))
                 result.SegmentWalksBySpanEquipmentId[spanEquipment.Id] = new List<SegmentWalk>() { segmentWalk };
