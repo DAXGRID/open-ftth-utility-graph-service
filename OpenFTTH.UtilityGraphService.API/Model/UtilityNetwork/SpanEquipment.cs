@@ -20,6 +20,8 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 
         public SpanEquipmentNodeContainerAffix[]? NodeContainerAffixes { get; init; }
 
+        public SpanEquipmentSpanEquipmentAffix[]? ParentAffixes { get; init; }
+
         public string? Name => NamingInfo?.Name;
         public string? Description => NamingInfo?.Description;
 
