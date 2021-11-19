@@ -32,6 +32,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.TerminalEquipmentConnectivityView
         {
             var json = JsonConvert.SerializeObject(TestTerminalEquipmentConnectivityViewData.LISAODFRack());
 
+
+            json = JsonConvert.SerializeObject(TestEquipmentConnectionFaceData.EquipmentConnectivityFaces());
+
+            json = JsonConvert.SerializeObject(TestEquipmentConnectionFaceData.TerminalEquipment_EquipmentConnectivityFaceConnectionInfo());
+
+            json = JsonConvert.SerializeObject(TestEquipmentConnectionFaceData.SpanEquipment_EquipmentConnectivityFaceConnectionInfo());
+
         }
 
 

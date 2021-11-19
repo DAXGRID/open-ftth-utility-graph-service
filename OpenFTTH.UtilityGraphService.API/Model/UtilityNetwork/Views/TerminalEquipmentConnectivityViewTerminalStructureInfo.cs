@@ -14,9 +14,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public string SpecName { get; init; }
         public string? Info { get; init; }
 
-        public TerminalEquipmentConnectivityViewLineInfo[] Lines { get; init; }
+        public TerminalEquipmentAZConnectivityViewLineInfo[] Lines { get; init; }
 
-        public TerminalEquipmentConnectivityViewTerminalStructureInfo(Guid id, string category, string name, string specName, TerminalEquipmentConnectivityViewLineInfo[] lines)
+        public TerminalEquipmentConnectivityViewTerminalStructureInfo(Guid id, string category, string name, string specName, TerminalEquipmentAZConnectivityViewLineInfo[] lines)
         {
             Id = id;
             Category = category;

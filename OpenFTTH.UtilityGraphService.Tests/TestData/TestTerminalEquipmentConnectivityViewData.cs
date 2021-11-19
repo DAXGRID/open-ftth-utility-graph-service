@@ -10,10 +10,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
     public static class TestTerminalEquipmentConnectivityViewData
     {
 
-        public static TerminalEquipmentConnectivityViewModel LISAODFRack()
+        public static TerminalEquipmentAZConnectivityViewModel LISAODFRack()
         {
             // Create rack with 80 LISA trays places in two holder, whith a splitter panel inbetween
-            return new TerminalEquipmentConnectivityViewModel(
+            return new TerminalEquipmentAZConnectivityViewModel(
                 terminalEquipments: new TerminalEquipmentConnectivityViewEquipmentInfo[]
                 {
                     new TerminalEquipmentConnectivityViewEquipmentInfo(
@@ -173,85 +173,85 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
                     category: "PatchSplice",
                     name: name,
                     specName: specName,
-                    lines: new TerminalEquipmentConnectivityViewLineInfo[]
+                    lines: new TerminalEquipmentAZConnectivityViewLineInfo[]
                     {
                         // connected to a splitter
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") { 
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") { 
                             A = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("1")) { ConnectedTo = "Splitter 1-1", End = "OLT 1-1-1"},
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("1")) { ConnectedTo = "K23433 (72) Fiber 1", End = "FS1332 Inst 234433 Vesterbakken 1, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             A = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("2")) { ConnectedTo = "Splitter 1-2", End = "OLT 1-1-1"},
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("2")) { ConnectedTo = "K23433 (72) Fiber 2", End = "FS1332 Inst 234434 Vesterbakken 2, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             A = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("3")) { ConnectedTo = "Splitter 2-10", End = "OLT 1-1-2"},
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("3")) { ConnectedTo = "K23433 (72) Fiber 3", End = "FS1712 Inst 224434 Rugbakken 10, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             A = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("4")) { ConnectedTo = "Splitter 2-11", End = "OLT 1-1-2"},
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("4")) { ConnectedTo = "K23433 (72) Fiber 4", End = "FS1712 Inst 143444 Rugbakken 15, Grejs"},
                         },
 
                         // not connected to a splitter
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("5")) { ConnectedTo = "K23433 (72) Fiber 5", End = "FS1512 Inst 143445 Rugbakken 16, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("6")) { ConnectedTo = "K23433 (72) Fiber 6", End = "FS1512 Inst 143446 Rugbakken 17, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("7")) { ConnectedTo = "K23433 (72) Fiber 7", End = "FS1512 Inst 143447 Rugbakken 18 ST TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("8")) { ConnectedTo = "K23433 (72) Fiber 8", End = "FS1512 Inst 143448 Rugbakken 18 ST TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("9")) { ConnectedTo = "K23433 (72) Fiber 9", End = "FS1512 Inst 143449 Rugbakken 18 1 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("10")) { ConnectedTo = "K23433 (72) Fiber 10", End = "FS1512 Inst 143449 Rugbakken 18 1 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("11")) { ConnectedTo = "K23433 (72) Fiber 11", End = "FS1512 Inst 143449 Rugbakken 18 1 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("12")) { ConnectedTo = "K23433 (72) Fiber 12", End = "FS1512 Inst 143450 Rugbakken 18 2 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("13")) { ConnectedTo = "K23433 (72) Fiber 13", End = "FS1512 Inst 143451 Rugbakken 18 2 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("14")) { ConnectedTo = "K23433 (72) Fiber 14", End = "FS1512 Inst 143452 Rugbakken 18 3 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("15")) { ConnectedTo = "K23433 (72) Fiber 15", End = "FS1512 Inst 143453 Rugbakken 18 3 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("16")) { ConnectedTo = "K23433 (72) Fiber 16", End = "FS1512 Inst 143454 Rugbakken 18 4 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("17")) { ConnectedTo = "K23433 (72) Fiber 17", End = "FS1512 Inst 143455 Rugbakken 18 4 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("18")) { ConnectedTo = "K23433 (72) Fiber 18", End = "FS1512 Inst 143456 Rugbakken 18 5 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("19")) { ConnectedTo = "K23433 (72) Fiber 19", End = "FS1512 Inst 143457 Rugbakken 18 5 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("20")) { ConnectedTo = "K23433 (72) Fiber 20", End = "FS1512 Inst 143458 Rugbakken 18 6 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("21")) { ConnectedTo = "K23433 (72) Fiber 21", End = "FS1512 Inst 143459 Rugbakken 18 6 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("22")) { ConnectedTo = "K23433 (72) Fiber 22", End = "FS1512 Inst 143460 Rugbakken 18 7 TV, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("23")) { ConnectedTo = "K23433 (72) Fiber 23", End = "FS1512 Inst 143461 Rugbakken 18 7 TH, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Splice") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Splice") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("24")) { ConnectedTo = "K23433 (72) Fiber 24", End = "FS1512 Inst 143466 Rugbakken 22, Grejs"},
                         },
                     }
@@ -270,103 +270,103 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
                     category: "Splitter",
                     name: name,
                     specName: specName,
-                    lines: new TerminalEquipmentConnectivityViewLineInfo[]
+                    lines: new TerminalEquipmentAZConnectivityViewLineInfo[]
                     {
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailSplice_PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailSplice_PigtailPatch") {
                             A = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("IN 1")) { ConnectedTo = "Splitter 1-1-1", End = "OLT 1-1-1"},
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 1")) { ConnectedTo = "PatchSplice 1-1-1", End = "FS1332 Inst 234433 Vesterbakken 1, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 2")) { ConnectedTo = "PatchSplice 1-1-2", End = "FS1332 Inst 234434 Vesterbakken 2, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 3")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 4")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 5")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 6")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 7")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 8")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 9")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 10")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 11")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 12")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 13")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 14")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 15")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 16")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 17")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 18")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 19")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 20")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 21")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 22")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 23")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 24")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 25")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 26")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 27")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 28")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 29")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 30")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 31")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 32")) {},
                         },
                     }
@@ -384,103 +384,103 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
                     category: "Coupler",
                     name: name,
                     specName: specName,
-                    lines: new TerminalEquipmentConnectivityViewLineInfo[]
+                    lines: new TerminalEquipmentAZConnectivityViewLineInfo[]
                     {
-                        new TerminalEquipmentConnectivityViewLineInfo("Patch_Patch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("Patch_Patch") {
                             A = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("IN 1")) { ConnectedTo = "Splitter 1-1-1", End = "OLT 1-1-1"},
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 1")) { ConnectedTo = "PatchSplice 1-1-1", End = "FS1332 Inst 234433 Vesterbakken 1, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 2")) { ConnectedTo = "PatchSplice 1-1-2", End = "FS1332 Inst 234434 Vesterbakken 2, Grejs"},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 3")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 4")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 5")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 6")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 7")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 8")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 9")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 10")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 11")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 12")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 13")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 14")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 15")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 16")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 17")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 18")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 19")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 20")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 21")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 22")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 23")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 24")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 25")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 26")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 27")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 28")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 29")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 30")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 31")) {},
                         },
-                        new TerminalEquipmentConnectivityViewLineInfo("PigtailPatch") {
+                        new TerminalEquipmentAZConnectivityViewLineInfo("PigtailPatch") {
                             Z = new TerminalEquipmentConnectivityViewEndInfo(CreateTerminal("OUT 32")) {},
                         },
                     }
