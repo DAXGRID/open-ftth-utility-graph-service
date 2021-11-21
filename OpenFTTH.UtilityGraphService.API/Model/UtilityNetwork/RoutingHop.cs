@@ -17,7 +17,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid? StartSpanEquipmentId { get; }
         public int? StartStrutureIndex { get; }
         public Guid? StartSpanSegmentId { get; }
-        public RouteNetworkInterest? WalkOfinterest { get; }
+        public Guid[]? WalkOfinterest { get; }
 
         /// <summary>
         /// Route through a span equipment by structure index
@@ -27,7 +27,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             Kind = RoutingHopKind.RouteThroughSpanEquipmentByStructureIndex;
             StartRouteNode = startRouteNodeId;
             StartSpanEquipmentId = startSpanEquipmentId;
-            StartStrutureIndex = StartStrutureIndex;
+            StartStrutureIndex = startStructureIndex;
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         /// <summary>
         /// Route through the route network
         /// </summary>
-        public RoutingHop(RouteNetworkInterest walkOfinterest)
+        public RoutingHop(Guid[] walkOfinterest)
         {
             Kind = RoutingHopKind.RouteThroughRouteNetwork;
             WalkOfinterest = walkOfinterest;

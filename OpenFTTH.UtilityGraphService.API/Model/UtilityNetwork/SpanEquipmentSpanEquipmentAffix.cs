@@ -10,5 +10,11 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     {
         public Guid SpanSegmentId { get; }
         public SpanEquipmentAffixDirectionEnum Direction { get; }
+
+        public SpanEquipmentSpanEquipmentAffix(Guid spanSegmentId, SpanEquipmentAffixDirectionEnum direction)
+        {
+            SpanSegmentId = spanSegmentId;
+            Direction = direction;
+        }
     }
 }
