@@ -23,4 +23,9 @@
     <ProjectReference Include="..\OpenFTTH.UtilityGraphService.API\OpenFTTH.UtilityGraphService.API.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TerminalEquipment\CommandHandlers\" />
+    <Folder Include="TerminalEquipment\QueryHandlers\" />
+  </ItemGroup>
+
 </Project>
