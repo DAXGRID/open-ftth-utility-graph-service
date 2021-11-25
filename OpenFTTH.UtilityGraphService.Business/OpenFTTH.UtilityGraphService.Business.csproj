@@ -24,8 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="TerminalEquipment\CommandHandlers\" />
-    <Folder Include="TerminalEquipment\QueryHandlers\" />
+    <Folder Include="TerminalEquipments\QueryHandlers\" />
   </ItemGroup>
 
 </Project>

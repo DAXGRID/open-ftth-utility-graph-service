@@ -11,7 +11,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid Id { get;}
         public string Category { get; }
         public string Name { get; }
-        public string ShortName { get; }
+        public string ShortName { get; }   
         public TerminalTemplate[] TerminalTemplates { get; }
         public bool Deprecated { get; init; }
         public string? Description { get; init; }

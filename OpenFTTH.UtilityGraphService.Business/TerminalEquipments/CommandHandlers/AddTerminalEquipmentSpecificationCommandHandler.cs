@@ -3,25 +3,27 @@ using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
 using System;
 using System.Threading.Tasks;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
+namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandlers
 {
-    public class AddSpanEquipmentSpecificationCommandHandler : ICommandHandler<AddSpanEquipmentSpecification, Result>
+    public class AddTerminalEquipmentSpecificationCommandHandler : ICommandHandler<AddTerminalEquipmentSpecification, Result>
     {
         private readonly IEventStore _eventStore;
 
-        public AddSpanEquipmentSpecificationCommandHandler(IEventStore eventStore)
+        public AddTerminalEquipmentSpecificationCommandHandler(IEventStore eventStore)
         {
             _eventStore = eventStore;
         }
 
-        public Task<Result> HandleAsync(AddSpanEquipmentSpecification command)
+        public Task<Result> HandleAsync(AddTerminalEquipmentSpecification command)
         {
-            var aggreate = _eventStore.Aggregates.Load<SpanEquipmentSpecifications>(SpanEquipmentSpecifications.UUID);
+            var aggreate = _eventStore.Aggregates.Load<TerminalEquipmentSpecifications>(TerminalEquipmentSpecifications.UUID);
 
-            var spanStructureSpecifications = _eventStore.Projections.Get<SpanStructureSpecificationsProjection>().Specifications;
+            var terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
 
             var manufacturer = _eventStore.Projections.Get<ManufacturerProjection>().Manufacturer;
 
@@ -29,7 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             try
             {
-                aggreate.AddSpecification(commandContext, command.Specification, spanStructureSpecifications, manufacturer);
+                aggreate.AddSpecification(commandContext, command.Specification, terminalStructureSpecifications, manufacturer);
             }
             catch (ArgumentException ex)
             {
