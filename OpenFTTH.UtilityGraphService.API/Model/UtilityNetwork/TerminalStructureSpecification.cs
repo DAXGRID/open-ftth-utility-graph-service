@@ -15,5 +15,15 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public TerminalTemplate[] TerminalTemplates { get; }
         public bool Deprecated { get; init; }
         public string? Description { get; init; }
+        public Guid[]? ManufacturerRefs { get; init; }
+
+        public TerminalStructureSpecification(Guid id, string category, string name, string shortName, TerminalTemplate[] terminalTemplates)
+        {
+            Id = id;
+            Category = category;
+            Name = name;
+            ShortName = shortName;
+            TerminalTemplates = terminalTemplates;
+        }
     }
 }

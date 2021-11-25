@@ -52,6 +52,55 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainerSpecificationsQueryResult.Value[newNodeContainerSpecification.Id].Description.Should().Be(newNodeContainerSpecification.Description);
         }
 
+        [Fact]
+        public async void AddValidRackSpecification_ShouldSucceed()
+        {
+            // Create manufacturer
+            var manufacturer = new Manufacturer(Guid.NewGuid(), "Rack Manufacturer");
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
+            var newRackSpecification = new RackSpecification(Guid.NewGuid(), "ETSI", "ETSI")
+            {
+                Description = "ETSI Rack",
+            };
+
+            // Act
+            var addRackSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddRackSpecification, Result>(new AddRackSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), newRackSpecification));
+
+            var rackSpecificationsQueryResult = await _queryDispatcher.HandleAsync<GetRackSpecifications, Result<LookupCollection<RackSpecification>>>(new GetRackSpecifications());
+
+            // Assert
+            addRackSpecificationCommandResult.IsSuccess.Should().BeTrue();
+            rackSpecificationsQueryResult.IsSuccess.Should().BeTrue();
+            rackSpecificationsQueryResult.Value[newRackSpecification.Id].Name.Should().Be(newRackSpecification.Name);
+            rackSpecificationsQueryResult.Value[newRackSpecification.Id].Description.Should().Be(newRackSpecification.Description);
+        }
+
+        [Fact]
+        public async void AddTwoRackSpecificationsWithSameName_ShouldFail()
+        {
+            // Create manufacturer
+            var manufacturer = new Manufacturer(Guid.NewGuid(), "Rack Manufacturer");
+            await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
+
+            var rack1Specification = new RackSpecification(Guid.NewGuid(), "ETSI2", "ETSI2")
+            {
+                Description = "ETSI Rack",
+            };
+
+            var rack2Specification = new RackSpecification(Guid.NewGuid(), "ETSI2", "ETSI2")
+            {
+                Description = "ETSI Rack",
+            };
+
+
+            // Act
+            var addFirstRackSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddRackSpecification, Result>(new AddRackSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), rack1Specification));
+            var addSecondRackSpecificationCommandResult = await _commandDispatcher.HandleAsync<AddRackSpecification, Result>(new AddRackSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), rack2Specification));
+
+            // Assert
+            addFirstRackSpecificationCommandResult.IsSuccess.Should().BeTrue();
+            addSecondRackSpecificationCommandResult.IsSuccess.Should().BeFalse();
+        }
     }
 }

@@ -30,7 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         public async void AddValidMultiLevelSpanEquipmentSpecification_ShouldSucceed()
         {
             // Create manufacturer
-            var manufacturer = new Manufacturer(Guid.NewGuid(), "Super Manufacturer");
+            var manufacturer = new Manufacturer(Guid.NewGuid(), "Conduit Manufacturer");
             await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
 

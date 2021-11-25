@@ -48,10 +48,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
         private void ValidateSpecificationName(TerminalEquipmentSpecification terminalEquipmentSpecification)
         {
             if (String.IsNullOrEmpty(terminalEquipmentSpecification.Name))
-                throw new ArgumentException($"Terminal specification name is mandatory. Error adding template equipment specification with id: {terminalEquipmentSpecification.Id}");
+                throw new ArgumentException($"Specification name is mandatory. Error adding terminal equipment specification with id: {terminalEquipmentSpecification.Id}");
 
             if (_terminalEquipmentSpecifications.Any(t => t.Name.ToLower() == terminalEquipmentSpecification.Name.ToLower()))
-                throw new ArgumentException($"Terminal specification name: '{terminalEquipmentSpecification.Name}' is already used. Must be unique. Error adding template equipment specification with id: {terminalEquipmentSpecification.Id}");
+                throw new ArgumentException($"Specification name: '{terminalEquipmentSpecification.Name}' is already used. Must be unique. Error adding template equipment specification with id: {terminalEquipmentSpecification.Id}");
         }
 
         private static void ValidateTerminalStructureSpecificationReferences(TerminalEquipmentSpecification equipmentEquipmentSpecification, LookupCollection<TerminalStructureSpecification> terminalStructureSpecifications)
@@ -70,7 +70,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                 foreach (var manufacturerId in equipmentEquipmentSpecification.ManufacturerRefs)
                 {
                     if (!manufacturer.ContainsKey(manufacturerId))
-                        throw new ArgumentException($"Cannot find manufaturer with id: {manufacturerId}");
+                        throw new ArgumentException($"Cannot find manufacturer with id: {manufacturerId}");
                 }
             }
         }
@@ -82,7 +82,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             foreach (var structureTemplate in terminalEquipmentSpecification.StructureTemplates)
             {
                 if (positionUsed.Contains(structureTemplate.Position))
-                    throw new ArgumentException($" Position {structureTemplate.Position} in template equipment specification: {terminalEquipmentSpecification.Id} is used more than once. Must be unique.");
+                    throw new ArgumentException($"Structure position: {structureTemplate.Position} specified in terminal equipment specification: {terminalEquipmentSpecification.Name} is used more than once. Must be unique.");
 
                 positionUsed.Add(structureTemplate.Position);
             }
