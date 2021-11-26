@@ -191,6 +191,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             var @event = new RackAddedToNodeContainer(
                 nodeContainerId: this.Id,
+                rackId: Guid.NewGuid(),
                 rackSpecificationId: rackSpecificationId,
                 rackName: rackName,
                 rackPosition: rackPosition
