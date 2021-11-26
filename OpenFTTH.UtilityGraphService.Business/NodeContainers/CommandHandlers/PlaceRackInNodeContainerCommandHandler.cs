@@ -7,13 +7,14 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
-    public class ReverseNodeContainerVerticalContentAlignmentCommandHandler : ICommandHandler<ReverseNodeContainerVerticalContentAlignment, Result>
+    public class PlaceRackInNodeContainerCommandHandler : ICommandHandler<PlaceRackInNodeContainer, Result>
     {
         // TODO: move into config
         private readonly string _topicName = "notification.utility-network";
@@ -21,16 +22,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly IEventStore _eventStore;
         private readonly IExternalEventProducer _externalEventProducer;
 
-        public ReverseNodeContainerVerticalContentAlignmentCommandHandler(IEventStore eventStore, IExternalEventProducer externalEventProducer)
+        public PlaceRackInNodeContainerCommandHandler(IEventStore eventStore, IExternalEventProducer externalEventProducer)
         {
             _externalEventProducer = externalEventProducer;
             _eventStore = eventStore;
         }
 
-        public Task<Result> HandleAsync(ReverseNodeContainerVerticalContentAlignment command)
+        public Task<Result> HandleAsync(PlaceRackInNodeContainer command)
         {
             var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
-            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
             if (!nodeContainers.TryGetValue(command.NodeContainerId, out var nodeContainer))
             {
@@ -39,22 +39,32 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var nodeContainerAR = _eventStore.Aggregates.Load<NodeContainerAR>(command.NodeContainerId);
 
-            var reverseResult = nodeContainerAR.ReverseVerticalContentAlignment(commandContext);
+            var rackSpecifications = _eventStore.Projections.Get<RackSpecificationsProjection>().Specifications;
 
-            if (reverseResult.IsSuccess)
+            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
+
+            var placeRackResult = nodeContainerAR.PlaceRack(
+                commandContext,
+                command.RackSpecificationId,
+                command.RackName,
+                command.RackPosition,
+                rackSpecifications
+            );
+
+            if (placeRackResult.IsSuccess)
             {
                 _eventStore.Aggregates.Store(nodeContainerAR);
                 NotifyExternalServicesAboutChange(nodeContainer.RouteNodeId, nodeContainer.Id);
             }
 
-            return Task.FromResult(reverseResult);
+            return Task.FromResult(placeRackResult);
         }
 
         private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid nodeContainerId)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
-                new IdChangeSet("NodeContainer", ChangeTypeEnum.Modification, new Guid[] { nodeContainerId })
+                new IdChangeSet("NodeContainer", ChangeTypeEnum.Addition, new Guid[] { nodeContainerId })
             };
 
             var updatedEvent =

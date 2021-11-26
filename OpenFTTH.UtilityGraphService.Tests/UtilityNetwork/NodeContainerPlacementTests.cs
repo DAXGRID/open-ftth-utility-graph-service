@@ -103,7 +103,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             firstNodeContainerResult.IsSuccess.Should().BeTrue();
             secondNodeContainerResult.IsSuccess.Should().BeFalse();
 
-            ((PlaceNodeContainerInRouteNetworkError)secondNodeContainerResult.Errors.First()).Code.Should().Be(PlaceNodeContainerInRouteNetworkErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE);
+            ((NodeContainerError)secondNodeContainerResult.Errors.First()).Code.Should().Be(NodeContainerErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE);
 
 
         }

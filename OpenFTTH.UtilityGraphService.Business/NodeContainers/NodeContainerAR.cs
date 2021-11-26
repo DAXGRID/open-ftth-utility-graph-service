@@ -28,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerVerticalAlignmentReversed>(Apply);
             Register<NodeContainerManufacturerChanged>(Apply);
             Register<NodeContainerSpecificationChanged>(Apply);
+            Register<RackAddedToNodeContainer>(Apply);
         }
 
         #region Place in network
@@ -47,19 +48,19 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             this.Id = nodeContainerId;
 
             if (nodeContainerId == Guid.Empty)
-                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_ID_CANNOT_BE_EMPTY, "Node container id cannot be empty. A unique id must be provided by client."));
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_CANNOT_BE_EMPTY, "Node container id cannot be empty. A unique id must be provided by client."));
 
             if (nodeContainers.ContainsKey(nodeContainerId))
-                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_ID_ALREADY_EXISTS, $"A node container with id: {nodeContainerId} already exists."));
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_ALREADY_EXISTS, $"A node container with id: {nodeContainerId} already exists."));
 
             if (nodeOfInterest.Kind != RouteNetworkInterestKindEnum.NodeOfInterest)
-                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_INTEREST_KIND_MUST_BE_NODE_OF_INTEREST, "Interest kind must be NodeOfInterest. You can only put node container into route nodes!"));
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_INTEREST_KIND_MUST_BE_NODE_OF_INTEREST, "Interest kind must be NodeOfInterest. You can only put node container into route nodes!"));
 
             if (!nodeContainerSpecifications.ContainsKey(nodeContainerSpecificationId))
-                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.INVALID_NODE_CONTAINER_SPECIFICATION_ID_NOT_FOUND, $"Cannot find node container specification with id: {nodeContainerSpecificationId}"));
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_NODE_CONTAINER_SPECIFICATION_ID_NOT_FOUND, $"Cannot find node container specification with id: {nodeContainerSpecificationId}"));
 
             if (nodeContainers.Any(n => n.RouteNodeId == nodeOfInterest.RouteNetworkElementRefs[0]))
-                return Result.Fail(new PlaceNodeContainerInRouteNetworkError(PlaceNodeContainerInRouteNetworkErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE, $"A node container already exist in the route node with id: {nodeOfInterest.RouteNetworkElementRefs[0]} Only one node container is allowed per route node.")); 
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE, $"A node container already exist in the route node with id: {nodeOfInterest.RouteNetworkElementRefs[0]} Only one node container is allowed per route node.")); 
 
             var nodeContainer = new NodeContainer(nodeContainerId, nodeContainerSpecificationId, nodeOfInterest.Id, nodeOfInterest.RouteNetworkElementRefs[0])
             {
@@ -80,6 +81,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return Result.Ok();
         }
+
+      
 
         private void Apply(NodeContainerPlacedInRouteNetwork obj)
         {
@@ -172,6 +175,62 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
         #endregion
+
+        #region Place Rack
+
+        public Result PlaceRack(CommandContext cmdContext, Guid rackSpecificationId, string rackName, int rackPosition, LookupCollection<RackSpecification> rackSpecifications)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (!rackSpecifications.ContainsKey(rackSpecificationId))
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_RACK_SPECIFICATION_ID_NOT_FOUND, $"Cannot find rack specification with id: {rackSpecificationId}"));
+
+            if (ValidateRackNameAndPosition(rackName, rackPosition).Errors.FirstOrDefault() is Error error)
+                return Result.Fail(error);
+
+            var @event = new RackAddedToNodeContainer(
+                nodeContainerId: this.Id,
+                rackSpecificationId: rackSpecificationId,
+                rackName: rackName,
+                rackPosition: rackPosition
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(RackAddedToNodeContainer @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        private Result ValidateRackNameAndPosition(string rackName, int position)
+        {
+            if (String.IsNullOrEmpty(rackName))
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_RACK_NAME_NOT_SPECIFIED, "Rack name is mandatory"));
+
+            if (_container != null && _container.Racks != null && _container.Racks.Any(r => r.Name.ToLower() == rackName.ToLower()))
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_RACK_NAME_NOT_UNIQUE, $"Rack name: '{rackName}' already used in node container with id: {this.Id}"));
+
+            if (_container != null && _container.Racks != null && _container.Racks.Any(r => r.Position == position))
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_RACK_POSITION_NOT_UNIQUE, $"Rack position: {position} already used in node container with id: {this.Id}"));
+
+            return Result.Ok();
+        }
+
+        #endregion
+
 
         #region Change Manufacturer
         public Result ChangeManufacturer(CommandContext cmdContext, Guid manufacturerId)

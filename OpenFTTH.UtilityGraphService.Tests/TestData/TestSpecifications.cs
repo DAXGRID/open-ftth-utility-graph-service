@@ -135,6 +135,9 @@ namespace OpenFTTH.TestData
         // Customer span equipments
         public static Guid CustomerConduit_Ø12_Orange = Guid.Parse("ddd86873-9d6c-4741-a406-084c628314db");
 
+        // Racks
+        public static Guid Rack_ESTI = Guid.Parse("b72523d7-4a55-489e-8901-a9fdf9a7d471");
+
 
         public FluentResults.Result<TestSpecifications> Run()
         {
@@ -152,6 +155,8 @@ namespace OpenFTTH.TestData
                 AddSpanStructureSpecifications();
 
                 AddSpanEquipmentSpecifications();
+
+                AddRackSpecifications();
 
                 Thread.Sleep(100);
 
@@ -783,6 +788,12 @@ namespace OpenFTTH.TestData
             AddManufacturer(new Manufacturer(Manu_Cubis, "Wavin"));
         }
 
+        private void AddRackSpecifications()
+        {
+            // ESTI
+            AddSpecification(new RackSpecification(Rack_ESTI, "CommScope ETSI Rack", "ETSI"));
+        }
+
         private void AddSpecification(SpanEquipmentSpecification spec)
         {
             var cmd = new AddSpanEquipmentSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec);
@@ -805,6 +816,15 @@ namespace OpenFTTH.TestData
         {
             var cmd = new AddNodeContainerSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec);
             var cmdResult = _commandDispatcher.HandleAsync<AddNodeContainerSpecification, Result>(cmd).Result;
+
+            if (cmdResult.IsFailed)
+                throw new ApplicationException(cmdResult.Errors.First().Message);
+        }
+
+        private void AddSpecification(RackSpecification spec)
+        {
+            var cmd = new AddRackSpecification(Guid.NewGuid(), new UserContext("test", Guid.Empty), spec);
+            var cmdResult = _commandDispatcher.HandleAsync<AddRackSpecification, Result>(cmd).Result;
 
             if (cmdResult.IsFailed)
                 throw new ApplicationException(cmdResult.Errors.First().Message);

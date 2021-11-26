@@ -54,6 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerManufacturerChanged>(Project);
             ProjectEvent<NodeContainerSpecificationChanged>(Project);
             ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
+            ProjectEvent<RackAddedToNodeContainer>(Project);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -195,6 +196,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (NodeContainerSpecificationChanged @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (RackAddedToNodeContainer @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
             }

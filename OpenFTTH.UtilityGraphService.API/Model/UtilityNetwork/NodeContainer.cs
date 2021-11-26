@@ -13,6 +13,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public NamingInfo? NamingInfo { get; init; }
         public LifecycleInfo? LifecycleInfo { get; init; }
         public NodeContainerVerticalContentAlignmentEnum VertialContentAlignmemt { get; init; }
+        public Rack[]? Racks { get; init; }
 
         public string? Name => null;
         public string? Description => null;

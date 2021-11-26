@@ -1,6 +1,7 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using System.Collections.Generic;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 {
@@ -32,5 +33,19 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static NodeContainer Apply(NodeContainer existingEquipment, RackAddedToNodeContainer @event)
+        {
+            List<Rack> newRackList = new();
+
+            if (existingEquipment.Racks != null)
+                newRackList.AddRange(existingEquipment.Racks);
+
+            newRackList.Add(new Rack(@event.RackName, @event.RackPosition, @event.RackSpecificationId, new SubrackMount[] {}));
+
+            return existingEquipment with
+            {
+                Racks = newRackList.ToArray()
+            };
+        }
     }
 }
