@@ -51,7 +51,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var placeNodeContainerResult = await _commandDispatcher.HandleAsync<PlaceNodeContainerInRouteNetwork, Result>(placeNodeContainerCommand);
 
             var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
-                new GetEquipmentDetails(new InterestIdList() { nodeOfInterestId })
+                new GetEquipmentDetails(new EquipmentIdList() { placeNodeContainerCommand.NodeContainerId })
             );
 
             // Assert

@@ -69,6 +69,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             else
                 Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, spanEquipmentsByIdResult.Errors.First().Message));
 
+
+            // Fetch node containers by id
+            var nodeContainersByIdResult = GetNodeContainersById(query.EquipmentIdsToQuery);
+
+            if (nodeContainersByIdResult.IsSuccess)
+            {
+                foreach (var nodeContainer in nodeContainersByIdResult.Value)
+                {
+                    nodeContainersToReturn.Add(nodeContainer);
+                }
+            }
+            else
+                Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, nodeContainersByIdResult.Errors.First().Message));
+
+
+
             // Get eventually single span segment request
             var traceThisSpanSegmentIdOnly = GetSingleSpanSegmentTraceOnlyIdIfSpecificed(query.EquipmentIdsToQuery);
 
@@ -137,17 +153,28 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
         private Result<List<SpanEquipment>> GetSpanEquipmentsById(EquipmentIdList equipmentIdsToFetch)
         {
-            List<SpanEquipment> result = new List<SpanEquipment>();
+            List<SpanEquipment> result = new();
 
             foreach (var equipmentId in equipmentIdsToFetch)
             {
-                if (!_utilityNetwork.TryGetEquipment<SpanEquipment>(equipmentId, out var spanEquipment))
-                    return Result.Fail(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Cannot find equipment with equipment id: {equipmentId}"));
-
-                result.Add(spanEquipment);
+                if (_utilityNetwork.TryGetEquipment<SpanEquipment>(equipmentId, out var spanEquipment))
+                    result.Add(spanEquipment);
             }
 
-            return Result.Ok<List<SpanEquipment>>(result);
+            return Result.Ok(result);
+        }
+
+        private Result<List<NodeContainer>> GetNodeContainersById(EquipmentIdList equipmentIdsToFetch)
+        {
+            List<NodeContainer> result = new();
+
+            foreach (var equipmentId in equipmentIdsToFetch)
+            {
+                if (_utilityNetwork.TryGetEquipment<NodeContainer>(equipmentId, out var spanEquipment))
+                    result.Add(spanEquipment);
+            }
+
+            return Result.Ok(result);
         }
     }
 }
