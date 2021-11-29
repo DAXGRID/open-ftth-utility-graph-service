@@ -59,7 +59,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Rack Manufacturer");
             await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
-            var newRackSpecification = new RackSpecification(Guid.NewGuid(), "ETSI", "ETSI")
+            var newRackSpecification = new RackSpecification(Guid.NewGuid(), "ETSI", "ETSI", 20)
             {
                 Description = "ETSI Rack",
             };
@@ -83,12 +83,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Rack Manufacturer");
             await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
-            var rack1Specification = new RackSpecification(Guid.NewGuid(), "ETSI2", "ETSI2")
+            var rack1Specification = new RackSpecification(Guid.NewGuid(), "ETSI2", "ETSI2", 20)
             {
                 Description = "ETSI Rack",
             };
 
-            var rack2Specification = new RackSpecification(Guid.NewGuid(), "ETSI2", "ETSI2")
+            var rack2Specification = new RackSpecification(Guid.NewGuid(), "ETSI2", "ETSI2", 20)
             {
                 Description = "ETSI Rack",
             };
