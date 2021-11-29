@@ -54,7 +54,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 sutNodeContainerId,
                 TestSpecifications.Rack_ESTI,
                 "Rack 1",
-                1,
                 80
             );
 
@@ -73,7 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainerAfterCommand.Should().NotBeNull();
             nodeContainerAfterCommand.Racks.Should().NotBeNull();
             nodeContainerAfterCommand.Racks[0].Name.Should().Be(placeRackCmd.RackName);
-            nodeContainerAfterCommand.Racks[0].Position.Should().Be(placeRackCmd.RackPosition);
+            nodeContainerAfterCommand.Racks[0].Position.Should().Be(1);
             nodeContainerAfterCommand.Racks[0].SpecificationId.Should().Be(placeRackCmd.RackSpecificationId);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the node container we just changed
@@ -97,7 +96,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 sutNodeContainerId,
                 TestSpecifications.Rack_ESTI,
                 "Rack 2",
-                2,
                 80
             );
 
@@ -118,7 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainerAfterCommand.Racks.Count().Should().Be(2);
 
             nodeContainerAfterCommand.Racks[1].Name.Should().Be(placeRackCmd.RackName);
-            nodeContainerAfterCommand.Racks[1].Position.Should().Be(placeRackCmd.RackPosition);
+            nodeContainerAfterCommand.Racks[1].Position.Should().Be(2);
             nodeContainerAfterCommand.Racks[1].SpecificationId.Should().Be(placeRackCmd.RackSpecificationId);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the node container we just changed

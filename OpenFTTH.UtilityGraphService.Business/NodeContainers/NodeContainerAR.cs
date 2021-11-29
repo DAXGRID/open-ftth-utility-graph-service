@@ -178,7 +178,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #region Place Rack
 
-        public Result PlaceRack(CommandContext cmdContext, Guid rackSpecificationId, string rackName, int rackPosition, int rackHeightInUnits, LookupCollection<RackSpecification> rackSpecifications)
+        public Result PlaceRack(CommandContext cmdContext, Guid rackSpecificationId, string rackName, int? rackPosition, int rackHeightInUnits, LookupCollection<RackSpecification> rackSpecifications)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
@@ -186,15 +186,21 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             if (!rackSpecifications.ContainsKey(rackSpecificationId))
                 return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_RACK_SPECIFICATION_ID_NOT_FOUND, $"Cannot find rack specification with id: {rackSpecificationId}"));
 
-            if (ValidateRackNameAndPosition(rackName, rackPosition).Errors.FirstOrDefault() is Error error)
+            if (rackPosition == null)
+            {
+                rackPosition = GetRackPosition();
+            }
+
+            if (ValidateRackNameAndPosition(rackName, rackPosition.Value).Errors.FirstOrDefault() is Error error)
                 return Result.Fail(error);
+
 
             var @event = new RackAddedToNodeContainer(
                 nodeContainerId: this.Id,
                 rackId: Guid.NewGuid(),
                 rackSpecificationId: rackSpecificationId,
                 rackName: rackName,
-                rackPosition: rackPosition,
+                rackPosition: rackPosition.Value,
                 rackHeightInUnits: rackHeightInUnits
             )
             {
@@ -207,6 +213,25 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             RaiseEvent(@event);
 
             return Result.Ok();
+        }
+
+        private int GetRackPosition()
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null)
+                return 1;
+
+            int maxRackPos = 0;
+
+            foreach (var rack in _container.Racks)
+            {
+                if (rack.Position > maxRackPos)
+                    maxRackPos = rack.Position;
+            }
+
+            return maxRackPos + 1;
         }
 
         private void Apply(RackAddedToNodeContainer @event)
