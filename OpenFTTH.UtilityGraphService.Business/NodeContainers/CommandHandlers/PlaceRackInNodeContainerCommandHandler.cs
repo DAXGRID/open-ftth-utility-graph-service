@@ -48,6 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 command.RackSpecificationId,
                 command.RackName,
                 command.RackPosition,
+                command.RackHeightInUnits,
                 rackSpecifications
             );
 

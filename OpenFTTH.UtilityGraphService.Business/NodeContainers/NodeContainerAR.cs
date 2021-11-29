@@ -178,7 +178,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #region Place Rack
 
-        public Result PlaceRack(CommandContext cmdContext, Guid rackSpecificationId, string rackName, int rackPosition, LookupCollection<RackSpecification> rackSpecifications)
+        public Result PlaceRack(CommandContext cmdContext, Guid rackSpecificationId, string rackName, int rackPosition, int rackHeightInUnits, LookupCollection<RackSpecification> rackSpecifications)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
@@ -194,7 +194,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 rackId: Guid.NewGuid(),
                 rackSpecificationId: rackSpecificationId,
                 rackName: rackName,
-                rackPosition: rackPosition
+                rackPosition: rackPosition,
+                rackHeightInUnits: rackHeightInUnits
             )
             {
                 CorrelationId = cmdContext.CorrelationId,

@@ -40,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             if (existingEquipment.Racks != null)
                 newRackList.AddRange(existingEquipment.Racks);
 
-            newRackList.Add(new Rack(@event.RackId, @event.RackName, @event.RackPosition, @event.RackSpecificationId, new SubrackMount[] {}));
+            newRackList.Add(new Rack(@event.RackId, @event.RackName, @event.RackPosition, @event.RackSpecificationId, @event.RackHeightInUnits, new SubrackMount[] { }));
 
             return existingEquipment with
             {

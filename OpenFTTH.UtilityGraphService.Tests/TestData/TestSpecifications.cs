@@ -791,7 +791,7 @@ namespace OpenFTTH.TestData
         private void AddRackSpecifications()
         {
             // ESTI
-            AddSpecification(new RackSpecification(Rack_ESTI, "CommScope ETSI Rack", "ETSI", 20));
+            AddSpecification(new RackSpecification(Rack_ESTI, "CommScope ETSI Rack", "ETSI"));
         }
 
         private void AddSpecification(SpanEquipmentSpecification spec)

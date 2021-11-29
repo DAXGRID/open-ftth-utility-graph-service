@@ -54,7 +54,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 sutNodeContainerId,
                 TestSpecifications.Rack_ESTI,
                 "Rack 1",
-                1
+                1,
+                80
             );
 
             var placeRackResult = await _commandDispatcher.HandleAsync<PlaceRackInNodeContainer, Result>(placeRackCmd);
@@ -96,7 +97,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 sutNodeContainerId,
                 TestSpecifications.Rack_ESTI,
                 "Rack 2",
-                2
+                2,
+                80
             );
 
             var placeRackResult = await _commandDispatcher.HandleAsync<PlaceRackInNodeContainer, Result>(placeRackCmd);
