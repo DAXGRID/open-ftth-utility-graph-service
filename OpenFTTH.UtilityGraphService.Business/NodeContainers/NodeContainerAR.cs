@@ -28,7 +28,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerVerticalAlignmentReversed>(Apply);
             Register<NodeContainerManufacturerChanged>(Apply);
             Register<NodeContainerSpecificationChanged>(Apply);
-            Register<RackAddedToNodeContainer>(Apply);
+            Register<NodeContainerRackAdded>(Apply);
+            Register<NodeContainerTerminalEquipmentReferenceAdded>(Apply);
         }
 
         #region Place in network
@@ -81,8 +82,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return Result.Ok();
         }
-
-      
 
         private void Apply(NodeContainerPlacedInRouteNetwork obj)
         {
@@ -195,7 +194,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 return Result.Fail(error);
 
 
-            var @event = new RackAddedToNodeContainer(
+            var @event = new NodeContainerRackAdded(
                 nodeContainerId: this.Id,
                 rackId: Guid.NewGuid(),
                 rackSpecificationId: rackSpecificationId,
@@ -234,7 +233,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             return maxRackPos + 1;
         }
 
-        private void Apply(RackAddedToNodeContainer @event)
+        private void Apply(NodeContainerRackAdded @event)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
@@ -254,6 +253,35 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_RACK_POSITION_NOT_UNIQUE, $"Rack position: {position} already used in node container with id: {this.Id}"));
 
             return Result.Ok();
+        }
+
+        #endregion
+
+        #region Add Terminal Equipment Reference
+        public Result AddTerminalEquipmentReference(CommandContext cmdContext, Guid terminalEquipmentId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            var e = new NodeContainerTerminalEquipmentReferenceAdded(this.Id, terminalEquipmentId)
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(e);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerTerminalEquipmentReferenceAdded @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
         }
 
         #endregion

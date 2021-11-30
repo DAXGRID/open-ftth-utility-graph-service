@@ -6,6 +6,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
     public class UtilityNetworkProjection : ProjectionBase
     {
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByEquipmentId = new();
+        private readonly ConcurrentDictionary<Guid, TerminalEquipment> _terminalEquipmentByEquipmentId = new();
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByEquipmentId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new();
@@ -54,7 +56,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerManufacturerChanged>(Project);
             ProjectEvent<NodeContainerSpecificationChanged>(Project);
             ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
-            ProjectEvent<RackAddedToNodeContainer>(Project);
+            ProjectEvent<NodeContainerRackAdded>(Project);
+            ProjectEvent<NodeContainerTerminalEquipmentReferenceAdded>(Project);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -72,6 +75,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 if (spanEquipmentByInterestId is T)
                 {
                     equipment = (T)(object)spanEquipmentByInterestId;
+                    return true;
+                }
+            }
+            else if (_terminalEquipmentByEquipmentId.TryGetValue(equipmentOrInterestId, out TerminalEquipment? terminalEquipmentByEquipmentId))
+            {
+                if (terminalEquipmentByEquipmentId is T)
+                {
+                    equipment = (T)(object)terminalEquipmentByEquipmentId;
                     return true;
                 }
             }
@@ -111,6 +122,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             switch (eventEnvelope.Data)
             {
+                // Span equipment events
                 case (SpanEquipmentPlacedInRouteNetwork @event):
                     StoreAndIndexVirginSpanEquipment(@event.Equipment);
                     break;
@@ -179,6 +191,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessSpanEquipmentSpecificationChange(@event);
                     break;
 
+                // Terminal equipment events
+                case (TerminalEquipmentPlacedInNodeContainer @event):
+                    StoreAndIndexVirginTerminalEquipment(@event.Equipment);
+                    break;
+
+
+                // Node container events
                 case (NodeContainerPlacedInRouteNetwork @event):
                     StoreAndIndexVirginContainerEquipment(@event.Container);
                     break;
@@ -199,7 +218,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
 
-                case (RackAddedToNodeContainer @event):
+                case (NodeContainerRackAdded @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerTerminalEquipmentReferenceAdded @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
             }
@@ -224,6 +247,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             // Store the new span equipment in memory
             _nodeContainerByEquipmentId.TryAdd(nodeContainer.Id, nodeContainer);
             _nodeContainerByInterestId.TryAdd(nodeContainer.InterestId, nodeContainer);
+        }
+
+        private void StoreAndIndexVirginTerminalEquipment(TerminalEquipment terminalEquipment)
+        {
+            // Store the new span equipment in memory
+            _terminalEquipmentByEquipmentId.TryAdd(terminalEquipment.Id, terminalEquipment);
         }
 
         private void ProcesstSegmentCuts(SpanSegmentsCut @event)

@@ -30,6 +30,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = (FakeExternalEventProducer)externalEventProducer;
+
+            new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+            new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
         [Fact]
@@ -121,9 +124,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact]
         public async void TestPlaceTwoSpanEquipmentWithSameId_SecondOneShouldFail()
         {
-            // Setup
-            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
-
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 
             var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, walkOfInterest);

@@ -4,7 +4,7 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
 {
-    public record RackAddedToNodeContainer : EventStoreBaseEvent
+    public record NodeContainerRackAdded : EventStoreBaseEvent
     {
 
         public Guid NodeContainerId { get; }
@@ -14,7 +14,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
         public int RackPosition { get; }
         public int RackHeightInUnits { get; }
 
-        public RackAddedToNodeContainer(Guid nodeContainerId, Guid rackId, Guid rackSpecificationId, string rackName, int rackPosition, int rackHeightInUnits)
+        public NodeContainerRackAdded(Guid nodeContainerId, Guid rackId, Guid rackSpecificationId, string rackName, int rackPosition, int rackHeightInUnits)
         {
             NodeContainerId = nodeContainerId;
             RackId = rackId;
