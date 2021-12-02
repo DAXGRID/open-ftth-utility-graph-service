@@ -146,7 +146,11 @@ namespace OpenFTTH.TestData
         public static Guid SpliceTray_Uknown24Pin = Guid.Parse("629e7a6c-7326-4cfb-bf8b-df1f78b7473e");
         public static Guid SpliceTray_SE12Pin = Guid.Parse("fdd67d8c-de49-46d6-ac88-af392f539019");
         public static Guid SpliceTray_SC12Pin = Guid.Parse("4a15dcc1-4477-4c9d-bf5e-e530480ce822");
-        public static Guid SpliceTray_LX12UPC12APC = Guid.Parse("adabaab0-24bd-4ecf-b703-932c407cfba8");
+
+        public static Guid SplicePatchTray_LX12UPC12APC = Guid.Parse("adabaab0-24bd-4ecf-b703-932c407cfba8");
+        public static Guid SplicePatchTray_GPS2_12SC = Guid.Parse("8e36b878-5f14-40f3-b088-f04f2ffb03d7");
+        public static Guid SplicePatchTray_GPS2_24LC = Guid.Parse("e24b4f50-24f6-4a33-8b56-cf9a52dce522");
+
 
         // Terminal Equipments
         public static Guid SpliceClosure_VMC_12Tray = Guid.Parse("c27377df-f5d0-483c-bc35-2ce8ab56c31b");
@@ -162,7 +166,9 @@ namespace OpenFTTH.TestData
         public static Guid SpliceClosure_FIST = Guid.Parse("7a038a46-297d-490c-8796-42b44d1218e0");
         public static Guid SpliceClosure_FOSC400 = Guid.Parse("5d95fe82-c563-47ff-8356-81d63bb512ee");
 
-        public static Guid SpliceModule_LISA_APC_UPC = Guid.Parse("778b9d6f-7add-40eb-ae9d-da9660dc1799");
+        public static Guid Subrack_LISA_APC_UPC = Guid.Parse("778b9d6f-7add-40eb-ae9d-da9660dc1799");
+        public static Guid Subrack_GPS_72_SC = Guid.Parse("aa8027fc-25d6-498e-98e6-4eb7d634070c");
+        public static Guid Subrack_GPS_144_LC = Guid.Parse("d1748de5-de10-45d9-a2a9-1b5b344bf159");
 
 
         public FluentResults.Result<TestSpecifications> Run()
@@ -918,35 +924,87 @@ namespace OpenFTTH.TestData
             ));
 
             // LISA 24 Søm UPC+APC
-            AddSpecification(new TerminalStructureSpecification(SpliceTray_LX12UPC12APC, "SpliceTray", "LISATray 12 x LX.5 UPC  og 12 x LX.5 APC", "LISA UPC+APC",
+            AddSpecification(new TerminalStructureSpecification(SplicePatchTray_LX12UPC12APC, "SplicePatchTray", "LISATray 12 x LX.5/UPC og 12 x LX.5/APC", "LISA UPC+APC",
                 new TerminalTemplate[]
                 {
-                    new TerminalTemplate("1", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("2", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("3", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("5", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("6", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("7", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("8", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("9", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("10", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("11", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("12", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("13", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("14", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("15", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("16", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("17", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("18", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("19", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("20", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("21", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("22", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"},
-                    new TerminalTemplate("23", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 APC"},
-                    new TerminalTemplate("24", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5 UPC"}
+                    new TerminalTemplate("1", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("2", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("3", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("5", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("6", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("7", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("8", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("9", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("10", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("11", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("12", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("13", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("14", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("15", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("16", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("17", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("18", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/APC"},
+                    new TerminalTemplate("19", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("20", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("21", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("22", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("23", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"},
+                    new TerminalTemplate("24", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LX.5/UPC"}
                 }
             ));
+
+
+            // CommScope GPS2 12 SC
+            AddSpecification(new TerminalStructureSpecification(SplicePatchTray_GPS2_12SC, "SplicePatchTray", "GPS2 12 x SC/APC", "GPS2 12xSC/APC",
+                new TerminalTemplate[]
+                {
+                    new TerminalTemplate("1", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("2", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("3", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("5", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("6", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("7", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("8", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("9", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("10", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("11", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                    new TerminalTemplate("12", TerminalDirectionEnum.BI, false, true) { ConnectorType = "SC/APC"},
+                }
+            ));
+
+            // CommScope GPS2 24 
+            AddSpecification(new TerminalStructureSpecification(SplicePatchTray_GPS2_24LC, "SplicePatchTray", "GPS2 24 x LC/APC", "GPS2 24xLC/APC",
+                new TerminalTemplate[]
+                {
+                    new TerminalTemplate("1", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("2", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("3", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("5", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("6", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("7", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("8", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("9", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("10", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("11", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("12", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("13", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("14", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("15", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("16", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("17", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("18", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("19", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("20", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("21", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("22", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("23", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"},
+                    new TerminalTemplate("24", TerminalDirectionEnum.BI, false, true) { ConnectorType = "LC/APC"}
+                }
+            ));
+
         }
 
         private void AddTerminalEquipmentSpecifications()
@@ -1118,15 +1176,43 @@ namespace OpenFTTH.TestData
 
 
             // LISA 24 Søm APC+UDF Tray
-            AddSpecification(new TerminalEquipmentSpecification(SpliceModule_LISA_APC_UPC, "SpliceClosure", "LISATray 12 x LX.5 UPC og 12 x LX.5 APC", "LISA APC+UPC", true, 1,
+            AddSpecification(new TerminalEquipmentSpecification(Subrack_LISA_APC_UPC, "Subrack", "LISATray 12 x LX.5/UPC og 12 x LX.5/APC", "LISA APC+UPC", true, 1,
                 new TerminalStructureTemplate[]
                 {
-                    new TerminalStructureTemplate(SpliceTray_LX12UPC12APC, 1)
+                    new TerminalStructureTemplate(SplicePatchTray_LX12UPC12APC, 1)
                }
             )
             { ManufacturerRefs = new Guid[] { Manu_HuberSuhner } });
 
 
+            // Patch/splidse GPS2 19" 72xSC/APC  
+            AddSpecification(new TerminalEquipmentSpecification(Subrack_GPS_72_SC, "Subrack", "Patch/splidse GPS2 19\" 72 x SC/APC", "GPS2-72", true, 4,
+                new TerminalStructureTemplate[]
+                {
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_12SC, 1),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_12SC, 2),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_12SC, 3),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_12SC, 4),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_12SC, 5),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_12SC, 6)
+               }
+            )
+            { ManufacturerRefs = new Guid[] { Manu_CommScope } });
+
+
+            // Patch/splidse GPS2 19" 144xLC/APC  
+            AddSpecification(new TerminalEquipmentSpecification(Subrack_GPS_144_LC, "Subrack", "Patch/splidse GPS2 19\" 144 x LC/APC", "GPS2-144", true, 4,
+                new TerminalStructureTemplate[]
+                {
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 1),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 2),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 3),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 4),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 5),
+                    new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 6)
+               }
+            )
+            { ManufacturerRefs = new Guid[] { Manu_CommScope } });
 
         }
 
