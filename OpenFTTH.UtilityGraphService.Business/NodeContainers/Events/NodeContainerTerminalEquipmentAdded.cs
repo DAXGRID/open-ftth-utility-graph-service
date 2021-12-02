@@ -3,12 +3,12 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
 {
-    public record NodeContainerTerminalEquipmentReferenceAdded : EventStoreBaseEvent
+    public record NodeContainerTerminalEquipmentAdded : EventStoreBaseEvent
     {
         public Guid NodeContainerId { get; }
         public Guid TerminalEquipmentId { get; }
 
-        public NodeContainerTerminalEquipmentReferenceAdded(Guid nodeContainerId, Guid terminalEquipmentId)
+        public NodeContainerTerminalEquipmentAdded(Guid nodeContainerId, Guid terminalEquipmentId)
         {
             NodeContainerId = nodeContainerId;
             TerminalEquipmentId = terminalEquipmentId;

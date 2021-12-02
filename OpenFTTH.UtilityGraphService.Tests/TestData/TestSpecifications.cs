@@ -952,14 +952,14 @@ namespace OpenFTTH.TestData
         private void AddTerminalEquipmentSpecifications()
         {
             // 12 Fiber Tray Uknown Type
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_Uknown12Fiber, "SpliceClosure", "Ukendt Splidseboks 12 Fiber", "Splidseboks", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_Uknown12Fiber, "SpliceClosure", "Ukendt Splidseboks 12 Fiber", "Splidseboks", false, 0,
                 new TerminalStructureTemplate[]
                 {
                 }
             ));
 
             // 72 Fiber Tray Uknown Type
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_Uknown72Fiber, "SpliceClosure", "Ukendt Splidseboks 72 Fiber", "Splidseboks", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_Uknown72Fiber, "SpliceClosure", "Ukendt Splidseboks 72 Fiber", "Splidseboks", false, 0,
                 new TerminalStructureTemplate[]
                 {
                 }
@@ -967,7 +967,7 @@ namespace OpenFTTH.TestData
 
 
             // VMC 12 bakker
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_VMC_12Tray, "SpliceClosure", "VMC Splidseboks 24 Fiber 12 stk. bakker med 12 søm", "VMC-12", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_VMC_12Tray, "SpliceClosure", "VMC Splidseboks 24 Fiber 12 stk. bakker med 12 søm", "VMC-12", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_Uknown12Pin, 1),
@@ -986,7 +986,7 @@ namespace OpenFTTH.TestData
             ));
 
             // VMC 24 bakker
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_VMC_24Tray, "SpliceClosure", "VMC Splidseboks 48 Fiber 24 stk. bakker med 12 søm", "VMC-24", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_VMC_24Tray, "SpliceClosure", "VMC Splidseboks 48 Fiber 24 stk. bakker med 12 søm", "VMC-24", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_Uknown12Pin, 1),
@@ -1017,7 +1017,7 @@ namespace OpenFTTH.TestData
             ));
 
             // 3M 72 Fiber
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_3M_72Fiber, "SpliceClosure", "3M Splidseboks 72 Fiber 6 stk. bakker med 12 søm", "3M", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_3M_72Fiber, "SpliceClosure", "3M Splidseboks 72 Fiber 6 stk. bakker med 12 søm", "3M", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_Uknown12Pin, 1),
@@ -1030,7 +1030,7 @@ namespace OpenFTTH.TestData
             ));
 
             // FIST Muffe
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_FIST, "SpliceClosure", "FIST Splidsemuffe IP55 flad 1x24 UM 12 stk. SE bakker med 12 søm", "FIST Muffe", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_FIST, "SpliceClosure", "FIST Splidsemuffe IP55 flad 1x24 UM 12 stk. SE bakker med 12 søm", "FIST Muffe", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_SE12Pin, 1),
@@ -1048,7 +1048,7 @@ namespace OpenFTTH.TestData
             ));
 
             // FOSC400
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_FOSC400, "SpliceClosure", "Splidsemuffe FOSC400 B4 3 stk bakker med 24 som", "FOSC400", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_FOSC400, "SpliceClosure", "Splidsemuffe FOSC400 B4 3 stk bakker med 24 som", "FOSC400", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_Uknown24Pin, 1),
@@ -1059,7 +1059,7 @@ namespace OpenFTTH.TestData
 
 
             // BUDI 1S 16 smal bakker
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_BUDI1S_16SCTrays, "SpliceClosure", "BUDI-1S splidseboks 48 Fiber 16 stk. SC bakker med 12 søm", "BUDI-1S", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_BUDI1S_16SCTrays, "SpliceClosure", "BUDI-1S splidseboks 48 Fiber 16 stk. SC bakker med 12 søm", "BUDI-1S", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 1),
@@ -1082,7 +1082,7 @@ namespace OpenFTTH.TestData
             { ManufacturerRefs = new Guid[] { Manu_CommScope } });
 
             // BUDI 1S 6 brede bakker
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_BUDI1S_6SETrays, "SpliceClosure", "BUDI-1S splidseboks 72 Fiber 6 stk. SE bakker med 12 søm", "BUDI-1S", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_BUDI1S_6SETrays, "SpliceClosure", "BUDI-1S splidseboks 72 Fiber 6 stk. SE bakker med 12 søm", "BUDI-1S", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_SE12Pin, 1),
@@ -1097,7 +1097,7 @@ namespace OpenFTTH.TestData
 
 
             // BUDI 2S 1 bakke
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_BUDI2S_1SETrays, "SpliceClosure", "BUDI-2S splidseboks 12 Fiber 1 stk. SE bakker med 12 søm", "BUDI-2S", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_BUDI2S_1SETrays, "SpliceClosure", "BUDI-2S splidseboks 12 Fiber 1 stk. SE bakker med 12 søm", "BUDI-2S", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_SE12Pin, 1)
@@ -1107,7 +1107,7 @@ namespace OpenFTTH.TestData
 
 
             // FTUO
-            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_FTUO, "SpliceClosure", "FTUO udvendig splideboks med plads til 12 søm", "FTUO", false,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceClosure_FTUO, "SpliceClosure", "FTUO udvendig splideboks med plads til 12 søm", "FTUO", false, 0,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_Uknown12Pin, 1)
@@ -1118,7 +1118,7 @@ namespace OpenFTTH.TestData
 
 
             // LISA 24 Søm APC+UDF Tray
-            AddSpecification(new TerminalEquipmentSpecification(SpliceModule_LISA_APC_UPC, "SpliceClosure", "LISATray 12 x LX.5 UPC og 12 x LX.5 APC", "LISA APC+UPC", true,
+            AddSpecification(new TerminalEquipmentSpecification(SpliceModule_LISA_APC_UPC, "SpliceClosure", "LISATray 12 x LX.5 UPC og 12 x LX.5 APC", "LISA APC+UPC", true, 1,
                 new TerminalStructureTemplate[]
                 {
                     new TerminalStructureTemplate(SpliceTray_LX12UPC12APC, 1)

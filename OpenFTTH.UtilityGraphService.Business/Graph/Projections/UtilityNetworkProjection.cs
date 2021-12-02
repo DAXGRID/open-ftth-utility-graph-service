@@ -33,6 +33,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             _utilityGraph = new(this);
 
+            // Span equipment
             ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
             ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
             ProjectEvent<SpanEquipmentAffixSideChanged>(Project);
@@ -51,13 +52,18 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
 
+            // Terminal equipment
+            ProjectEvent<TerminalEquipmentPlacedInNodeContainer>(Project);
+
+            // Node container
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
             ProjectEvent<NodeContainerRemovedFromRouteNetwork>(Project);
             ProjectEvent<NodeContainerManufacturerChanged>(Project);
             ProjectEvent<NodeContainerSpecificationChanged>(Project);
             ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
             ProjectEvent<NodeContainerRackAdded>(Project);
-            ProjectEvent<NodeContainerTerminalEquipmentReferenceAdded>(Project);
+            ProjectEvent<NodeContainerTerminalEquipmentAdded>(Project);
+            ProjectEvent<NodeContainerTerminalEquipmentsAddedToRack>(Project);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -222,7 +228,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
 
-                case (NodeContainerTerminalEquipmentReferenceAdded @event):
+                case (NodeContainerTerminalEquipmentAdded @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerTerminalEquipmentsAddedToRack @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
             }

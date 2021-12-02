@@ -29,7 +29,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerManufacturerChanged>(Apply);
             Register<NodeContainerSpecificationChanged>(Apply);
             Register<NodeContainerRackAdded>(Apply);
-            Register<NodeContainerTerminalEquipmentReferenceAdded>(Apply);
+            Register<NodeContainerTerminalEquipmentAdded>(Apply);
+            Register<NodeContainerTerminalEquipmentsAddedToRack>(Apply);
         }
 
         #region Place in network
@@ -257,13 +258,13 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #endregion
 
-        #region Add Terminal Equipment Reference
-        public Result AddTerminalEquipmentReference(CommandContext cmdContext, Guid terminalEquipmentId)
+        #region Add Terminal Equipment To Node
+        public Result AddTerminalEquipmentToNode(CommandContext cmdContext, Guid terminalEquipmentId)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
 
-            var e = new NodeContainerTerminalEquipmentReferenceAdded(this.Id, terminalEquipmentId)
+            var e = new NodeContainerTerminalEquipmentAdded(this.Id, terminalEquipmentId)
             {
                 CorrelationId = cmdContext.CorrelationId,
                 IncitingCmdId = cmdContext.CmdId,
@@ -276,12 +277,72 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             return Result.Ok();
         }
 
-        private void Apply(NodeContainerTerminalEquipmentReferenceAdded @event)
+        private void Apply(NodeContainerTerminalEquipmentAdded @event)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
 
             _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        #endregion
+
+        #region Add Terminal Equipments to Rack
+        public Result AddTerminalEquipmentsToRack(CommandContext cmdContext, Guid[] terminalEquipmentIds, TerminalEquipmentSpecification terminalEquipmentSpecification, Guid rackId, int startUnitPosition, SubrackPlacmentMethod placmentMethod)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {rackId} in node container with id: {this.Id}"));
+
+            if (startUnitPosition < 0)
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.INVALID_RACK_UNIT_START_POSITION, $"Invalid rack unit must be greater or equal to zero"));
+
+            var rack = _container.Racks.First(r => r.Id == rackId);
+
+            var revisedStartPoistion = ReviseStartPosition(rack, startUnitPosition);
+
+            var e = new NodeContainerTerminalEquipmentsAddedToRack(
+                nodeContainerId: this.Id,
+                rackId: rackId,
+                startUnitPosition: revisedStartPoistion,
+                terminalEquipmentIds: terminalEquipmentIds,
+                terminalEquipmentHeightInUnits: terminalEquipmentSpecification.HeightInRackUnits
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(e);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerTerminalEquipmentsAddedToRack @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        private int ReviseStartPosition(Rack rack, int startUnitPosition)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            foreach (var subrackMount in rack.SubrackMounts)
+            {
+                // If start position is within an exisiting equipment move to position where that equipment sits
+                if (startUnitPosition > subrackMount.Position && startUnitPosition < (subrackMount.Position + subrackMount.HeightInUnits))
+                    return subrackMount.Position;
+            }
+
+            return startUnitPosition;
         }
 
         #endregion

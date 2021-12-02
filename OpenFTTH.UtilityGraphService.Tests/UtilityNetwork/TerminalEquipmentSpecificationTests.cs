@@ -33,7 +33,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Super Manufacturer");
             await _commandDispatcher.HandleAsync<AddManufacturer, Result>(new AddManufacturer(Guid.NewGuid(), new UserContext("test", Guid.Empty), manufacturer));
 
-            var terminalEquipmentSpecification = new TerminalEquipmentSpecification(Guid.NewGuid(), "SpliceClosure", "BUDI 1s deluxe", "BUDI", false,
+            var terminalEquipmentSpecification = new TerminalEquipmentSpecification(Guid.NewGuid(), "SpliceClosure", "BUDI 1s deluxe", "BUDI", false, 0,
                 new TerminalStructureTemplate[] { }
             )
             {

@@ -52,6 +52,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
         private Task<Result<GetEquipmentDetailsResult>> QueryByEquipmentOrInterestIds(GetEquipmentDetails query)
         {
             List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn = new();
+            List<TerminalEquipment> terminalEquipmentsToReturn = new();
             List<SpanEquipment> spanEquipmentsToTrace = new();
             List<NodeContainer> nodeContainersToReturn = new();
 
@@ -70,6 +71,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                 Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, spanEquipmentsByIdResult.Errors.First().Message));
 
 
+            // Fetch terminal equipments by id
+            var terminalEquipmentsByIdResult = GetTerminalEquipmentsById(query.EquipmentIdsToQuery);
+
+            if (terminalEquipmentsByIdResult.IsSuccess)
+            {
+                foreach (var terminalEquipment in terminalEquipmentsByIdResult.Value)
+                {
+                    terminalEquipmentsToReturn.Add(terminalEquipment);
+                }
+            }
+            else
+                Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, terminalEquipmentsByIdResult.Errors.First().Message));
+
+
             // Fetch node containers by id
             var nodeContainersByIdResult = GetNodeContainersById(query.EquipmentIdsToQuery);
 
@@ -82,7 +97,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             }
             else
                 Result.Fail<GetEquipmentDetailsResult>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, nodeContainersByIdResult.Errors.First().Message));
-
 
 
             // Get eventually single span segment request
@@ -110,6 +124,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
             var result = new GetEquipmentDetailsResult() {
                 SpanEquipment = new LookupCollection<SpanEquipmentWithRelatedInfo>(spanEquipmentsToReturn),
+                TerminalEquipment = new LookupCollection<TerminalEquipment>(terminalEquipmentsToReturn),
                 NodeContainers = new LookupCollection<NodeContainer>(nodeContainersToReturn),
                 RouteNetworkTraces = query.EquipmentDetailsFilter.IncludeRouteNetworkTrace ? AddTraceRefsToSpanEquipments(spanEquipmentsToTrace, spanEquipmentsToReturn, traceThisSpanSegmentIdOnly) : null
             };
@@ -172,6 +187,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             {
                 if (_utilityNetwork.TryGetEquipment<NodeContainer>(equipmentId, out var spanEquipment))
                     result.Add(spanEquipment);
+            }
+
+            return Result.Ok(result);
+        }
+
+        private Result<List<TerminalEquipment>> GetTerminalEquipmentsById(EquipmentIdList equipmentIdsToFetch)
+        {
+            List<TerminalEquipment> result = new();
+
+            foreach (var equipmentId in equipmentIdsToFetch)
+            {
+                if (_utilityNetwork.TryGetEquipment<TerminalEquipment>(equipmentId, out var terminalEquipment))
+                    result.Add(terminalEquipment);
             }
 
             return Result.Ok(result);

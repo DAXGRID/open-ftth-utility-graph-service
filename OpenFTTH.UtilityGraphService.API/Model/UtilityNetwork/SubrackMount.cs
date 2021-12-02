@@ -4,13 +4,15 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 {
     public record SubrackMount
     {
-        public int Position { get; }
         public Guid TerminalEquipmentId { get; }
+        public int Position { get; init; }
+        public int HeightInUnits { get; }
 
-        public SubrackMount(int position, Guid terminalEquipmentId)
+        public SubrackMount(Guid terminalEquipmentId, int position, int heightInUnits)
         {
-            Position = position;
             TerminalEquipmentId = terminalEquipmentId;
+            Position = position;
+            HeightInUnits = heightInUnits;
         }
     }
 }

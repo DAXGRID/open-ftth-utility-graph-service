@@ -34,6 +34,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             ValidateTerminalStructureSpecificationReferences(terminalEquipmentSpecification, terminalStructureSpecifications);
             ValidateManufacturerReferences(terminalEquipmentSpecification, manufacturer);
             ValidateTerminalStructureTemplatePositionUniqueness(terminalEquipmentSpecification, terminalStructureSpecifications);
+            ValidateRackEquipment(terminalEquipmentSpecification);
 
             RaiseEvent(
                 new TerminalEquipmentSpecificationAdded(terminalEquipmentSpecification)
@@ -86,6 +87,14 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                     throw new ArgumentException($"Structure position: {structureTemplate.Position} specified in terminal equipment specification: {terminalEquipmentSpecification.Name} is used more than once. Must be unique.");
 
                 positionUsed.Add(structureTemplate.Position);
+            }
+        }
+
+        private static void ValidateRackEquipment(TerminalEquipmentSpecification terminalEquipmentSpecification)
+        {
+            if (terminalEquipmentSpecification.IsRackEquipment && terminalEquipmentSpecification.HeightInRackUnits < 1)
+            {
+                throw new ArgumentException($"Expected a positive height (in rack unit) on a rack equipment. Error validating terminal equipment specification: {terminalEquipmentSpecification.Name}");
             }
         }
     }

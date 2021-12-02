@@ -30,6 +30,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             Guid nodeContainerId,
             Guid terminalEquipmentId,
             Guid terminalEquipmentSpecificationId,
+            int sequenceNumber,
+            TerminalEquipmentNamingMethodEnum namingMethod,
             NamingInfo? namingInfo,
             LifecycleInfo? lifecycleInfo,
             Guid? manufacturerId
@@ -54,7 +56,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                nodeContainerId: nodeContainerId,
                terminalStructures: new TerminalStructure[] { },
                manufacturerId: manufacturerId,
-               namingInfo: namingInfo,
+               namingInfo: CalculateName(namingInfo, sequenceNumber, namingMethod),
                lifecycleInfo: lifecycleInfo
             );
 
@@ -69,6 +71,33 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             RaiseEvent(terminalEquipmentPlacedInNodeContainerEvent);
 
             return Result.Ok();
+        }
+
+        private NamingInfo CalculateName(NamingInfo? namingInfo, int sequenceNumber, TerminalEquipmentNamingMethodEnum namingMethod)
+        {
+            NamingInfo resultNamingInfo = new();
+
+            resultNamingInfo.Description = namingInfo?.Description;
+
+            switch (namingMethod)
+            {
+                case TerminalEquipmentNamingMethodEnum.NumberOnly:
+                    resultNamingInfo.Name = sequenceNumber.ToString();
+                    break;
+
+                case TerminalEquipmentNamingMethodEnum.NameOnly:
+                    resultNamingInfo.Name = namingInfo?.Name;
+                    break;
+
+                case TerminalEquipmentNamingMethodEnum.NameAndNumber:
+                    if (namingInfo != null && !String.IsNullOrEmpty(namingInfo.Name))
+                        resultNamingInfo.Name = namingInfo.Name + " " + sequenceNumber.ToString();
+                    else
+                        resultNamingInfo.Name = sequenceNumber.ToString();
+                    break;
+            }
+
+            return resultNamingInfo;
         }
 
         private void Apply(TerminalEquipmentPlacedInNodeContainer obj)

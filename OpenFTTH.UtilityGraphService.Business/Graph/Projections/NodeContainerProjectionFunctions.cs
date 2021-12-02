@@ -3,6 +3,7 @@ using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 {
@@ -49,7 +50,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
-        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalEquipmentReferenceAdded @event)
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalEquipmentAdded @event)
         {
             List<Guid> newTerminalEquipmentRefList = new();
 
@@ -63,5 +64,70 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 TerminalEquipmentReferences = newTerminalEquipmentRefList.ToArray()
             };
         }
+
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalEquipmentsAddedToRack @event)
+        {
+            if (existingEquipment.Racks == null)
+                return existingEquipment;
+
+            Rack? rack = existingEquipment.Racks.FirstOrDefault(r => r.Id == @event.RackId);
+
+            if (rack == null)
+                return existingEquipment;
+
+            int totalHeight = @event.TerminalEquipmentHeightInUnits * @event.TerminalEquipmentIds.Count();
+
+            List<SubrackMount> keepList = new();
+            List<SubrackMount> moveUpList = new();
+
+            bool foundFirstEquipmentWithinBlock = false;
+            int moveUpUnits = 0;
+
+            foreach (var existingSubrackMount in rack.SubrackMounts.OrderBy(s => s.Position))
+            {
+                // Check if existing mount found within new equipment(s) block
+                if (!foundFirstEquipmentWithinBlock && existingSubrackMount.Position >= @event.StartUnitPosition && existingSubrackMount.Position < (@event.StartUnitPosition + totalHeight))
+                {
+                    foundFirstEquipmentWithinBlock = true;
+                    moveUpUnits = totalHeight - (existingSubrackMount.Position - @event.StartUnitPosition);
+                }
+
+                if (foundFirstEquipmentWithinBlock)
+                {
+                    // We're going to move it up
+                    moveUpList.Add(existingSubrackMount with { Position = existingSubrackMount.Position + moveUpUnits });
+                }
+                else
+                {
+                    // We keep the position
+                    keepList.Add(existingSubrackMount);
+                }
+            }
+
+            // Add the new terminal equipments to rack
+            int insertPosition = @event.StartUnitPosition;
+
+            foreach (var equipmentId in @event.TerminalEquipmentIds)
+            {
+                keepList.Add(new SubrackMount(equipmentId, insertPosition, @event.TerminalEquipmentHeightInUnits));
+                insertPosition += @event.TerminalEquipmentHeightInUnits;
+            }
+
+            // Add the moved up terminal equipments
+            keepList.AddRange(moveUpList);
+
+            Rack[] newRacks = new Rack[existingEquipment.Racks.Length];
+
+            existingEquipment.Racks.CopyTo(newRacks, 0);
+
+            newRacks[Array.IndexOf(existingEquipment.Racks, rack)] = new Rack(rack.Id, rack.Name, rack.Position, rack.SpecificationId, rack.HeightInUnits, keepList.ToArray());
+
+            return existingEquipment with
+            {
+                Racks = newRacks
+            };
+        }
+
+
     }
 }
