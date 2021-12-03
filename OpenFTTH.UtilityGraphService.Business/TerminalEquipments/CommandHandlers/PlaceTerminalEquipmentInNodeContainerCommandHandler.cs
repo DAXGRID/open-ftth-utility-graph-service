@@ -25,8 +25,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly string _topicName = "notification.utility-network";
 
         private readonly IEventStore _eventStore;
+        private readonly UtilityNetworkProjection _utilityNetwork;
         private readonly IExternalEventProducer _externalEventProducer;
-        private readonly LookupCollection<NodeContainer> _nodeContainers;
         private readonly LookupCollection<TerminalEquipmentSpecification> _terminalEquipmentSpecifications;
         private readonly LookupCollection<TerminalStructureSpecification> _terminalStructureSpecifications;
 
@@ -34,7 +34,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             _externalEventProducer = externalEventProducer;
             _eventStore = eventStore;
-            _nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
+            _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
             _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
             _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
         }
@@ -50,7 +50,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!_terminalEquipmentSpecifications.Any(s => s.Id == command.TerminalEquipmentSpecificationId))
                 return Task.FromResult(Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.INVALID_TERMINAL_EQUIPMENT_SPECIFICATION_ID_NOT_FOUND, $"Terminal equipment specification with id: {command.TerminalEquipmentSpecificationId} not found")));
 
-            if (!_nodeContainers.TryGetValue(command.NodeContainerId, out var nodeContainer))
+            if (!_utilityNetwork.TryGetEquipment<NodeContainer>(command.NodeContainerId, out var nodeContainer))
                 return Task.FromResult(Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.NODE_CONTAINER_NOT_FOUND, $"Cannot find any node container with id: {command.NodeContainerId}")));
 
             if (command.SubrackPlacementInfo != null)

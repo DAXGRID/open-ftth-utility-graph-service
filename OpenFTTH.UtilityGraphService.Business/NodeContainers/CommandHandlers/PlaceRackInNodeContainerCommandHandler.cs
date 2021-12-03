@@ -5,6 +5,7 @@ using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
@@ -20,19 +21,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly string _topicName = "notification.utility-network";
 
         private readonly IEventStore _eventStore;
+        private readonly UtilityNetworkProjection _utilityNetwork;
         private readonly IExternalEventProducer _externalEventProducer;
 
         public PlaceRackInNodeContainerCommandHandler(IEventStore eventStore, IExternalEventProducer externalEventProducer)
         {
             _externalEventProducer = externalEventProducer;
             _eventStore = eventStore;
+            _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
         public Task<Result> HandleAsync(PlaceRackInNodeContainer command)
         {
-            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
-
-            if (!nodeContainers.TryGetValue(command.NodeContainerId, out var nodeContainer))
+            if (!_utilityNetwork.TryGetEquipment<NodeContainer>(command.NodeContainerId, out var nodeContainer))
             {
                 return Task.FromResult(Result.Fail(new NodeContainerError(NodeContainerErrorCodes.NODE_CONTAINER_NOT_FOUND, $"Cannot find any node container with id: {command.NodeContainerId}")));
             }
