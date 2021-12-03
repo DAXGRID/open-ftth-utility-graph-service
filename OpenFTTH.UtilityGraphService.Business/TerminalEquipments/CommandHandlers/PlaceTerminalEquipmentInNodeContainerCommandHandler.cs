@@ -105,7 +105,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     _terminalEquipmentSpecifications[command.TerminalEquipmentSpecificationId], 
                     command.SubrackPlacementInfo.RackId, 
                     command.SubrackPlacementInfo.StartUnitPosition, 
-                    command.SubrackPlacementInfo.PlacmentMethod
+                    command.SubrackPlacementInfo.PlacementMethod
                  );
 
                 if (addTerminalEquipmentToRackResult.IsFailed)

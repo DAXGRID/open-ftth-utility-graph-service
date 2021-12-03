@@ -6,13 +6,13 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     {
         public Guid RackId { get; }
         public int StartUnitPosition { get; }
-        public SubrackPlacmentMethod PlacmentMethod { get; }
+        public SubrackPlacmentMethod PlacementMethod { get; }
 
         public SubrackPlacementInfo(Guid rackId, int startUnitPosition, SubrackPlacmentMethod placmentMethod)
         {
             RackId = rackId;
             StartUnitPosition = startUnitPosition;
-            PlacmentMethod = placmentMethod;
+            PlacementMethod = placmentMethod;
         }
     }
 }
