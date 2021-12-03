@@ -6,6 +6,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
+using System.Collections.Generic;
 
 namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 {
@@ -54,7 +55,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                id: terminalEquipmentId,
                specificationId: terminalEquipmentSpecificationId,
                nodeContainerId: nodeContainerId,
-               terminalStructures: new TerminalStructure[] { },
+               terminalStructures: CreateTerminalStructuresFromSpecification(terminalEquipmentSpecifications[terminalEquipmentSpecificationId], terminalStructureSpecifications),
                manufacturerId: manufacturerId,
                namingInfo: CalculateName(namingInfo, sequenceNumber, namingMethod),
                lifecycleInfo: lifecycleInfo
@@ -72,6 +73,35 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 
             return Result.Ok();
         }
+
+        private TerminalStructure[] CreateTerminalStructuresFromSpecification(TerminalEquipmentSpecification terminalEquipmentSpecification, LookupCollection<TerminalStructureSpecification> terminalStructureSpecifications)
+        {
+            List<TerminalStructure> terminalStructures = new();
+
+            foreach (var structureTemplate in terminalEquipmentSpecification.StructureTemplates)
+            {
+                if (terminalStructureSpecifications.TryGetValue(structureTemplate.TerminalStructureSpecificationId, out var terminalStructureSpecification))
+                {
+                    List<Terminal> terminals = new();
+
+                    foreach (var terminalTemplate in terminalStructureSpecification.TerminalTemplates)
+                    {
+                        terminals.Add(
+                            new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType)
+                        );
+                    }
+
+                    terminalStructures.Add(new TerminalStructure(Guid.NewGuid(), structureTemplate.TerminalStructureSpecificationId, structureTemplate.Position, terminals.ToArray()));
+                }
+                else
+                {
+                    throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipmentSpecification.Id} References a non-existing terminal structure specification with id: {structureTemplate.TerminalStructureSpecificationId}");
+                }
+            }
+
+            return terminalStructures.ToArray();
+        }
+
 
         private NamingInfo CalculateName(NamingInfo? namingInfo, int sequenceNumber, TerminalEquipmentNamingMethodEnum namingMethod)
         {

@@ -854,7 +854,7 @@ namespace OpenFTTH.TestData
                 }
             ));
 
-            // 14 Pin Tray Uknown Type
+            // 24 Pin Tray Uknown Type
             AddSpecification(new TerminalStructureSpecification(SpliceTray_Uknown24Pin, "SpliceTray", "Splidsebakke 24 Søm", "Bakke 24 Søm",
                 new TerminalTemplate[]
                 {
@@ -1130,6 +1130,7 @@ namespace OpenFTTH.TestData
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 8),
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 9),
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 10),
+                    new TerminalStructureTemplate(SpliceTray_SC12Pin, 11),
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 12),
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 13),
                     new TerminalStructureTemplate(SpliceTray_SC12Pin, 14),

@@ -7,6 +7,7 @@ using OpenFTTH.TestData;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
@@ -74,6 +75,17 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
             equipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
             equipment.Name.Should().Be("Splice Closure 1");
+
+            // test that terminal structures and terminal has been created
+            equipment.TerminalStructures.Count().Should().Be(16);
+            equipment.TerminalStructures[0].Position.Should().Be(1);
+            equipment.TerminalStructures[15].Position.Should().Be(16);
+            equipment.TerminalStructures[0].Terminals.Count().Should().Be(12);
+            equipment.TerminalStructures[0].Terminals[0].Name.Should().Be("1");
+            equipment.TerminalStructures[0].Terminals[11].Name.Should().Be("12");
+            equipment.TerminalStructures[0].Terminals[0].IsSplice.Should().BeTrue();
+            equipment.TerminalStructures[0].Terminals[0].IsPigtail.Should().BeFalse();
+            equipment.TerminalStructures[0].Terminals[0].ConnectorType.Should().BeNull();
 
         }
 
@@ -206,7 +218,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 nodeContainerId: sutNodeContainer,
-                terminalEquipmentSpecificationId: TestSpecifications.Subrack_LISA_APC_UPC,
+                terminalEquipmentSpecificationId: TestSpecifications.Subrack_GPS_144_LC,
                 numberOfEquipments: 1,
                 startSequenceNumber: 5,
                 namingMethod: TerminalEquipmentNamingMethodEnum.NumberOnly,
@@ -252,7 +264,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // First equipment/mount
             firstMount.Position.Should().Be(0);
-            firstMount.HeightInUnits.Should().Be(1);
+            firstMount.HeightInUnits.Should().Be(4);
 
             firstEquipment.Name.Should().Be("5");
             firstEquipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
@@ -260,22 +272,103 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // Second equipment/mount
-            secondMount.Position.Should().Be(1);
+            secondMount.Position.Should().Be(4);
             secondMount.HeightInUnits.Should().Be(1);
 
             secondEquipment.Name.Should().Be("1");
-            secondEquipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
             secondEquipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
 
 
             // Third equipment/mount
-            thirdMount.Position.Should().Be(2);
+            thirdMount.Position.Should().Be(5);
             thirdMount.HeightInUnits.Should().Be(1);
 
             thirdEquipment.Name.Should().Be("2");
-            thirdEquipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
             thirdEquipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
         }
 
+
+
+        [Fact, Order(100)]
+        public async void QueryConnectivityInfoOneFirstTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.J_1;
+
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_J_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            var firstEquipmentInRack1Id = nodeContainerBeforeCommand.Racks[0].SubrackMounts[0].TerminalEquipmentId;
+
+            var connectivityQuery = new GetTerminalEquipmentConnectivityView(sutRouteNodeId, firstEquipmentInRack1Id);
+
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityQuery
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            viewModel.TerminalEquipments.Should().NotBeNull();
+            viewModel.TerminalEquipments.Count().Should().Be(1);
+
+            viewModel.TerminalEquipments[0].TerminalStructures.Count().Should().Be(6);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count().Should().Be(24);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A != null && l.Z != null).Should().Be(24);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal != null && l.Z.Terminal != null).Should().Be(24);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal.Id != Guid.Empty && l.Z.Terminal.Id != Guid.Empty).Should().Be(24);
+        }
+
+        [Fact, Order(101)]
+        public async void QueryConnectivityInfoOneAllTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.J_1;
+
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_J_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            var firstEquipmentInRack1Id = nodeContainerBeforeCommand.Racks[0].Id;
+
+            var connectivityQuery = new GetTerminalEquipmentConnectivityView(sutRouteNodeId, firstEquipmentInRack1Id);
+
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityQuery
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            viewModel.ParentNodeStructures.Should().NotBeNull();
+            viewModel.ParentNodeStructures.Count().Should().Be(1);
+
+            viewModel.TerminalEquipments.Should().NotBeNull();
+            viewModel.TerminalEquipments.Count().Should().Be(3);
+
+            // check parent rack
+            viewModel.ParentNodeStructures.Count().Should().Be(1);
+
+            // check first equipmenmt
+            viewModel.TerminalEquipments[0].ParentNodeStructureId.Should().Be(nodeContainerBeforeCommand.Racks[0].Id);
+            viewModel.TerminalEquipments[0].TerminalStructures.Count().Should().Be(6);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count().Should().Be(24);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A != null && l.Z != null).Should().Be(24);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal != null && l.Z.Terminal != null).Should().Be(24);
+            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal.Id != Guid.Empty && l.Z.Terminal.Id != Guid.Empty).Should().Be(24);
+        }
     }
 }
