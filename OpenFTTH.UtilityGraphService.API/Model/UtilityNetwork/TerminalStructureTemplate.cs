@@ -7,9 +7,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     {
         public Guid TerminalStructureSpecificationId { get; }
         public UInt16 Position { get; }
-        public TerminalStructureTemplate(Guid spanStructureSpecificationId, UInt16 position)
+        public TerminalStructureTemplate(Guid terminalStructureSpecificationId, UInt16 position)
         {
-            TerminalStructureSpecificationId = spanStructureSpecificationId;
+            TerminalStructureSpecificationId = terminalStructureSpecificationId;
             Position = position;
         }
     }
