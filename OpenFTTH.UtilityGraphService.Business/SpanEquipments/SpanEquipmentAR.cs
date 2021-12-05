@@ -82,7 +82,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 lifecycleInfo: lifecycleInfo,
                 markingInfo: markingInfo,
                 addressInfo: addressInfo,
-                spanEquipmentAffixes: null
+                spanEquipmentAffixes: null,
+                isCable: spanEquipmentSpecifications[spanEquipmentSpecificationId].IsCable
              );
 
             RaiseEvent(
@@ -132,7 +133,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 namingInfo: namingInfo,
                 lifecycleInfo: lifecycleInfo,
                 markingInfo: markingInfo,
-                addressInfo: addressInfo
+                addressInfo: addressInfo,
+                isCable: spanEquipmentSpecifications[spanEquipmentSpecificationId].IsCable
              );
 
             RaiseEvent(
@@ -148,7 +150,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo, AddressInfo? addressInfo, SpanEquipmentSpanEquipmentAffix[]? spanEquipmentAffixes)
+        private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo, AddressInfo? addressInfo, SpanEquipmentSpanEquipmentAffix[]? spanEquipmentAffixes, bool isCable)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
 
@@ -186,7 +188,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 LifecycleInfo = lifecycleInfo,
                 MarkingInfo = markingInfo,
                 AddressInfo = addressInfo,
-                ParentAffixes = spanEquipmentAffixes
+                ParentAffixes = spanEquipmentAffixes,
+                IsCable = isCable
             };
 
             return spanEquipment;

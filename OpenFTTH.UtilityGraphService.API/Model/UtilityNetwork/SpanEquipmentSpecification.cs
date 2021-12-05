@@ -12,10 +12,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public bool Deprecated { get; init; }
         public bool IsFixed { get; init; }
         public bool IsMultiLevel { get; init; }
-
         public string? Description { get; init; }
-
         public Guid[]? ManufacturerRefs { get; init; }
+        public bool IsCable { get; init; }
 
         /// <summary>
         /// </summary>

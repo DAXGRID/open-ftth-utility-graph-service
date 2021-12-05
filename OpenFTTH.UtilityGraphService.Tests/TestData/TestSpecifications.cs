@@ -846,7 +846,8 @@ namespace OpenFTTH.TestData
                 Description = "2 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_4Fiber, "FiberCable", "4 Fiber", CreateFibers(4))
@@ -854,7 +855,8 @@ namespace OpenFTTH.TestData
                 Description = "4 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_12Fiber, "FiberCable", "12 Fiber", CreateFibers(12))
@@ -862,7 +864,8 @@ namespace OpenFTTH.TestData
                 Description = "12 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_24Fiber, "FiberCable", "24 Fiber", CreateFibers(24))
@@ -870,15 +873,17 @@ namespace OpenFTTH.TestData
                 Description = "24 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_48Fiber, "FiberCable", "48 Fiber", CreateFibers(48))
             {
-                Description = "2 Fiber Cable",
+                Description = "48 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_72Fiber, "FiberCable", "72 Fiber", CreateFibers(72))
@@ -886,7 +891,8 @@ namespace OpenFTTH.TestData
                 Description = "72 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_96Fiber, "FiberCable", "96 Fiber", CreateFibers(96))
@@ -894,7 +900,8 @@ namespace OpenFTTH.TestData
                 Description = "96 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_144Fiber, "FiberCable", "144 Fiber", CreateFibers(144))
@@ -902,7 +909,8 @@ namespace OpenFTTH.TestData
                 Description = "144 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_192Fiber, "FiberCable", "192 Fiber", CreateFibers(192))
@@ -910,7 +918,8 @@ namespace OpenFTTH.TestData
                 Description = "192 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
             AddSpecification(new SpanEquipmentSpecification(FiberCable_216Fiber, "FiberCable", "216 Fiber", CreateFibers(216))
@@ -918,15 +927,17 @@ namespace OpenFTTH.TestData
                 Description = "216 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
 
-            AddSpecification(new SpanEquipmentSpecification(FiberCable_288Fiber, "FiberCable", "288 Fiber", CreateFibers(216))
+            AddSpecification(new SpanEquipmentSpecification(FiberCable_288Fiber, "FiberCable", "288 Fiber", CreateFibers(288))
             {
                 Description = "288 Fiber Cable",
                 ManufacturerRefs = new Guid[] { Manu_Emtelle },
                 IsFixed = true,
-                IsMultiLevel = true
+                IsMultiLevel = true,
+                IsCable = true
             });
         }
 

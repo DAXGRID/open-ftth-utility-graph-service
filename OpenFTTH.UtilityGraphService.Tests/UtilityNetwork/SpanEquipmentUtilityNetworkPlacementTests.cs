@@ -71,7 +71,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 new RoutingHop(TestRouteNetwork.CO_1, routeThroughSpanSegmentId)
             };
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, routingHops)
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_72Fiber, routingHops)
             {
                 NamingInfo = new NamingInfo("Hans", "Grethe"),
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
@@ -90,9 +90,20 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
               }
             );
 
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { placeSpanEquipmentCommand.SpanEquipmentId })
+               {
+                   EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                   {
+                       IncludeRouteNetworkTrace = true
+                   }
+               }
+            );
+
             // Assert
             placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
             routeNetworkQueryResult.IsSuccess.Should().BeTrue();
+            traceQueryResult.IsSuccess.Should().BeTrue();
 
             // Check walk of interest
             var walkOfInterest = routeNetworkQueryResult.Value.Interests[placedSpanEquipment.WalkOfInterestId];
@@ -105,6 +116,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placedSpanEquipment.ParentAffixes.Count().Should().Be(2);
             placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegmentId).Should().NotBeNull();
             placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughConnectedSpanSegmentId).Should().NotBeNull();
+
+            // Check that trace only include outer jacket of cable
+            traceQueryResult.Value.RouteNetworkTraces.Count().Should().Be(1);
         }
 
 

@@ -392,6 +392,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                                 }
                             }
                         }
+
+                        // Break if cable
+                        if (spanEquipment.IsCable)
+                            break;
                     }
                 }
 

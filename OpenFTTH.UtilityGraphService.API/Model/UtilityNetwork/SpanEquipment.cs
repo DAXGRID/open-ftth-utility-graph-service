@@ -17,6 +17,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public LifecycleInfo? LifecycleInfo { get; init; }
         public MarkingInfo? MarkingInfo { get; init; }
         public AddressInfo? AddressInfo { get; init; }
+        public bool IsCable { get; init; }
 
         public SpanEquipmentNodeContainerAffix[]? NodeContainerAffixes { get; init; }
 
