@@ -42,6 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentAddressInfoChanged>(Apply);
             Register<SpanEquipmentManufacturerChanged>(Apply);
             Register<SpanEquipmentSpecificationChanged>(Apply);
+            Register<SpanEquipmentAffixedToParent>(Apply);
         }
 
         #region Place Span Equipment
@@ -199,6 +200,32 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         {
             _spanEquipment = @event.Equipment;
         }
+        #endregion
+
+        #region Affix parents
+        public Result AffixToParent(CommandContext cmdContext, SpanEquipmentSpanEquipmentAffix[] spanEquipmentAffixes)
+        {
+            RaiseEvent(
+                new SpanEquipmentAffixedToParent(this.Id, spanEquipmentAffixes)
+                {
+                    CorrelationId = cmdContext.CorrelationId,
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                }
+            );
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentAffixedToParent @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
         #endregion
 
         #region Affix To Node Container

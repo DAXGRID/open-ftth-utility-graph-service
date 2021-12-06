@@ -249,6 +249,68 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
 
+        [Fact, Order(4)]
+        public async void TestAffixExistingSpanEquipmentToConduit_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var routeThroughSpanEquipment1Id = TestUtilityNetwork.MultiConduit_10x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipment1Id, out var routeThoughSpanEquipment1);
+
+            // Setup
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+
+            // First place in route network from HH_1 to HH_10
+            var routingHops = new RoutingHop[]
+            {
+                new RoutingHop(
+                    new Guid[] { TestRouteNetwork.HH_1, TestRouteNetwork.S2, TestRouteNetwork.HH_2, TestRouteNetwork.S4, TestRouteNetwork.CC_1, TestRouteNetwork.S13, TestRouteNetwork.HH_10 }
+                ),
+            };
+
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_288Fiber, routingHops)
+            {
+                NamingInfo = new NamingInfo("K12345678", null),
+                ManufacturerId = Guid.NewGuid()
+            };
+
+
+            // Act
+            var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInUtilityNetwork, Result>(placeSpanEquipmentCommand);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(placeSpanEquipmentCommand.SpanEquipmentId, out var placedSpanEquipment);
+
+
+            var affixtCommand = new AffixSpanEquipmentToParent(Guid.NewGuid(), new UserContext("test", Guid.Empty),TestRouteNetwork.CC_1, placedSpanEquipment.SpanStructures[0].SpanSegments[0].Id, routeThoughSpanEquipment1.SpanStructures[5].SpanSegments[0].Id);
+
+            var affixCommandResult = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToParent, Result>(affixtCommand);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(placeSpanEquipmentCommand.SpanEquipmentId, out var movedSpanEquipment);
+
+
+            var routeNetworkQueryResult = await _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+              new GetRouteNetworkDetails(new InterestIdList() { placedSpanEquipment.WalkOfInterestId })
+              {
+                  RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementAndInterestObjects
+              }
+            );
+
+            // Assert
+            placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
+            affixCommandResult.IsSuccess.Should().BeTrue();
+            routeNetworkQueryResult.IsSuccess.Should().BeTrue();
+
+            var walkOfInterest = routeNetworkQueryResult.Value.Interests[placedSpanEquipment.WalkOfInterestId];
+
+            walkOfInterest.RouteNetworkElementRefs.First().Should().Be(TestRouteNetwork.HH_1);
+            walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.HH_10);
+
+            // Check parent relationship
+            placedSpanEquipment.ParentAffixes.Should().BeEmpty();
+
+            movedSpanEquipment.ParentAffixes.Count().Should().Be(1);
+        }
+
         [Fact, Order(10)]
         public async void TestPlaceSpanEquipmentRouteByIndexFromNodeWithNoConduitEnds_ShouldFail()
         {

@@ -51,6 +51,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentAddressInfoChanged>(Project);
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
+            ProjectEvent<SpanEquipmentAffixedToParent>(Project);
 
             // Terminal equipment
             ProjectEvent<TerminalEquipmentPlacedInNodeContainer>(Project);
@@ -196,6 +197,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (SpanEquipmentSpecificationChanged @event):
                     ProcessSpanEquipmentSpecificationChange(@event);
                     break;
+
+                case (SpanEquipmentAffixedToParent @event):
+                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
+                    break;
+
 
                 // Terminal equipment events
                 case (TerminalEquipmentPlacedInNodeContainer @event):

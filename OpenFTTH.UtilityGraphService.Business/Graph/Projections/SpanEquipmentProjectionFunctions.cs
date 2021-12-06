@@ -503,5 +503,22 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 SpanStructures = newSpanStructures.ToArray()
             };
         }
+
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAffixedToParent @event)
+        {
+            List<SpanEquipmentSpanEquipmentAffix> newParentAffixes = new();
+
+            // add existing affixes
+            if (existingSpanEquipment.ParentAffixes != null && existingSpanEquipment.ParentAffixes.Length > 0)
+                newParentAffixes.AddRange(existingSpanEquipment.ParentAffixes);
+
+            // add new affixes
+            newParentAffixes.AddRange(@event.ParentAffixes);
+
+            return existingSpanEquipment with
+            {
+               ParentAffixes = newParentAffixes.ToArray()
+            };
+        }
     }
 }
