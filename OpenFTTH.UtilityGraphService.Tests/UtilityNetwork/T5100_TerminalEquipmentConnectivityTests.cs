@@ -45,12 +45,25 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
 
             var firstEquipmentInRack1Id = nodeContainerBeforeCommand.Racks[0].Id;
-
-
-
-
         }
 
-     
+
+        [Fact, Order(10)]
+        public async void GetConnectivityTraceView_ShouldSucceed()
+        {
+            var connectivityTrace = new GetConnectivityTraceView(Guid.NewGuid());
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityTraceView, Result<ConnectivityTraceView>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+        }
+
+
     }
 }
