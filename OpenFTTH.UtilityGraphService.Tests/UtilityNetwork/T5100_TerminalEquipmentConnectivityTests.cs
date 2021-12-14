@@ -51,7 +51,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact, Order(10)]
         public async void GetConnectivityTraceView_ShouldSucceed()
         {
-            var connectivityTrace = new GetConnectivityTraceView(Guid.NewGuid());
+            var connectivityTrace = new GetConnectivityTraceView(Guid.NewGuid(), Guid.NewGuid());
 
             // Act
             var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityTraceView, Result<ConnectivityTraceView>>(
