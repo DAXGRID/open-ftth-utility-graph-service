@@ -8,13 +8,11 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 {
     public class GetConnectivityTraceView : IQuery<Result<ConnectivityTraceView>> 
     { 
-        public Guid? SpanSegmentId { get; }
+        public Guid? TerminalOrSpanSegmentId { get; }
 
-        public Guid? TerminalId { get; }
-
-        public GetConnectivityTraceView(Guid spanSegmentId)
+        public GetConnectivityTraceView(Guid terminalOrSpanSegmentId)
         {
-            this.SpanSegmentId = SpanSegmentId;
+            this.TerminalOrSpanSegmentId = terminalOrSpanSegmentId;
         }
     }
 }
