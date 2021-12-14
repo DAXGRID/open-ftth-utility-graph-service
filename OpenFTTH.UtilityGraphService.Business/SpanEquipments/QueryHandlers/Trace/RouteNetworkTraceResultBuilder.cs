@@ -317,8 +317,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
 
                                     var segmentHop = new SegmentWalkHop(
                                         spanEquipmentOrSegmentId: connectedSegment.Id,
-                                        fromNodeId: ((UtilityGraphConnectedTerminal)spanTraceResult.Downstream[downstreamIndex + 1]).NodeOfInterestId,
-                                        toNodeId: ((UtilityGraphConnectedTerminal)spanTraceResult.Downstream[downstreamIndex - 1]).NodeOfInterestId,
+                                        fromNodeId: ((UtilityGraphConnectedSimpleTerminal)spanTraceResult.Downstream[downstreamIndex + 1]).NodeOfInterestId,
+                                        toNodeId: ((UtilityGraphConnectedSimpleTerminal)spanTraceResult.Downstream[downstreamIndex - 1]).NodeOfInterestId,
                                         walkOfInterestId: walkOfInterestId,
                                         addressInfo: ((UtilityGraphConnectedSegment)item).SpanEquipment(_utilityNetwork).AddressInfo
                                     );
@@ -340,8 +340,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                                     {
                                         var segmentHop = new SegmentWalkHop(
                                             spanEquipmentOrSegmentId: connectedSegment.Id,
-                                            fromNodeId: ((UtilityGraphConnectedTerminal)spanTraceResult.Downstream[1]).NodeOfInterestId,
-                                            toNodeId: ((UtilityGraphConnectedTerminal)spanTraceResult.Upstream[upstreamIndex + 1]).NodeOfInterestId,
+                                            fromNodeId: ((UtilityGraphConnectedSimpleTerminal)spanTraceResult.Downstream[1]).NodeOfInterestId,
+                                            toNodeId: ((UtilityGraphConnectedSimpleTerminal)spanTraceResult.Upstream[upstreamIndex + 1]).NodeOfInterestId,
                                             walkOfInterestId: walkOfInterestId,
                                             addressInfo: ((UtilityGraphConnectedSegment)item).SpanEquipment(_utilityNetwork).AddressInfo
                                         );
@@ -352,8 +352,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                                     {
                                         var segmentHop = new SegmentWalkHop(
                                             spanEquipmentOrSegmentId: connectedSegment.Id,
-                                            fromNodeId:((UtilityGraphConnectedTerminal)spanTraceResult.Upstream[upstreamIndex - 1]).NodeOfInterestId,
-                                            toNodeId: ((UtilityGraphConnectedTerminal)spanTraceResult.Upstream[upstreamIndex + 1]).NodeOfInterestId,
+                                            fromNodeId:((UtilityGraphConnectedSimpleTerminal)spanTraceResult.Upstream[upstreamIndex - 1]).NodeOfInterestId,
+                                            toNodeId: ((UtilityGraphConnectedSimpleTerminal)spanTraceResult.Upstream[upstreamIndex + 1]).NodeOfInterestId,
                                             walkOfInterestId: walkOfInterestId,
                                             addressInfo: ((UtilityGraphConnectedSegment)item).SpanEquipment(_utilityNetwork).AddressInfo
                                         );

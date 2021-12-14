@@ -73,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_72Fiber, routingHops)
             {
-                NamingInfo = new NamingInfo("Hans", "Grethe"),
+                NamingInfo = new NamingInfo("K69373563", null),
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
                 ManufacturerId = Guid.NewGuid()
             };

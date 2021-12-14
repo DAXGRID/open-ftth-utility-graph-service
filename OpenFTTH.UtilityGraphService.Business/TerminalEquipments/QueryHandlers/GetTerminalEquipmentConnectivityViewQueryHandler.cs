@@ -23,22 +23,23 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly UtilityNetworkProjection _utilityNetwork;
-        private readonly LookupCollection<RackSpecification> _rackSpecifications;
-        private readonly LookupCollection<TerminalStructureSpecification> _terminalStructureSpecifications;
-        private readonly LookupCollection<TerminalEquipmentSpecification> _terminalEquipmentSpecifications;
+        private LookupCollection<RackSpecification> _rackSpecifications;
+        private LookupCollection<TerminalStructureSpecification> _terminalStructureSpecifications;
+        private LookupCollection<TerminalEquipmentSpecification> _terminalEquipmentSpecifications;
 
         public GetTerminalEquipmentConnectivityViewQueryHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _queryDispatcher = queryDispatcher;
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-            _rackSpecifications = _eventStore.Projections.Get<RackSpecificationsProjection>().Specifications;
-            _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
-            _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
         }
 
         public Task<Result<TerminalEquipmentAZConnectivityViewModel>> HandleAsync(GetTerminalEquipmentConnectivityView query)
         {
+            _rackSpecifications = _eventStore.Projections.Get<RackSpecificationsProjection>().Specifications;
+            _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
+            _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
+
             // If terminal equipment   
             if (_utilityNetwork.TryGetEquipment<TerminalEquipment>(query.terminalEquipmentOrRackId, out var terminalEquipment))
             {

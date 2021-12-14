@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 using Xunit.Extensions.Ordering;
@@ -45,7 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 numberOfEquipments: 1,
                 startSequenceNumber: 1,
                 namingMethod: TerminalEquipmentNamingMethodEnum.NameAndNumber,
-                namingInfo: new NamingInfo("Splice Closure",null)
+                namingInfo: new NamingInfo("Splice Closure", null)
             );
 
             // Act
@@ -153,10 +154,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 namingMethod: TerminalEquipmentNamingMethodEnum.NumberOnly,
                 namingInfo: null
             )
-            { 
+            {
                 SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 0, SubrackPlacmentMethod.BottomUp)
             };
-               
+
 
             // Act
             var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
@@ -369,6 +370,59 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A != null && l.Z != null).Should().Be(24);
             viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal != null && l.Z.Terminal != null).Should().Be(24);
             viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal.Id != Guid.Empty && l.Z.Terminal.Id != Guid.Empty).Should().Be(24);
+        }
+
+
+        [Fact, Order(1000)]
+        public async void QueryConnectivityFacesInJ1_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.J_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+
+            var connectivityQuery = new GetConnectivityFaces(sutRouteNodeId);
+
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<EquipmentConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            viewModel.Count.Should().BeGreaterThan(4);
+
+        }
+
+
+
+        [Fact, Order(1001)]
+        public async void QueryConnectivityFacesInCC1_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.CC_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+
+            var connectivityQuery = new GetConnectivityFaces(sutRouteNodeId);
+
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<EquipmentConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
         }
     }
 }

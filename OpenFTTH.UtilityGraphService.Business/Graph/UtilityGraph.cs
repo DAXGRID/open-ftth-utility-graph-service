@@ -57,7 +57,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     var version = _objectManager.GetLatestCommitedVersion();
 
                     // Do the upstream trace
-                    var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
+                    var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
                         version,
                         n => n != connectedSegment.InV(version)
                     ).ToList();
@@ -68,11 +68,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     {
                         if (lastUpstreamSegment.OutV(version) == null)
                         {
-                            upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                            upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                         }
                         else if (lastUpstreamSegment.InV(version) == null)
                         {
-                            upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                            upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                         }
                         else
                         {
@@ -83,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     result.Upstream = upstreamTrace.ToArray();
 
                     // Do the downstream trace
-                    var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
+                    var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
                         version,
                         n => n != connectedSegment.OutV(version)
                     ).ToList();
@@ -94,11 +94,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     {
                         if (lastDownstreamSegment.InV(version) == null)
                         {
-                            downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                            downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                         }
                         else if (lastDownstreamSegment.OutV(version) == null)
                         {
-                            downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                            downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                         }
                         else
                         {
@@ -114,10 +114,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         }
 
 
-        internal UtilityGraphConnectedTerminal? GetTerminal(Guid terminalId, long version)
+        internal IUtilityGraphTerminalRef? GetTerminal(Guid terminalId, long version)
         {
             // Find or create terminal
-            return _objectManager.GetObject(terminalId, version) as UtilityGraphConnectedTerminal;
+            return _objectManager.GetObject(terminalId, version) as IUtilityGraphTerminalRef;
         }
 
         internal void AddDisconnectedSegment(SpanEquipment spanEquipment, UInt16 structureIndex, UInt16 segmentIndex)
@@ -130,28 +130,38 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ArgumentException($"A span segment with id: {spanSegment.Id} already exists in the graph.");
         }
 
-        internal void RemoveDisconnectedSegment(Guid spanSegmentId)
+        internal void AddDisconnectedTerminal(TerminalEquipment terminalEquipment, UInt16 structureIndex, UInt16 terminalIndex)
         {
-            if (!_graphElementsById.TryRemove(spanSegmentId, out _))
-                throw new ArgumentException($"The span segment with id: {spanSegmentId} cannot be removed from the graph.");
+            var terminal = terminalEquipment.TerminalStructures[structureIndex].Terminals[terminalIndex];
+
+            var disconnectedGraphTerminal = new UtilityGraphDisconnectedSegment(terminalEquipment.Id, structureIndex, terminalIndex);
+
+            if (!_graphElementsById.TryAdd(terminal.Id, disconnectedGraphTerminal))
+                throw new ArgumentException($"A terminal with id: {terminal.Id} already exists in the graph.");
         }
 
-        internal void UpdateIndex(Guid segmentId, IUtilityGraphSegmentRef newUtilityGraphSegmentRef)
+        internal void RemoveGraphElement(Guid graphElementId)
         {
-            RemoveFromIndex(segmentId);
-            AddToIndex(segmentId, newUtilityGraphSegmentRef);
+            if (!_graphElementsById.TryRemove(graphElementId, out _))
+                throw new ArgumentException($"The graph element with id: {graphElementId} cannot be removed from the graph.");
+        }
+
+        internal void UpdateIndex(Guid graphElementId, IUtilityGraphElement newUtilityGraphElementRef)
+        {
+            RemoveFromIndex(graphElementId);
+            AddToIndex(graphElementId, newUtilityGraphElementRef);
         }
 
         internal void RemoveFromIndex(Guid segmentId)
         {
             if (!_graphElementsById.TryRemove(segmentId, out _))
-                throw new ApplicationException($"Cannot remove segment with id: {segmentId} from graph.");
+                throw new ApplicationException($"Cannot remove graph element with id: {segmentId} from graph.");
         }
 
-        internal void AddToIndex(Guid segmentId, IUtilityGraphSegmentRef newUtilityGraphSegmentRef)
+        internal void AddToIndex(Guid graphElementId, IUtilityGraphElement newUtilityGraphElement)
         {
-            if (!_graphElementsById.TryAdd(segmentId, newUtilityGraphSegmentRef))
-                throw new ArgumentException($"A span segment with id: {segmentId} already exists in the graph.");
+            if (!_graphElementsById.TryAdd(graphElementId, newUtilityGraphElement))
+                throw new ArgumentException($"A graph element with id: {graphElementId} already exists in the graph.");
         }
 
         internal ITransaction CreateTransaction()

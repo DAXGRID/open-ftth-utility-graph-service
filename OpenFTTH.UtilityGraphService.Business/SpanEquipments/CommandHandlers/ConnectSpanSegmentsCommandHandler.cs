@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -206,6 +207,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private Result ConnectSpanSegmentsFromTwoSpanEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
         {
+            var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
+
             // Create junction/terminal ids used to connect span segments
             for (int i = 0; i < firstSpanEquipment.Connects.Count; i++)
             {
@@ -221,8 +224,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Connect the first span equipment to terminals
             var firstSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanEquipment.SpanEquipment.Id);
 
-            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+            var firstSpanEquipmentConnectResult = firstSpanEquipmentAR.ConnectConduitSpanSegmentsToSimpleTerminals(
                 cmdContext: cmdContext,
+                specification: spanEquipmentSpecifications[firstSpanEquipment.SpanEquipment.SpecificationId],
                 routeNodeId: routeNodeId,
                 connects: firstSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
             );
@@ -233,9 +237,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Connect the second span equipment to terminals
             var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
 
-            var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+            var secondSpanEquipmentConnectResult = secondSpanEquipmentAR.ConnectConduitSpanSegmentsToSimpleTerminals(
                 cmdContext: cmdContext,
                 routeNodeId: routeNodeId,
+                specification: spanEquipmentSpecifications[secondSpanEquipment.SpanEquipment.SpecificationId],
                 connects: secondSpanEquipment.Connects.Select(c => c.ConnectInfo).ToArray()
             );
 
@@ -252,6 +257,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private Result ConnectSpanSegmentsInSameEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder spanEquipmentToConnect)
         {
+            var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
+
             if (spanEquipmentToConnect.Connects.Count != 2)
             {
                 return 
@@ -290,6 +297,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 );
             }
 
+
             // Create junction/terminal ids used to connect span segments
             var junctionId = Guid.NewGuid();
 
@@ -301,9 +309,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Connect span equipment to terminals
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipmentToConnect.SpanEquipment.Id);
 
-            var spanEquipmentConnectResult = spanEquipmentAR.ConnectSpanSegmentsToSimpleTerminals(
+            var spanEquipmentConnectResult = spanEquipmentAR.ConnectConduitSpanSegmentsToSimpleTerminals(
                 cmdContext: cmdContext,
                 routeNodeId: routeNodeId,
+                specification: spanEquipmentSpecifications[spanEquipmentToConnect.SpanEquipment.SpecificationId],
                 connects: spanEquipmentToConnect.Connects.Select(c => c.ConnectInfo).ToArray()
             );
 

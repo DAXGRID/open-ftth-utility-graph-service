@@ -10,7 +10,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public ushort StructureIndex { get; }
         public ushort SegmentIndex { get; }
 
-        public UtilityGraphConnectedSegment(Guid id, UtilityGraphConnectedTerminal? fromNode, UtilityGraphConnectedTerminal? toNode, Guid spanEquipmentId, UInt16 structureIndex, UInt16 segmentIndex) : base(id, fromNode, toNode)
+        public UtilityGraphConnectedSegment(Guid id, GraphNode? fromNode, GraphNode? toNode, Guid spanEquipmentId, UInt16 structureIndex, UInt16 segmentIndex) : base(id, fromNode, toNode)
         {
             SpanEquipmentId = spanEquipmentId;
             StructureIndex = structureIndex;

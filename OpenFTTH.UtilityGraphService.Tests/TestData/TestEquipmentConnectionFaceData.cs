@@ -9,7 +9,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
 {
     public static class TestEquipmentConnectionFaceData
     {
-
+        /*
         public static EquipmentConnectivityFace[] EquipmentConnectivityFaces()
         {
             List<EquipmentConnectivityFace> result = new();
@@ -187,5 +187,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
 
             return result.ToArray();
         }
+        */
     }
 }

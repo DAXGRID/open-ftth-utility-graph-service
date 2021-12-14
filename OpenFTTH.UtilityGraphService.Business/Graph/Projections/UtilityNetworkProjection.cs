@@ -258,17 +258,29 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
+        private void StoreAndIndexVirginTerminalEquipment(TerminalEquipment terminalEquipment)
+        {
+            // Store the new span equipment in memory
+            _terminalEquipmentByEquipmentId.TryAdd(terminalEquipment.Id, terminalEquipment);
+
+            // Add terminals to the graph
+            for (UInt16 structureIndex = 0; structureIndex < terminalEquipment.TerminalStructures.Length; structureIndex++)
+            {
+                var terminalStructure = terminalEquipment.TerminalStructures[structureIndex];
+
+                for (UInt16 terminalIndex = 0; terminalIndex < terminalStructure.Terminals.Length; terminalIndex++)
+                {
+                    // We're dealing with a virgin span equipment and therefore only disconnected segments at index 0
+                    _utilityGraph.AddDisconnectedTerminal(terminalEquipment, structureIndex, terminalIndex);
+                }
+            }
+        }
+
         private void StoreAndIndexVirginContainerEquipment(NodeContainer nodeContainer)
         {
             // Store the new span equipment in memory
             _nodeContainerByEquipmentId.TryAdd(nodeContainer.Id, nodeContainer);
             _nodeContainerByInterestId.TryAdd(nodeContainer.InterestId, nodeContainer);
-        }
-
-        private void StoreAndIndexVirginTerminalEquipment(TerminalEquipment terminalEquipment)
-        {
-            // Store the new span equipment in memory
-            _terminalEquipmentByEquipmentId.TryAdd(terminalEquipment.Id, terminalEquipment);
         }
 
         private void ProcesstSegmentCuts(SpanSegmentsCut @event)
@@ -277,7 +289,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcesstSpanEquipmentCutReverted(SpanEquipmentCutReverted @event)
@@ -286,7 +298,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcessSegmentConnects(SpanSegmentsConnectedToSimpleTerminals @event)
@@ -295,7 +307,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcessSegmentDisconnects(SpanSegmentDisconnectedFromTerminal @event)
@@ -304,7 +316,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcessAdditionalStructures(AdditionalStructuresAddedToSpanEquipment @event)
@@ -313,7 +325,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcessInnerStructureRemoval(SpanStructureRemoved @event)
@@ -322,7 +334,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
 
@@ -339,7 +351,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 {
                     foreach (var spanSegment in spanStructure.SpanSegments)
                     {
-                        _utilityGraph.RemoveDisconnectedSegment(spanSegment.Id);
+                        _utilityGraph.RemoveGraphElement(spanSegment.Id);
                     }
                 }
             }
@@ -358,7 +370,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
             TryUpdate(after);
 
-            UtilityGraphProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
         private void ProcessSpanEquipmentMerge(SpanEquipmentMerged @event)

@@ -1,4 +1,5 @@
 ﻿using DAX.ObjectVersioning.Core;
+using DAX.ObjectVersioning.Graph;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 
@@ -8,7 +9,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
     /// Maintains a graph of span and terminal equipments by analyzing changes between equipment states
     /// Created to avoid implementing and maintaining projection functions for each aggregate event type that might come along
     /// </summary>
-    public static class UtilityGraphProjections
+    public static class UtilityGraphSegmentProjections
     {
         public static void ApplyConnectivityChangesToGraph(SpanEquipment spanEquipmentBefore, SpanEquipment spanEquipmentAfter, UtilityGraph graph)
         {
@@ -172,17 +173,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
             else
             {
-                UtilityGraphConnectedTerminal? fromTerminal = null;
+                IUtilityGraphTerminalRef? fromTerminal = null;
 
                 if (spanSegment.FromTerminalId != Guid.Empty)
                     fromTerminal = FindOrCreateSimpleTerminal(spanSegment.FromTerminalId, spanEquipment.NodesOfInterestIds[spanSegment.FromNodeOfInterestIndex], graph, transaction);
 
-                UtilityGraphConnectedTerminal? toTerminal = null;
+                IUtilityGraphTerminalRef? toTerminal = null;
 
                 if (spanSegment.ToTerminalId != Guid.Empty)
                     toTerminal = FindOrCreateSimpleTerminal(spanSegment.ToTerminalId, spanEquipment.NodesOfInterestIds[spanSegment.ToNodeOfInterestIndex], graph, transaction);
 
-                var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegment.Id, fromTerminal, toTerminal, spanEquipment.Id, structureIndex, segmentIndex);
+                var newSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegment.Id, fromTerminal as GraphNode, toTerminal as GraphNode, spanEquipment.Id, structureIndex, segmentIndex);
 
                 transaction.Add(newSegmentGraphElement);
 
@@ -208,17 +209,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
             else
             {
-                UtilityGraphConnectedTerminal? fromTerminal = null;
+                IUtilityGraphTerminalRef? fromTerminal = null;
 
                 if (spanSegment.FromTerminalId != Guid.Empty)
                     fromTerminal = FindOrCreateSimpleTerminal(spanSegment.FromTerminalId, spanEquipment.NodesOfInterestIds[spanSegment.FromNodeOfInterestIndex], graph, transaction);
 
-                UtilityGraphConnectedTerminal? toTerminal = null;
+                IUtilityGraphTerminalRef? toTerminal = null;
 
                 if (spanSegment.ToTerminalId != Guid.Empty)
                     toTerminal = FindOrCreateSimpleTerminal(spanSegment.ToTerminalId, spanEquipment.NodesOfInterestIds[spanSegment.ToNodeOfInterestIndex], graph, transaction);
 
-                var updatedSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegment.Id, fromTerminal, toTerminal, spanEquipment.Id, structureIndex, segmentIndex);
+                var updatedSegmentGraphElement = new UtilityGraphConnectedSegment(spanSegment.Id, fromTerminal as GraphNode, toTerminal as GraphNode, spanEquipment.Id, structureIndex, segmentIndex);
 
                 if (graph.TryGetGraphElement<UtilityGraphConnectedSegment>(spanSegment.Id, out var _))
                 {
@@ -249,7 +250,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
         }
 
         
-        private static UtilityGraphConnectedTerminal FindOrCreateSimpleTerminal(Guid terminalId, Guid terminalNodeOfInterestId, UtilityGraph graph, ITransaction transaction)
+        private static IUtilityGraphTerminalRef FindOrCreateSimpleTerminal(Guid terminalId, Guid terminalNodeOfInterestId, UtilityGraph graph, ITransaction transaction)
         {
             // Try find terminal in graph
             var terminal = graph.GetTerminal(terminalId, transaction.Version.InternalVersionId);
@@ -257,13 +258,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             // Try find in transaction
             if (terminal == null)
             {
-                terminal = transaction.GetObject(terminalId) as UtilityGraphConnectedTerminal;
+                terminal = transaction.GetObject(terminalId) as IUtilityGraphTerminalRef;
             }
 
             if (terminal == null)
             {
-                terminal = new UtilityGraphConnectedTerminal(terminalId, terminalNodeOfInterestId);
-                transaction.Add(terminal);
+                terminal = new UtilityGraphConnectedSimpleTerminal(terminalId, terminalNodeOfInterestId);
+                transaction.Add(terminal as GraphNode);
             }
 
             return terminal;

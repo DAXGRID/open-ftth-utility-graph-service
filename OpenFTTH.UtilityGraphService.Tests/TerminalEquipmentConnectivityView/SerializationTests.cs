@@ -30,6 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TerminalEquipmentConnectivityView
         [Fact]
         public async void SerializeTestdata()
         {
+            /*
             var json = JsonConvert.SerializeObject(TestTerminalEquipmentConnectivityViewData.LISAODFRack());
 
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TerminalEquipmentConnectivityView
             json = JsonConvert.SerializeObject(TestEquipmentConnectionFaceData.TerminalEquipment_EquipmentConnectivityFaceConnectionInfo());
 
             json = JsonConvert.SerializeObject(TestEquipmentConnectionFaceData.SpanEquipment_EquipmentConnectivityFaceConnectionInfo());
-
+            */
         }
 
 

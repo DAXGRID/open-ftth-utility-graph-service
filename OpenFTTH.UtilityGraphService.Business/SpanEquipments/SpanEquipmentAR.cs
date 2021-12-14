@@ -800,10 +800,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Connect Span Segments To Simple Terminals
-        public Result ConnectSpanSegmentsToSimpleTerminals(CommandContext cmdContext, Guid routeNodeId,SpanSegmentToSimpleTerminalConnectInfo[] connects)
+        public Result ConnectConduitSpanSegmentsToSimpleTerminals(CommandContext cmdContext, SpanEquipmentSpecification specification, Guid routeNodeId, SpanSegmentToSimpleTerminalConnectInfo[] connects)
         {
             if (routeNodeId == Guid.Empty)
                 return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_ROUTE_NODE_ID_CANNOT_BE_EMPTY, "Route node id cannot be empty."));
+
+            if (specification.IsCable)
+                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_SPAN_SEGMENT_KIND_MUST_BE_NON_CABLE, "Can only call this function on non-cable span equipments"));
 
             // Chat that span equipment is affixed to container at node where the connects should be created
             if (!IsAffixedToNodeContainer(routeNodeId))
@@ -845,7 +848,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
-            // Check that span segments are not already cut
+            // Check that alle span segments connected are ending in the route node
             foreach (var structure in _spanEquipment.SpanStructures)
             {
                 foreach (var segment in structure.SpanSegments)
@@ -920,6 +923,43 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
         #endregion
+
+
+        #region
+        public Result ConnectCableSpanSegmentsWithTerminals(CommandContext cmdContext, SpanEquipmentSpecification specification, Guid routeNodeId, SpanSegmentToSimpleTerminalConnectInfo[] connects)
+        {
+            if (routeNodeId == Guid.Empty)
+                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_ROUTE_NODE_ID_CANNOT_BE_EMPTY, "Route node id cannot be empty."));
+
+            if (!specification.IsCable)
+                return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_SPAN_SEGMENT_KIND_MUST_BE_CABLE, "Can only call this function on cable span equipments"));
+
+
+            // Check that connects are valid
+            var validConnectsResult = IsConnectsValid(routeNodeId, connects);
+
+            if (validConnectsResult.IsFailed)
+                return validConnectsResult;
+
+            var @event = new SpanSegmentsConnectedToSimpleTerminals(
+                spanEquipmentId: this.Id,
+                connects: connects
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+
+        #endregion
+
 
         #region Disconnect Span Segment From Terminal
         public Result DisconnectSegmentFromTerminal(CommandContext cmdContext, Guid spanSegmentId, Guid terminalId)
