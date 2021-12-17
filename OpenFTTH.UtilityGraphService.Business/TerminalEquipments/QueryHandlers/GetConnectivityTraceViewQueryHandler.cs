@@ -40,6 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
                 new ConnectivityTraceViewHopInfo(
+                    1,
                     level: 0,
                     isSplitter: false,
                     isTraceSource: false,
@@ -56,6 +57,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
                new ConnectivityTraceViewHopInfo(
+                   2,
                    level: 0,
                    isSplitter: false,
                    isTraceSource: false,
@@ -72,6 +74,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
            hops.Add(
               new ConnectivityTraceViewHopInfo(
+                  3,
                   level: 0,
                   isSplitter: false,
                   isTraceSource: true,
@@ -88,6 +91,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
               new ConnectivityTraceViewHopInfo(
+                  4,
                   level: 0,
                   isSplitter: false,
                   isTraceSource: false,
@@ -107,6 +111,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
               new ConnectivityTraceViewHopInfo(
+                  5,
                   level: 0,
                   isSplitter: true,
                   isTraceSource: false,
@@ -123,6 +128,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
              new ConnectivityTraceViewHopInfo(
+                 6,
                  level: 1,
                  isSplitter: false,
                  isTraceSource: false,
@@ -139,6 +145,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
            hops.Add(
              new ConnectivityTraceViewHopInfo(
+                 7,
                  level: 1,
                  isSplitter: false,
                  isTraceSource: false,
@@ -155,6 +162,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
              new ConnectivityTraceViewHopInfo(
+                 8,
                  level: 1,
                  isSplitter: false,
                  isTraceSource: false,
@@ -171,6 +179,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
             new ConnectivityTraceViewHopInfo(
+                9,
                 level: 1,
                 isSplitter: false,
                 isTraceSource: false,
@@ -189,6 +198,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
               new ConnectivityTraceViewHopInfo(
+                  10,
                   level: 0,
                   isSplitter: true,
                   isTraceSource: false,
@@ -205,6 +215,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
              new ConnectivityTraceViewHopInfo(
+                 11,
                  level: 1,
                  isSplitter: false,
                  isTraceSource: false,
@@ -221,6 +232,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
               new ConnectivityTraceViewHopInfo(
+                  12,
                   level: 1,
                   isSplitter: false,
                   isTraceSource: false,
@@ -237,6 +249,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
              new ConnectivityTraceViewHopInfo(
+                 13,
                  level: 1,
                  isSplitter: false,
                  isTraceSource: false,
@@ -253,6 +266,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             hops.Add(
             new ConnectivityTraceViewHopInfo(
+                14,
                 level: 1,
                 isSplitter: false,
                 isTraceSource: false,
