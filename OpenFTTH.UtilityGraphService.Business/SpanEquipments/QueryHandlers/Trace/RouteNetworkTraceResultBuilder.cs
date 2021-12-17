@@ -299,7 +299,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Tra
                         if (traceThisSpanSegmentIdOnly != null && traceThisSpanSegmentIdOnly != spanSegment.Id)
                             continue;
 
-                        var spanTraceResult = _utilityNetwork.Graph.TraceSegment(spanSegment.Id);
+                        var spanTraceResult = _utilityNetwork.Graph.Trace(spanSegment.Id);
 
                         // We're dealing with a connected segment if non-empty trace result is returned
                         if (spanTraceResult.Upstream.Length > 0)

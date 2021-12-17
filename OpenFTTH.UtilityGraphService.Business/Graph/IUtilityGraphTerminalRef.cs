@@ -1,4 +1,5 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
@@ -7,6 +8,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         TerminalEquipment TerminalEquipment(UtilityNetworkProjection utilityNetwork);
         TerminalStructure TerminalStructure(UtilityNetworkProjection utilityNetwork);
         Terminal Terminal(UtilityNetworkProjection utilityNetwork);
+        Guid TerminalId { get; }
         ushort StructureIndex { get; }
         ushort TerminalIndex { get; }
     }

@@ -11,7 +11,7 @@ using System.Collections.Generic;
 namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 {
     /// <summary>
-    /// The root structure placed in a route network node - i.e. cabinet, building, well, conduit closure etc.
+    /// A equipment place in a node/rack - i.e. splice closures, OLTs etc.
     /// </summary>
     public class TerminalEquipmentAR : AggregateBase
     {

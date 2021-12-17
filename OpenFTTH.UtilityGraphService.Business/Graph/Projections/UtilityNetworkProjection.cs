@@ -270,8 +270,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                 for (UInt16 terminalIndex = 0; terminalIndex < terminalStructure.Terminals.Length; terminalIndex++)
                 {
-                    // We're dealing with a virgin span equipment and therefore only disconnected segments at index 0
-                    _utilityGraph.AddDisconnectedTerminal(terminalEquipment, structureIndex, terminalIndex);
+                    var terminal = terminalStructure.Terminals[terminalIndex];
+
+                    // We're dealing with a virgin terminal
+                    _utilityGraph.AddDisconnectedTerminal(terminalEquipment, terminal.Id, structureIndex, terminalIndex);
                 }
             }
         }

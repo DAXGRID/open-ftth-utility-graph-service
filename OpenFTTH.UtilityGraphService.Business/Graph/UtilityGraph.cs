@@ -1,8 +1,10 @@
 ﻿using DAX.ObjectVersioning.Core;
+using DAX.ObjectVersioning.Graph;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph.Trace;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
@@ -40,7 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         }
        
 
-        public SpanSegmentTraceResult TraceSegment(Guid id)
+        public SpanSegmentTraceResult Trace(Guid id)
         {
             var result = new SpanSegmentTraceResult() { SpanSegmentId = id };
 
@@ -56,63 +58,157 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     var version = _objectManager.GetLatestCommitedVersion();
 
-                    // Do the upstream trace
-                    var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
-                        version,
-                        n => n != connectedSegment.InV(version)
-                    ).ToList();
+                    result.Upstream = UpstreamSegmentTrace(connectedSegment, version).ToArray();
 
-                    var lastUpstreamObject = upstreamTrace.Last();
+                    result.Downstream = DownstreamSegmentTrace(connectedSegment, version).ToArray();
+                }
+                else if (utilityGraphElement is IUtilityGraphTerminalRef)
+                {
+                    IUtilityGraphTerminalRef terminalRef = (IUtilityGraphTerminalRef)utilityGraphElement;
 
-                    if (lastUpstreamObject is UtilityGraphConnectedSegment lastUpstreamSegment)
+                    var version = _objectManager.GetLatestCommitedVersion();
+
+                    var terminal = (UtilityGraphConnectedSimpleTerminal)_objectManager.GetObject(terminalRef.TerminalId);
+
+                    var nTerminalNeigbours = terminal.NeighborElements(version).Count;
+
+                    if (nTerminalNeigbours == 1)
                     {
-                        if (lastUpstreamSegment.OutV(version) == null)
-                        {
-                            upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
-                        }
-                        else if (lastUpstreamSegment.InV(version) == null)
-                        {
-                            upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
-                        }
-                        else
-                        {
-                            throw new ApplicationException($"Last element in upstream trace was a UtilityGraphConnectedSegment with id: {lastUpstreamSegment.Id}, not a terminal. However, the segment seems to have to have an upstream terminal connection. Something wrong!");
-                        }
+                        result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
                     }
-
-                    result.Upstream = upstreamTrace.ToArray();
-
-                    // Do the downstream trace
-                    var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
-                        version,
-                        n => n != connectedSegment.OutV(version)
-                    ).ToList();
-
-                    var lastDownstreamObject = downstreamTrace.Last();
-
-                    if (lastDownstreamObject is UtilityGraphConnectedSegment lastDownstreamSegment)
+                    else if (nTerminalNeigbours == 2)
                     {
-                        if (lastDownstreamSegment.InV(version) == null)
-                        {
-                            downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
-                        }
-                        else if (lastDownstreamSegment.OutV(version) == null)
-                        {
-                            downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
-                        }
-                        else
-                        {
-                            throw new ApplicationException($"Last element in downstream trace was a UtilityGraphConnectedSegment with id: {lastDownstreamSegment.Id}, not a terminal. However, the segment seems to have to have an downstream terminal connection. Something wrong!");
-                        }
-                    }
+                        result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                        result.Downstream = DownstreamTerminalTrace(terminal, version).ToArray();
 
-                    result.Downstream = downstreamTrace.ToArray();
+                    }
+                    else
+                    {
+                        throw new ApplicationException($"terminal with id: {terminal.Id} version: {version} have more than two segment connected to it. The system must prevent that to never happend!");
+                    }
                 }
             }
 
             return result;
         }
 
+       
+
+        private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
+        {
+            var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+                version,
+                n => n != connectedSegment.OutV(version)
+            ).ToList();
+
+            var lastDownstreamObject = downstreamTrace.Last();
+
+            if (lastDownstreamObject is UtilityGraphConnectedSegment lastDownstreamSegment)
+            {
+                if (lastDownstreamSegment.InV(version) == null)
+                {
+                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                }
+                else if (lastDownstreamSegment.OutV(version) == null)
+                {
+                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                }
+                else
+                {
+                    throw new ApplicationException($"Last element in downstream trace was a UtilityGraphConnectedSegment with id: {lastDownstreamSegment.Id}, not a terminal. However, the segment seems to have to have an downstream terminal connection. Something wrong!");
+                }
+            }
+
+            return downstreamTrace;
+        }
+
+        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedSimpleTerminal terminal, long version)
+        {
+            var lastSegment = terminal.NeighborElements(version).Last();
+
+            var downstreamTrace = lastSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+                version,
+                n => n != terminal
+            ).ToList();
+
+            var lastDownstreamObject = downstreamTrace.Last();
+
+            if (lastDownstreamObject is UtilityGraphConnectedSegment lastDownstreamSegment)
+            {
+                if (lastDownstreamSegment.InV(version) == null)
+                {
+                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                }
+                else if (lastDownstreamSegment.OutV(version) == null)
+                {
+                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                }
+                else
+                {
+                    throw new ApplicationException($"Last element in downstream trace was a UtilityGraphConnectedSegment with id: {lastDownstreamSegment.Id}, not a terminal. However, the segment seems to have to have an downstream terminal connection. Something wrong!");
+                }
+            }
+
+            return downstreamTrace;
+        }
+
+        private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
+        {
+            var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+                version,
+                n => n != connectedSegment.InV(version)
+            ).ToList();
+
+            var lastUpstreamObject = upstreamTrace.Last();
+
+            if (lastUpstreamObject is UtilityGraphConnectedSegment lastUpstreamSegment)
+            {
+                if (lastUpstreamSegment.OutV(version) == null)
+                {
+                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                }
+                else if (lastUpstreamSegment.InV(version) == null)
+                {
+                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                }
+                else
+                {
+                    throw new ApplicationException($"Last element in upstream trace was a UtilityGraphConnectedSegment with id: {lastUpstreamSegment.Id}, not a terminal. However, the segment seems to have to have an upstream terminal connection. Something wrong!");
+                }
+            }
+
+            return upstreamTrace;
+        }
+
+        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedSimpleTerminal terminal, long version)
+        {
+            var firstSegment = terminal.NeighborElements(version).First();
+
+            var upstreamTrace = firstSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+                version,
+                n => n != terminal
+            ).ToList();
+
+            var lastUpstreamObject = upstreamTrace.Last();
+
+            if (lastUpstreamObject is UtilityGraphConnectedSegment lastUpstreamSegment)
+            {
+                if (lastUpstreamSegment.OutV(version) == null)
+                {
+                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                }
+                else if (lastUpstreamSegment.InV(version) == null)
+                {
+                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                }
+                else
+                {
+                    throw new ApplicationException($"Last element in upstream trace was a UtilityGraphConnectedSegment with id: {lastUpstreamSegment.Id}, not a terminal. However, the segment seems to have to have an upstream terminal connection. Something wrong!");
+                }
+            }
+
+            return upstreamTrace;
+        }
 
         internal IUtilityGraphTerminalRef? GetTerminal(Guid terminalId, long version)
         {
@@ -130,11 +226,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ArgumentException($"A span segment with id: {spanSegment.Id} already exists in the graph.");
         }
 
-        internal void AddDisconnectedTerminal(TerminalEquipment terminalEquipment, UInt16 structureIndex, UInt16 terminalIndex)
+        internal void AddDisconnectedTerminal(TerminalEquipment terminalEquipment, Guid terminalId, UInt16 structureIndex, UInt16 terminalIndex)
         {
             var terminal = terminalEquipment.TerminalStructures[structureIndex].Terminals[terminalIndex];
 
-            var disconnectedGraphTerminal = new UtilityGraphDisconnectedSegment(terminalEquipment.Id, structureIndex, terminalIndex);
+            var disconnectedGraphTerminal = new UtilityGraphDisconnectedTerminal(terminalId, terminalEquipment.Id, structureIndex, terminalIndex);
 
             if (!_graphElementsById.TryAdd(terminal.Id, disconnectedGraphTerminal))
                 throw new ArgumentException($"A terminal with id: {terminal.Id} already exists in the graph.");

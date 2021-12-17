@@ -255,6 +255,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             // Try find terminal in graph
             var terminal = graph.GetTerminal(terminalId, transaction.Version.InternalVersionId);
 
+            if (terminal != null)
+            {
+
+            }
+
             // Try find in transaction
             if (terminal == null)
             {
