@@ -10,8 +10,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Trace;
+using OpenFTTH.UtilityGraphService.Business.Trace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -149,7 +148,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
         private LookupCollection<RouteNetworkTrace> AddTraceRefsToSpanEquipments(List<SpanEquipment> spanEquipmentsToTrace, List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn, Guid? traceThisSpanSegmentIdOnly)
         {
-            var traceBuilder = new RouteNetworkTraceResultBuilder(_queryDispatcher, _utilityNetwork);
+            var traceBuilder = new RouteNetworkTraceHelper(_queryDispatcher, _utilityNetwork);
 
             var traceInfo = traceBuilder.GetTraceInfo(spanEquipmentsToTrace, traceThisSpanSegmentIdOnly);
 

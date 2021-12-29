@@ -13,14 +13,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Trace
+namespace OpenFTTH.UtilityGraphService.Business.Trace
 {
-    public class RouteNetworkTraceResultBuilder
+    public class RouteNetworkTraceHelper
     {
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly UtilityNetworkProjection _utilityNetwork;
 
-        public RouteNetworkTraceResultBuilder(IQueryDispatcher queryDispatcher, UtilityNetworkProjection utilityNetwork)
+        public RouteNetworkTraceHelper(IQueryDispatcher queryDispatcher, UtilityNetworkProjection utilityNetwork)
         {
             _queryDispatcher = queryDispatcher;
             _utilityNetwork = utilityNetwork;

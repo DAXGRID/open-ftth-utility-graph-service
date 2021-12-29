@@ -1,18 +1,16 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
-using Newtonsoft.Json;
 using OpenFTTH.CQRS;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
-using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 using OpenFTTH.UtilityGraphService.Business.Graph;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Trace;
+using OpenFTTH.UtilityGraphService.Business.Trace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -133,7 +131,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
 
-            var traceBuilder = new RouteNetworkTraceResultBuilder(_queryDispatcher, _utilityNetwork);
+            var traceBuilder = new RouteNetworkTraceHelper(_queryDispatcher, _utilityNetwork);
 
             var traceInfo = traceBuilder.GetTraceInfo(new List<SpanEquipment> { spanEquipment }, spanSegmentIdToTrace);
 
