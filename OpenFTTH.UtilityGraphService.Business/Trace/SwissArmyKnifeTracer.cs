@@ -5,8 +5,8 @@ using OpenFTTH.CQRS;
 using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
+using OpenFTTH.UtilityGraphService.API.Model.Trace;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using Serilog;
 using System;
@@ -15,18 +15,21 @@ using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.Trace
 {
-    public class RouteNetworkTraceHelper
+    /// <summary>
+    /// As the name suggests, this class should be refactored into some more elegant trace functions
+    /// </summary>
+    public class SwissArmyKnifeTracer
     {
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly UtilityNetworkProjection _utilityNetwork;
 
-        public RouteNetworkTraceHelper(IQueryDispatcher queryDispatcher, UtilityNetworkProjection utilityNetwork)
+        public SwissArmyKnifeTracer(IQueryDispatcher queryDispatcher, UtilityNetworkProjection utilityNetwork)
         {
             _queryDispatcher = queryDispatcher;
             _utilityNetwork = utilityNetwork;
         }
 
-        public TraceInfo? GetTraceInfo(List<SpanEquipment> spanEquipmentsToTrace, Guid? traceThisSpanSegmentIdOnly)
+        public SwissArmyKnifeTraceResult? Trace(List<SpanEquipment> spanEquipmentsToTrace, Guid? traceThisSpanSegmentIdOnly)
         {
             if (spanEquipmentsToTrace.Count == 0)
                 return null;
@@ -45,10 +48,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
 
                 Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> traceIdRefBySpanEquipmentId = new();
 
-                
-                List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> routeNetworkTraces = new();
 
-                Dictionary<Guid, API.Model.UtilityNetwork.Tracing.UtilityNetworkTrace> utilityTraceBySpanSegmentId = new();
+                List<API.Model.Trace.RouteNetworkTraceResult> routeNetworkTraces = new();
+
+                Dictionary<Guid, UtilityNetworkTraceResult> utilityTraceBySpanSegmentId = new();
 
                 // Find unique route network traces and utility traces
                 foreach (var segmentWalksBySpanEquipmentId in intermidiateTraceResult.SegmentWalksBySpanEquipmentId)
@@ -113,10 +116,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
                         else
                             traceIdRefBySpanEquipmentId[segmentWalksBySpanEquipmentId.Key].Add(traceRef);
 
+
                         // Add utility network trace (span segments)
                         if (!utilityTraceBySpanSegmentId.ContainsKey(segmentWalk.SpanEquipmentOrSegmentId))
                         {
-                            utilityTraceBySpanSegmentId[segmentWalk.SpanEquipmentOrSegmentId] = new API.Model.UtilityNetwork.Tracing.UtilityNetworkTrace(
+                            utilityTraceBySpanSegmentId[segmentWalk.SpanEquipmentOrSegmentId] = new UtilityNetworkTraceResult(
                                 spanSegmentId: segmentWalk.SpanEquipmentOrSegmentId,
                                 fromTerminalId: null,
                                 toTerminalId: null,
@@ -126,7 +130,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
                     }
                 }
 
-                return new TraceInfo(routeNetworkTraces, traceIdRefBySpanEquipmentId, utilityTraceBySpanSegmentId);
+                return new SwissArmyKnifeTraceResult(routeNetworkTraces, traceIdRefBySpanEquipmentId, utilityTraceBySpanSegmentId);
             }
             else
                 return null;
@@ -151,7 +155,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
             return null;
         }
 
-        private Guid FindOrCreateRouteNetworkTrace(List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> routeNetworkTraces, List<Guid> segmentIds, List<string> segmentGeometries, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)
+        private Guid FindOrCreateRouteNetworkTrace(List<API.Model.Trace.RouteNetworkTraceResult> routeNetworkTraces, List<Guid> segmentIds, List<string> segmentGeometries, Guid fromNodeId, Guid toNodeId, string? fromNodeName, string? toNodeName)
         {
             foreach (var routeNetworkTrace in routeNetworkTraces)
             {
@@ -159,7 +163,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
                     return routeNetworkTrace.Id;
             }
 
-            var newRouteNetworkTrace = new API.Model.UtilityNetwork.Tracing.RouteNetworkTrace(Guid.NewGuid(), fromNodeId, toNodeId, segmentIds.ToArray(), fromNodeName, toNodeName, segmentGeometries.ToArray());
+            var newRouteNetworkTrace = new API.Model.Trace.RouteNetworkTraceResult(Guid.NewGuid(), fromNodeId, toNodeId, segmentIds.ToArray(), fromNodeName, toNodeName, segmentGeometries.ToArray());
 
             routeNetworkTraces.Add(newRouteNetworkTrace);
 
@@ -193,8 +197,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
 
             return result;
         }
-
-
 
         private GetRouteNetworkDetailsResult GatherRouteNetworkInformation(IEnumerable<Guid> walkOfInterestIds)
         {
@@ -451,50 +453,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
         {
             public HashSet<Guid> InterestList = new();
             public Dictionary<Guid, List<SegmentWalk>> SegmentWalksBySpanEquipmentId = new();
-        }
-
-        public record SegmentWalk
-        {
-            public Guid SpanEquipmentOrSegmentId { get; }
-
-            public List<SegmentWalkHop> Hops = new();
-
-            public SegmentWalk(Guid spanEquipmentOrSegmentId)
-            {
-                SpanEquipmentOrSegmentId = spanEquipmentOrSegmentId;
-            }
-        }
-
-        public record SegmentWalkHop
-        {
-            public Guid SpanSegmentId { get; }
-            public Guid FromNodeId { get; }
-            public Guid ToNodeId { get;  }
-            public Guid WalkOfInterestId { get; }
-            public AddressInfo? AddressInfo { get; }
-
-            public SegmentWalkHop(Guid spanEquipmentOrSegmentId, Guid fromNodeId, Guid toNodeId, Guid walkOfInterestId, AddressInfo? addressInfo)
-            {
-                SpanSegmentId = spanEquipmentOrSegmentId;
-                FromNodeId = fromNodeId;
-                ToNodeId = toNodeId;
-                WalkOfInterestId = walkOfInterestId;
-                AddressInfo = addressInfo;
-            }
-        }
-    }
-
-    public class TraceInfo
-    {
-        public List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> RouteNetworkTraces { get; }
-        public Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId { get; }
-        public Dictionary<Guid, API.Model.UtilityNetwork.Tracing.UtilityNetworkTrace> UtilityNetworkTraceBySpanSegmentId { get; }
-
-        public TraceInfo(List<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> routeNetworkTraces, Dictionary<Guid, List<SpanSegmentRouteNetworkTraceRef>> spanSegmentRouteNetworkTraceRefsBySpanEquipmentId, Dictionary<Guid, API.Model.UtilityNetwork.Tracing.UtilityNetworkTrace> utilityNetworkTraceBySpanSegmentId)
-        {
-            RouteNetworkTraces = routeNetworkTraces;
-            SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId = spanSegmentRouteNetworkTraceRefsBySpanEquipmentId;
-            UtilityNetworkTraceBySpanSegmentId = utilityNetworkTraceBySpanSegmentId;
         }
     }
 }

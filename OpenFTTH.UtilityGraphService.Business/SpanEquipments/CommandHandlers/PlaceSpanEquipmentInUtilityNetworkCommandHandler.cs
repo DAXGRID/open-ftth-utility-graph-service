@@ -7,8 +7,8 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Model.Trace;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using OpenFTTH.UtilityGraphService.Business.Trace;
@@ -304,9 +304,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
 
-            var traceBuilder = new RouteNetworkTraceHelper(_queryDispatcher, _utilityNetwork);
+            var traceBuilder = new SwissArmyKnifeTracer(_queryDispatcher, _utilityNetwork);
 
-            var traceInfo = traceBuilder.GetTraceInfo(new List<SpanEquipment> { spanEquipment }, spanSegmentIdToTrace);
+            var traceInfo = traceBuilder.Trace(new List<SpanEquipment> { spanEquipment }, spanSegmentIdToTrace);
 
             if (traceInfo == null || traceInfo.RouteNetworkTraces.Count != 1)
             {
@@ -374,10 +374,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             public ValidatedRouteNetworkWalk ValidatedRouteNetworkWalk { get; set; }
             public bool IsReversed { get; set; }
-            public UtilityNetworkTrace? UtilityNetworkTrace { get; }
+            public UtilityNetworkTraceResult? UtilityNetworkTrace { get; }
             public Guid? SegmentId { get; }
 
-            public ProcessedHopResult(Guid? segmentId, ValidatedRouteNetworkWalk validatedRouteNetworkWalk, UtilityNetworkTrace? utilityNetworkTrace)
+            public ProcessedHopResult(Guid? segmentId, ValidatedRouteNetworkWalk validatedRouteNetworkWalk, UtilityNetworkTraceResult? utilityNetworkTrace)
             {
                 SegmentId = segmentId;
                 ValidatedRouteNetworkWalk = validatedRouteNetworkWalk;

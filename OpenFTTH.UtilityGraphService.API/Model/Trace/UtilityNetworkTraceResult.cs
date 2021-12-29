@@ -1,9 +1,9 @@
 ﻿using OpenFTTH.Core;
 using System;
 
-namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing
+namespace OpenFTTH.UtilityGraphService.API.Model.Trace
 {
-    public record UtilityNetworkTrace : IIdentifiedObject
+    public record UtilityNetworkTraceResult : IIdentifiedObject
     {
         public Guid Id { get; }
         public Guid? FromTerminalId { get; }
@@ -13,7 +13,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing
         public string? Name => null;
         public string? Description => null;
 
-        public UtilityNetworkTrace(Guid spanSegmentId, Guid? fromTerminalId, Guid? toTerminalId, Guid[] spanSegmentIds)
+        public UtilityNetworkTraceResult(Guid spanSegmentId, Guid? fromTerminalId, Guid? toTerminalId, Guid[] spanSegmentIds)
         {
             Id = spanSegmentId;
             FromTerminalId = fromTerminalId;

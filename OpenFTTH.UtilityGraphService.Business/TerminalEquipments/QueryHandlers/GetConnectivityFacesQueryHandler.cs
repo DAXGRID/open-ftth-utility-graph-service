@@ -5,6 +5,7 @@ using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Model.Trace;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
@@ -280,7 +281,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             public LookupCollection<RouteNetworkInterest> RouteNetworkInterests { get; set; }
             public LookupCollection<SpanEquipmentWithRelatedInfo> SpanEquipments { get; set; }
             public LookupCollection<TerminalEquipment> TerminalEquipments { get; set; }
-            public LookupCollection<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace> RouteNetworkTraces { get; set; }
+            public LookupCollection<API.Model.Trace.RouteNetworkTraceResult> RouteNetworkTraces { get; set; }
             public Dictionary<Guid, RouteNetworkElementInterestRelation> InterestRelations { get; set; }
             public NodeContainer NodeContainer { get; set; }
             public Guid NodeContainerRouteNetworkElementId { get; set; }

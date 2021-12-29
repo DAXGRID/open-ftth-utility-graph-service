@@ -3,11 +3,10 @@ using Newtonsoft.Json;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
-using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model;
+using OpenFTTH.UtilityGraphService.API.Model.Trace;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.Trace;
@@ -15,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using RouteNetworkTrace = OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Tracing.RouteNetworkTrace;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 {
@@ -146,11 +144,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
             return null;
         }
 
-        private LookupCollection<RouteNetworkTrace> AddTraceRefsToSpanEquipments(List<SpanEquipment> spanEquipmentsToTrace, List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn, Guid? traceThisSpanSegmentIdOnly)
+        private LookupCollection<API.Model.Trace.RouteNetworkTraceResult> AddTraceRefsToSpanEquipments(List<SpanEquipment> spanEquipmentsToTrace, List<SpanEquipmentWithRelatedInfo> spanEquipmentsToReturn, Guid? traceThisSpanSegmentIdOnly)
         {
-            var traceBuilder = new RouteNetworkTraceHelper(_queryDispatcher, _utilityNetwork);
+            var traceBuilder = new SwissArmyKnifeTracer(_queryDispatcher, _utilityNetwork);
 
-            var traceInfo = traceBuilder.GetTraceInfo(spanEquipmentsToTrace, traceThisSpanSegmentIdOnly);
+            var traceInfo = traceBuilder.Trace(spanEquipmentsToTrace, traceThisSpanSegmentIdOnly);
 
             if (traceInfo != null)
             {
@@ -159,10 +157,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                     spanEquipment.RouteNetworkTraceRefs = traceInfo.SpanSegmentRouteNetworkTraceRefsBySpanEquipmentId[spanEquipment.Id].ToArray();
                 }
 
-                return new LookupCollection<API.Model.UtilityNetwork.Tracing.RouteNetworkTrace>(traceInfo.RouteNetworkTraces);
+                return new LookupCollection<API.Model.Trace.RouteNetworkTraceResult>(traceInfo.RouteNetworkTraces);
             }
             else
-                return new LookupCollection<RouteNetworkTrace>();
+                return new LookupCollection<API.Model.Trace.RouteNetworkTraceResult>();
         }
 
         private Result<List<SpanEquipment>> GetSpanEquipmentsById(EquipmentIdList equipmentIdsToFetch)
