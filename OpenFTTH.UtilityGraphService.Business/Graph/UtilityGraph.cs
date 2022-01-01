@@ -42,9 +42,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         }
        
 
-        public SpanSegmentTraceResult Trace(Guid id)
+        public UtilityGraphTraceResult Trace(Guid id)
         {
-            var result = new SpanSegmentTraceResult() { SpanSegmentId = id };
+            var result = new UtilityGraphTraceResult() { TerminalOrSpanSegmentId = id };
 
             if (_graphElementsById.TryGetValue(id, out var utilityGraphElement))
             {
@@ -68,23 +68,26 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     var version = _objectManager.GetLatestCommitedVersion();
 
-                    var terminal = (UtilityGraphConnectedSimpleTerminal)_objectManager.GetObject(terminalRef.TerminalId);
+                    var terminal = (UtilityGraphConnectedTerminal)_objectManager.GetObject(terminalRef.TerminalId);
 
-                    var nTerminalNeigbours = terminal.NeighborElements(version).Count;
+                    if (terminal != null)
+                    {
+                        var nTerminalNeigbours = terminal.NeighborElements(version).Count;
 
-                    if (nTerminalNeigbours == 1)
-                    {
-                        result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
-                    }
-                    else if (nTerminalNeigbours == 2)
-                    {
-                        result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
-                        result.Downstream = DownstreamTerminalTrace(terminal, version).ToArray();
+                        if (nTerminalNeigbours == 1)
+                        {
+                            result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                        }
+                        else if (nTerminalNeigbours == 2)
+                        {
+                            result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                            result.Downstream = DownstreamTerminalTrace(terminal, version).ToArray();
 
-                    }
-                    else
-                    {
-                        throw new ApplicationException($"terminal with id: {terminal.Id} version: {version} have more than two segment connected to it. The system must prevent that to never happend!");
+                        }
+                        else
+                        {
+                            throw new ApplicationException($"terminal with id: {terminal.Id} version: {version} have more than two segment connected to it. The system must prevent that to never happend!");
+                        }
                     }
                 }
             }
@@ -96,7 +99,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
         {
-            var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+            var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
                 version,
                 n => n != connectedSegment.OutV(version)
             ).ToList();
@@ -107,11 +110,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastDownstreamSegment.InV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else if (lastDownstreamSegment.OutV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else
                 {
@@ -122,11 +125,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return downstreamTrace;
         }
 
-        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedSimpleTerminal terminal, long version)
+        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version)
         {
             var lastSegment = terminal.NeighborElements(version).Last();
 
-            var downstreamTrace = lastSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+            var downstreamTrace = lastSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
                 version,
                 n => n != terminal
             ).ToList();
@@ -137,11 +140,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastDownstreamSegment.InV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else if (lastDownstreamSegment.OutV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else
                 {
@@ -154,7 +157,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
         {
-            var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+            var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
                 version,
                 n => n != connectedSegment.InV(version)
             ).ToList();
@@ -165,11 +168,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastUpstreamSegment.OutV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else if (lastUpstreamSegment.InV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else
                 {
@@ -180,11 +183,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return upstreamTrace;
         }
 
-        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedSimpleTerminal terminal, long version)
+        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version)
         {
             var firstSegment = terminal.NeighborElements(version).First();
 
-            var upstreamTrace = firstSegment.UndirectionalDFS<UtilityGraphConnectedSimpleTerminal, UtilityGraphConnectedSegment>(
+            var upstreamTrace = firstSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
                 version,
                 n => n != terminal
             ).ToList();
@@ -195,11 +198,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastUpstreamSegment.OutV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else if (lastUpstreamSegment.InV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedSimpleTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else
                 {

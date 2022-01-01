@@ -36,14 +36,15 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void ConnectFirstTerminalEquipmentInCC1With_ShouldSucceed()
+        public async void ConnectFirstTerminalEquipmentInCC1WithFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             var sutNodeId = TestRouteNetwork.CC_1;
             var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+            var sutCableName = "K69373563";
 
-            
+
             // Get node container
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
 
@@ -61,7 +62,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var viewModel = connectivityQueryResult.Value;
 
-            var cableId = viewModel.First(m => m.EquipmentName.StartsWith("K69373563")).EquipmentId;
+            var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var spanEquipment);
 
@@ -73,8 +74,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 routeNodeId: sutNodeId,
                 spanEquipmentId: spanEquipment.Id,
                 spanSegmentsIds: new Guid[] { 
-                    spanEquipment.SpanStructures[1].SpanSegments[0].Id, // Fiber 1
-                    spanEquipment.SpanStructures[2].SpanSegments[0].Id  // Fiber 2
+                    spanEquipment.SpanStructures[2].SpanSegments[0].Id, // Fiber 2
+                    spanEquipment.SpanStructures[3].SpanSegments[0].Id  // Fiber 3
                 },
                 terminalEquipmentId: terminalEquipment.Id,
                 terminalIds: new Guid[] { 
@@ -86,18 +87,47 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
-            
-            // trace fiber 1
-            var spanTraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
 
-            var upstreamTerminalFromTrace = spanTraceResult.Upstream.First(t => t.Id == terminalEquipment.TerminalStructures[0].Terminals[0].Id) as IUtilityGraphTerminalRef;
+            // Trace fiber 1 (should not be connected to anything)
+            var fiber1TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
+
+            fiber1TraceResult.Upstream.Length.Should().Be(0);
+            fiber1TraceResult.Downstream.Length.Should().Be(0);
+
+            // Trace fiber 2
+            var fiber2TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[2].SpanSegments[0].Id);
+
+            var upstreamTerminalFromTrace = fiber2TraceResult.Upstream.First(t => t.Id == terminalEquipment.TerminalStructures[0].Terminals[0].Id) as IUtilityGraphTerminalRef;
 
             var equipmentFromTracedTerminal = upstreamTerminalFromTrace.TerminalEquipment(utilityNetwork);
 
             equipmentFromTracedTerminal.Should().Be(terminalEquipment);
 
-            // trace terminal 4
-            var terj8haiTraceResult = utilityNetwork.Graph.Trace(terminalEquipment.TerminalStructures[0].Terminals[5].Id);
+            // Trace terminal 4
+            var term4TraceResult = utilityNetwork.Graph.Trace(terminalEquipment.TerminalStructures[0].Terminals[5].Id);
+
+            term4TraceResult.Downstream.Length.Should().Be(0);
+            term4TraceResult.Upstream.Length.Should().Be(2); // a segment and a terminal at the end
+            ((UtilityGraphConnectedTerminal)term4TraceResult.Upstream.Last()).RouteNodeId.Should().NotBeEmpty();
+
+
+            // Check equipment connectivity view
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, terminalEquipment.Id);
+
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
+            );
+
+            connectivityViewResult.IsSuccess.Should().BeTrue();
+
+            var connectivityTraceView = connectivityViewResult.Value;
+
+            var teInfoToAssert = connectivityTraceView.TerminalEquipments.First(t => t.Id == terminalEquipment.Id);
+
+            teInfoToAssert.TerminalStructures[0].Lines[0].A.Should().NotBeNull();
+            teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().NotBeNull();
+            teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().Be($"{sutCableName} (72) Fiber 2");
+
 
 
         }

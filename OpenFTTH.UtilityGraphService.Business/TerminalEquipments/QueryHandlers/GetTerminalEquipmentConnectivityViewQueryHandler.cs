@@ -1,6 +1,9 @@
-﻿using FluentResults;
+﻿using DAX.ObjectVersioning.Graph;
+using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.RouteNetwork.API.Model;
+using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -120,6 +123,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             if (!_terminalEquipmentSpecifications.TryGetValue(terminalEquipment.SpecificationId, out var terminalEquipmentSpecification))
                 throw new ApplicationException($"Invalid/corrupted terminal equipment instance: {terminalEquipment.Id} Has reference to non-existing terminal equipment specification with id: {terminalEquipment.SpecificationId}");
 
+            var equipmentData = GatherRelevantTerminalEquipmentData(terminalEquipment);
+
             List<TerminalEquipmentConnectivityViewTerminalStructureInfo> terminalStructureInfos = new();
 
             foreach (var terminalStructure in terminalEquipment.TerminalStructures)
@@ -136,9 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                         lineInfos.Add(
                             new TerminalEquipmentAZConnectivityViewLineInfo(GetConnectorSymbol(terminal, terminal))
                             {
-                                A = new TerminalEquipmentConnectivityViewEndInfo(
-                                    new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name)
-                                ),
+                                A = GetAEndInfo(equipmentData, terminal),
                                 Z = new TerminalEquipmentConnectivityViewEndInfo(
                                     new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name)
                                 ),
@@ -172,6 +175,151 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             );
         }
 
+        private TerminalEquipmentConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        {
+            var terminalInfo = new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
+
+            var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
+
+            var connectedToText = CreateConnectedToString(relevantEquipmentData, traceInfo);
+
+            return new TerminalEquipmentConnectivityViewEndInfo(terminalInfo)
+            {
+                ConnectedTo = connectedToText
+            };
+        }
+
+        private string? CreateConnectedToString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        {
+            if (traceInfo == null)
+                return null;
+
+            var spanEquipment = traceInfo.NeighborSegment.SpanEquipment(_utilityNetwork);
+            var fiber = traceInfo.NeighborSegment.StructureIndex;
+
+            return  $"{spanEquipment.Name} ({spanEquipment.SpanStructures.Length - 1}) Fiber {fiber}";
+        }
+
+        private RelevantEquipmentData GatherRelevantTerminalEquipmentData(TerminalEquipment terminalEquipment)
+        {
+            RelevantEquipmentData relevantEquipmentData = new RelevantEquipmentData();
+
+            relevantEquipmentData.TracedTerminals = TraceAllTerminals(terminalEquipment);
+
+            var endNodesIds = GetEndNodeIdsFromTraceResult(relevantEquipmentData.TracedTerminals.Values);
+
+            relevantEquipmentData.RouteNetworkElements = GatherRelevantRouteNodeInformation(_queryDispatcher, endNodesIds);
+
+            return relevantEquipmentData;
+        }
+
+        private Dictionary<Guid, TraceInfo> TraceAllTerminals(TerminalEquipment terminalEquipment)
+        {
+            Dictionary<Guid, TraceInfo> traceInfosByTerminalId = new();
+
+            // Trace all equipment terminals
+            foreach (var terminalStructure in terminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    TraceInfo traceInfo = new TraceInfo();
+
+                    var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
+
+                    if (terminalTraceResult != null)
+                    {
+                        if (terminalTraceResult.Upstream.Length > 0)
+                        {
+                            traceInfo.Upstream = GetEndInfoFromTrace(terminal.Id, terminalTraceResult.Upstream);
+                        }
+
+                        if (terminalTraceResult.Downstream.Length > 0)
+                        {
+                            traceInfo.Downstream = GetEndInfoFromTrace(terminal.Id, terminalTraceResult.Downstream);
+                        }
+                    }
+
+                    traceInfosByTerminalId.Add(terminal.Id, traceInfo);
+                }
+            }
+
+            return traceInfosByTerminalId;
+        }
+
+        private IEnumerable<Guid> GetEndNodeIdsFromTraceResult(IEnumerable<TraceInfo> traceInfos)
+        {
+            HashSet<Guid> endNodeIds = new();
+
+            foreach (var traceInfo in traceInfos)
+            {
+                AddEndNodeIdsToHash(traceInfo, endNodeIds);
+            }
+
+            return endNodeIds;
+        }
+
+        private static void AddEndNodeIdsToHash(TraceInfo traceInfo, HashSet<Guid> endNodeIds)
+        {
+            if (traceInfo.Upstream != null)
+            {
+                if (!endNodeIds.Contains(traceInfo.Upstream.EndTerminal.RouteNodeId))
+                    endNodeIds.Add(traceInfo.Upstream.EndTerminal.RouteNodeId);
+            }
+
+            if (traceInfo.Downstream != null)
+            {
+                if (!endNodeIds.Contains(traceInfo.Downstream.EndTerminal.RouteNodeId))
+                    endNodeIds.Add(traceInfo.Downstream.EndTerminal.RouteNodeId);
+            }
+        }
+
+        private TraceEndInfo GetEndInfoFromTrace(Guid tracedTerminalId, IGraphObject[] trace)
+        {
+            if (trace.Length < 2)
+                throw new ApplicationException($"Expected trace length to be minimum 2. Please check trace on terminal with id: {tracedTerminalId}");
+
+
+            // Get neighbor segment
+            var neighborSegment = trace.First();
+
+            if (!(neighborSegment is UtilityGraphConnectedSegment))
+                throw new ApplicationException($"Expected neighbor to be a UtilityGraphConnectedSegment. Please check trace on terminal with id: {tracedTerminalId}");
+
+
+            // Get end terminal
+            var terminalEnd = trace.Last();
+
+            if (!(terminalEnd is UtilityGraphConnectedTerminal))
+                throw new ApplicationException($"Expected end to be a UtilityGraphConnectedTerminal. Please check trace on terminal with id: {tracedTerminalId}");
+
+
+            return new TraceEndInfo((UtilityGraphConnectedSegment)neighborSegment, (UtilityGraphConnectedTerminal)terminalEnd);
+        }
+
+        private LookupCollection<RouteNetworkElement> GatherRelevantRouteNodeInformation(IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds)
+        {
+            if (nodeOfInterestIds.Count() == 0)
+                return new LookupCollection<RouteNetworkElement>();
+
+            RouteNetworkElementIdList idList = new();
+            idList.AddRange(nodeOfInterestIds);
+
+            var interestQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+                new GetRouteNetworkDetails(idList)
+                {
+                    RouteNetworkElementFilter = new RouteNetworkElementFilterOptions() { 
+                        IncludeNamingInfo = true,
+                        IncludeRouteNodeInfo = true
+                    }
+                }
+            ).Result;
+
+            if (interestQueryResult.IsFailed)
+                throw new ApplicationException("Failed to query route network information. Got error: " + interestQueryResult.Errors.First().Message);
+
+            return interestQueryResult.Value.RouteNetworkElements;
+        }
+
         private string GetConnectorSymbol(Terminal fromTerminal, Terminal toTerminal)
         {
             string symbolName = "";
@@ -190,6 +338,41 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             }
 
             return symbolName;
+        }
+
+        private record RelevantEquipmentData
+        {
+            public Dictionary<Guid, TraceInfo> TracedTerminals { get; set; }
+            public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
+        }
+
+        private record TraceInfo
+        {
+            public TraceEndInfo? Upstream { get; set; }
+            public TraceEndInfo? Downstream { get; set; }
+
+            public bool DownstreamIsZ {get; set;}
+            public TraceEndInfo? Z
+            {
+                get
+                {
+                    if (DownstreamIsZ) return Downstream;
+                    else return Upstream;
+                }
+            }
+            
+        }
+
+        private record TraceEndInfo
+        {
+            public UtilityGraphConnectedSegment NeighborSegment { get; set; }
+            public UtilityGraphConnectedTerminal EndTerminal { get; set; }
+
+            public TraceEndInfo(UtilityGraphConnectedSegment neighborSegment, UtilityGraphConnectedTerminal endTerminal)
+            {
+                NeighborSegment = neighborSegment;
+                EndTerminal = endTerminal;
+            }
         }
     }
 }

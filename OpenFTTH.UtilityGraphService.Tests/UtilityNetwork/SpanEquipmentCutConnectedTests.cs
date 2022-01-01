@@ -109,8 +109,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var traceResult = utilityNetwork.Graph.Trace(innerConduit1Segment1Id);
 
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.SP_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.SP_1);
 
 
             // Check that inner conduit 5 segment 1 is connected correctly in graph
@@ -122,8 +122,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             traceResult = utilityNetwork.Graph.Trace(innerConduit5Segment1Id);
 
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CC_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CC_1);
 
             ((UtilityGraphConnectedSegment)traceResult.Downstream.First()).StructureIndex.Should().Be(5);
 
@@ -177,8 +177,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var traceResult = utilityNetwork.Graph.Trace(innerConduit1Segment1Id);
 
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.HH_2);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.HH_2);
 
         }
 
@@ -217,8 +217,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var traceResult = utilityNetwork.Graph.Trace(innerConduit1Segment1Id);
 
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.SP_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.SP_1);
 
         }
 
@@ -256,8 +256,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var traceResult = utilityNetwork.Graph.Trace(innerConduit1Segment1Id);
 
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.HH_2);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.HH_2);
 
         }
 
@@ -295,8 +295,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var traceResult = utilityNetwork.Graph.Trace(innerConduit1Segment1Id);
 
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Downstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.CO_1);
-            ((UtilityGraphConnectedSimpleTerminal)traceResult.Upstream.Last()).NodeOfInterestId.Should().Be(TestRouteNetwork.SP_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
+            ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.SP_1);
 
         }
     }

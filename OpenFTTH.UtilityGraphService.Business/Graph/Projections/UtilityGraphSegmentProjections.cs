@@ -268,7 +268,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
             if (terminal == null)
             {
-                terminal = new UtilityGraphConnectedSimpleTerminal(terminalId, terminalNodeOfInterestId);
+                terminal = new UtilityGraphConnectedTerminal(terminalId, terminalNodeOfInterestId);
                 transaction.Add(terminal as GraphNode);
             }
 

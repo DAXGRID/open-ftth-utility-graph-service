@@ -3,9 +3,9 @@ using System;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Trace
 {
-    public record SpanSegmentTraceResult
+    public record UtilityGraphTraceResult
     {
-        public Guid SpanSegmentId { get; init; }
+        public Guid TerminalOrSpanSegmentId { get; init; }
 
         public IGraphObject[] Downstream = Array.Empty<IGraphObject>();
         public IGraphObject[] Upstream = Array.Empty<IGraphObject>();
