@@ -4,6 +4,6 @@
     {
         In = 1,
         Out = 2,
-        NA = 3
+        Bidirectional = 3
     }
 }

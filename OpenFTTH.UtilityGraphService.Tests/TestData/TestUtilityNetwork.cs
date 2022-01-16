@@ -42,6 +42,7 @@ namespace OpenFTTH.TestData
         public static Guid CustomerConduit_CC_1_to_SDU_1;
         public static Guid CustomerConduit_CC_1_to_SDU_2;
         public static Guid CustomerConduit_CC_1_to_SDU_3;
+        public static Guid CustomerConduit_HH_11_to_CC_1;
 
         public static Guid NodeContainer_HH_1;
         public static Guid NodeContainer_CC_1;
@@ -109,6 +110,13 @@ namespace OpenFTTH.TestData
                     new AddressInfo() { Remark = "This conduit and at SDU 3" }
                 );
 
+                // To test uturn problem
+                CustomerConduit_HH_11_to_CC_1 = PlaceConduit(
+                    TestSpecifications.CustomerConduit_Ø12_Orange,
+                    new RouteNetworkElementIdList() { TestRouteNetwork.S12, TestRouteNetwork.S13 },
+                    new AddressInfo() { Remark = "This conduit lying parallel with multi conduit" }
+                );
+
 
                 // Place node containers
                 NodeContainer_HH_1 = PlaceNodeContainer(TestSpecifications.Well_Fiberpowertech_37_EK_378_400x800, TestSpecifications.Manu_Fiberpowertech, TestRouteNetwork.HH_1);
@@ -142,10 +150,9 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(MultiConduit_3x10_SDU_1_to_SDU_2, NodeContainer_SDU_1, NodeContainerSideEnum.East);
                 AffixSpanEquipmentToContainer(MultiConduit_12x7_SDU_1_to_J_1, NodeContainer_SDU_1, NodeContainerSideEnum.East);
 
-                // Affix customer conduit in CC_1
+                // Affix customer conduits in CC_1
                 AffixSpanEquipmentToContainer(CustomerConduit_CC_1_to_SDU_1, NodeContainer_CC_1, NodeContainerSideEnum.North);
-
-
+                AffixSpanEquipmentToContainer(CustomerConduit_HH_11_to_CC_1, NodeContainer_CC_1, NodeContainerSideEnum.East);
 
                 Thread.Sleep(100);
 

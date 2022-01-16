@@ -18,6 +18,7 @@ using Xunit.Extensions.Ordering;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.RouteNetwork.API.Queries;
+using OpenFTTH.Tests.Util;
 
 #nullable disable
 
@@ -31,12 +32,15 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly FakeExternalEventProducer _externalEventProducer;
 
+        private readonly UtilityNetworkBuilder _utilityNetworkBuilder;
+
         public T4000_SpanEquipmentUtilityNetworkPlacementTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = (FakeExternalEventProducer)externalEventProducer;
+            _utilityNetworkBuilder = new UtilityNetworkBuilder(_eventStore, _commandDispatcher, _queryDispatcher);
 
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
@@ -111,11 +115,18 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             walkOfInterest.RouteNetworkElementRefs.First().Should().Be(TestRouteNetwork.CO_1);
             walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.CC_1);
 
-            // Check parent relationship
-            placedSpanEquipment.ParentAffixes.Should().NotBeNull();
-            placedSpanEquipment.ParentAffixes.Count().Should().Be(2);
-            placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegmentId).Should().NotBeNull();
-            placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughConnectedSpanSegmentId).Should().NotBeNull();
+            // Check that cable contains one hop
+            placedSpanEquipment.UtilityNetworkHops.Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(1);
+
+            // Check hop from and to node id
+            placedSpanEquipment.UtilityNetworkHops[0].FromNodeId.Should().Be(TestRouteNetwork.CO_1);
+            placedSpanEquipment.UtilityNetworkHops[0].ToNodeId.Should().Be(TestRouteNetwork.CC_1);
+
+            // Check conduit parent segment ids
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Count().Should().Be(2);
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegmentId).Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Single(p => p.SpanSegmentId == routeThroughConnectedSpanSegmentId).Should().NotBeNull();
 
             // Check that trace only include outer jacket of cable
             traceQueryResult.Value.RouteNetworkTraces.Count().Should().Be(1);
@@ -123,7 +134,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(2)]
-        public async void TestPlaceSpanEquipmentUsingOneThreeHopFromCO1ToSP1_ShouldSucceed()
+        public async void TestPlaceSpanEquipmentUsingThreeHopFromCO1ToHH1ToHH10ToCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -178,16 +189,26 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             walkOfInterest.RouteNetworkElementRefs.First().Should().Be(TestRouteNetwork.CO_1);
             walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.CC_1);
 
+            // Check that we go forth and backwards between CC_1 and HH_10 (S13)
             walkOfInterest.RouteNetworkElementRefs.Count(e => e == TestRouteNetwork.CC_1).Should().Be(2);
             walkOfInterest.RouteNetworkElementRefs.Count(e => e == TestRouteNetwork.S13).Should().Be(2);
 
-            // Check parent relationship
-            placedSpanEquipment.ParentAffixes.Should().NotBeNull();
-            placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegment1Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
-            placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegment2Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
-            placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegment3Id && p.Direction == SpanEquipmentAffixDirectionEnum.Backward).Should().NotBeNull();
+            
+            placedSpanEquipment.UtilityNetworkHops.Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(3);
 
+            // Check conduit parent relationship
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegment1Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops[1].ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegment2Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops[2].ParentAffixes.Single(p => p.SpanSegmentId == routeThroughSpanSegment3Id && p.Direction == SpanEquipmentAffixDirectionEnum.Backward).Should().NotBeNull();
 
+            // Check hop from and to node id
+            placedSpanEquipment.UtilityNetworkHops[0].FromNodeId.Should().Be(TestRouteNetwork.CO_1);
+            placedSpanEquipment.UtilityNetworkHops[0].ToNodeId.Should().Be(TestRouteNetwork.HH_1);
+            placedSpanEquipment.UtilityNetworkHops[1].FromNodeId.Should().Be(TestRouteNetwork.HH_1);
+            placedSpanEquipment.UtilityNetworkHops[1].ToNodeId.Should().Be(TestRouteNetwork.HH_10);
+            placedSpanEquipment.UtilityNetworkHops[2].FromNodeId.Should().Be(TestRouteNetwork.HH_10);
+            placedSpanEquipment.UtilityNetworkHops[2].ToNodeId.Should().Be(TestRouteNetwork.CC_1);
         }
 
         [Fact, Order(3)]
@@ -242,9 +263,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.HH_2);
 
             // Check parent relationship
-            placedSpanEquipment.ParentAffixes.Should().NotBeNull();
-            placedSpanEquipment.ParentAffixes.Count().Should().Be(1);
-            placedSpanEquipment.ParentAffixes.Single(p => p.SpanSegmentId == routeThoughSpanEquipment1.SpanStructures[0].SpanSegments[0].Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops.Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(1);
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Single(p => p.SpanSegmentId == routeThoughSpanEquipment1.SpanStructures[0].SpanSegments[0].Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
         }
 
 
@@ -306,9 +327,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.HH_10);
 
             // Check parent relationship
-            placedSpanEquipment.ParentAffixes.Should().BeEmpty();
-
-            movedSpanEquipment.ParentAffixes.Count().Should().Be(1);
+            movedSpanEquipment.UtilityNetworkHops.Count().Should().Be(1);
         }
 
         [Fact, Order(10)]
@@ -457,6 +476,88 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         }
 
+
+        [Fact, Order(14)]
+        public async void TestPlaceSpanEquipmenInHopThatRunsForthAndBackInTheSameRouteSegment_ShouldSucceed()
+        {
+            // Connect sub conduit 1 and 2 of the same multi conduit in CC_1
+            _utilityNetworkBuilder.ConnectTwoSpanSegments(
+                nodeId: TestRouteNetwork.CC_1,
+                fromSpanEquipmentId: TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10,
+                fromSpanStructureIndex: 1,
+                fromSpanSegmentIndex: 1,
+                toSpanEquipmentId: TestUtilityNetwork.CustomerConduit_HH_11_to_CC_1,
+                toSpanStructureIndex: 0,
+                toSpanSegmentIndex: 0
+            );
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var routeThroughSpanEquipment1Id = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
+            utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipment1Id, out var routeThoughSpanEquipment1);
+            var routeThroughSpanSegment1Id = routeThoughSpanEquipment1.SpanStructures[1].SpanSegments[1].Id;
+
+
+            var routeThroughSpanEquipment2Id = TestUtilityNetwork.CustomerConduit_HH_11_to_CC_1;
+            utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipment2Id, out var routeThoughSpanEquipment2);
+            var routeThroughSpanSegment2Id = routeThoughSpanEquipment2.SpanStructures[0].SpanSegments[0].Id;
+
+
+            // Setup
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+
+            // blow from HH_10 through sub conduit 1, which goes to CC_1 and back to HH_11 via. HH_10 (in the customer conduit)
+            var routingHops = new RoutingHop[]
+            {
+                new RoutingHop(TestRouteNetwork.HH_10, routeThroughSpanSegment1Id),
+            };
+
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, routingHops)
+            {
+                NamingInfo = new NamingInfo("Hans", "Grethe"),
+                MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
+                ManufacturerId = Guid.NewGuid()
+            };
+
+            // Act
+            var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInUtilityNetwork, Result>(placeSpanEquipmentCommand);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(placeSpanEquipmentCommand.SpanEquipmentId, out var placedSpanEquipment);
+
+            var routeNetworkQueryResult = await _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+              new GetRouteNetworkDetails(new InterestIdList() { placedSpanEquipment.WalkOfInterestId })
+              {
+                  RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementAndInterestObjects
+              }
+            );
+
+            // Assert
+            placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
+
+            // Check walk of interest
+            var walkOfInterest = routeNetworkQueryResult.Value.Interests[placedSpanEquipment.WalkOfInterestId];
+
+            walkOfInterest.RouteNetworkElementRefs.Count.Should().Be(7);    
+            walkOfInterest.RouteNetworkElementRefs[0].Should().Be(TestRouteNetwork.HH_10);
+            walkOfInterest.RouteNetworkElementRefs[1].Should().Be(TestRouteNetwork.S13);
+            walkOfInterest.RouteNetworkElementRefs[2].Should().Be(TestRouteNetwork.CC_1);
+            walkOfInterest.RouteNetworkElementRefs[3].Should().Be(TestRouteNetwork.S13);
+            walkOfInterest.RouteNetworkElementRefs[4].Should().Be(TestRouteNetwork.HH_10);
+            walkOfInterest.RouteNetworkElementRefs[5].Should().Be(TestRouteNetwork.S12);
+            walkOfInterest.RouteNetworkElementRefs[6].Should().Be(TestRouteNetwork.HH_11);
+
+            placedSpanEquipment.UtilityNetworkHops.Should().NotBeNull();
+            placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(1);
+
+            // Check hop from and to node id
+            placedSpanEquipment.UtilityNetworkHops[0].FromNodeId.Should().Be(TestRouteNetwork.HH_10);
+            placedSpanEquipment.UtilityNetworkHops[0].ToNodeId.Should().Be(TestRouteNetwork.HH_11);
+
+            // Check span segment parents
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Count().Should().Be(2);
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes[0].SpanSegmentId.Should().Be(routeThroughSpanSegment1Id);
+            placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes[1].SpanSegmentId.Should().Be(routeThroughSpanSegment2Id);
+        }
     }
 }
 

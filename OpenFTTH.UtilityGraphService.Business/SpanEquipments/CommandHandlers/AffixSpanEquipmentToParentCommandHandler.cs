@@ -73,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var cableSpanEquipment = spanEquipment1.IsCable ? spanEquipment1 : spanEquipment2;
             var conduitSpanSegmentId = spanEquipment1.IsCable ? command.SpanSegmentId2 : command.SpanSegmentId1;
 
-            var createAffixesResult = CreateSpanEquipmentAffixes(conduitSpanSegmentId);
+            var createAffixesResult = CreateHop(conduitSpanSegmentId);
 
             if (createAffixesResult.IsFailed)
                 return Task.FromResult(Result.Fail(createAffixesResult.Errors.First()));
@@ -84,7 +84,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var affixResult = spanEquipmentAR.AffixToParent(
                 cmdContext: commandContext,
-                spanEquipmentAffixes: createAffixesResult.Value.ToArray()
+                utilityNetworkHop: createAffixesResult.Value
             );
 
             if (affixResult.IsSuccess)
@@ -98,7 +98,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         }
 
 
-        private Result<List<SpanEquipmentSpanEquipmentAffix>> CreateSpanEquipmentAffixes(Guid conduitSpanSegmentToTrace)
+        private Result<UtilityNetworkHop> CreateHop(Guid conduitSpanSegmentToTrace)
         {
             // Create span equipment parent affixes
             List<SpanEquipmentSpanEquipmentAffix> affixes = new();
@@ -120,7 +120,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 }
             }
 
-            return Result.Ok(affixes);
+            return Result.Ok(new UtilityNetworkHop(segmentTrace.ValidatedRouteNetworkWalk.FromNodeId, segmentTrace.ValidatedRouteNetworkWalk.ToNodeId, affixes.ToArray()));
         }
 
 

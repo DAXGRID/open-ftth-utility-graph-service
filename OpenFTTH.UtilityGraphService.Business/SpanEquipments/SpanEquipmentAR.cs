@@ -83,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 lifecycleInfo: lifecycleInfo,
                 markingInfo: markingInfo,
                 addressInfo: addressInfo,
-                spanEquipmentAffixes: null,
+                utilityNetworkHops: null,
                 isCable: spanEquipmentSpecifications[spanEquipmentSpecificationId].IsCable
              );
 
@@ -107,7 +107,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Guid spanEquipmentId, Guid spanEquipmentSpecificationId,
             Guid walkOfInterestId,
             RouteNetworkElementIdList walk,
-            SpanEquipmentSpanEquipmentAffix[] spanEquipmentAffixes, 
+            UtilityNetworkHop[] utilityNetworkHops, 
             Guid? manufacturerId, 
             NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, 
             MarkingInfo? markingInfo, 
@@ -129,7 +129,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 specification: spanEquipmentSpecifications[spanEquipmentSpecificationId],
                 walkOfInterestId: walkOfInterestId,
                 nodesOfInterestIds: new Guid[] { walk.First(), walk.Last() },
-                spanEquipmentAffixes: spanEquipmentAffixes,
+                utilityNetworkHops: utilityNetworkHops,
                 manufacturerId: manufacturerId,
                 namingInfo: namingInfo,
                 lifecycleInfo: lifecycleInfo,
@@ -151,7 +151,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo, AddressInfo? addressInfo, SpanEquipmentSpanEquipmentAffix[]? spanEquipmentAffixes, bool isCable)
+        private static SpanEquipment CreateSpanEquipmentFromSpecification(Guid spanEquipmentId, SpanEquipmentSpecification specification, Guid walkOfInterestId, Guid[] nodesOfInterestIds, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, MarkingInfo? markingInfo, AddressInfo? addressInfo, UtilityNetworkHop[]? utilityNetworkHops, bool isCable)
         {
             List<SpanStructure> spanStructuresToInclude = new List<SpanStructure>();
 
@@ -189,7 +189,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 LifecycleInfo = lifecycleInfo,
                 MarkingInfo = markingInfo,
                 AddressInfo = addressInfo,
-                ParentAffixes = spanEquipmentAffixes,
+                UtilityNetworkHops = utilityNetworkHops,
                 IsCable = isCable
             };
 
@@ -203,10 +203,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #endregion
 
         #region Affix parents
-        public Result AffixToParent(CommandContext cmdContext, SpanEquipmentSpanEquipmentAffix[] spanEquipmentAffixes)
+        public Result AffixToParent(CommandContext cmdContext, UtilityNetworkHop utilityNetworkHop)
         {
             RaiseEvent(
-                new SpanEquipmentAffixedToParent(this.Id, spanEquipmentAffixes)
+                new SpanEquipmentAffixedToParent(this.Id, utilityNetworkHop)
                 {
                     CorrelationId = cmdContext.CorrelationId,
                     IncitingCmdId = cmdContext.CmdId,

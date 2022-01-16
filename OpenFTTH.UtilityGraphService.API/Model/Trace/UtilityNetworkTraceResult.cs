@@ -1,5 +1,6 @@
 ﻿using OpenFTTH.Core;
 using System;
+using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.Trace
 {
@@ -19,6 +20,11 @@ namespace OpenFTTH.UtilityGraphService.API.Model.Trace
             FromTerminalId = fromTerminalId;
             ToTerminalId = toTerminalId;
             SpanSegmentIds = spanSegmentIds;
+        }
+
+        public UtilityNetworkTraceResult Reverse()
+        {
+            return new UtilityNetworkTraceResult(Id, ToTerminalId, FromTerminalId, SpanSegmentIds.Reverse().ToArray());
         }
     }
 }

@@ -7,12 +7,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events
     public record SpanEquipmentAffixedToParent : EventStoreBaseEvent
     {
         public Guid SpanEquipmentId { get; }
-        public SpanEquipmentSpanEquipmentAffix[] ParentAffixes { get; init; }
+        public UtilityNetworkHop NewUtilityHop { get; init; }
 
-        public SpanEquipmentAffixedToParent(Guid spanEquipmentId, SpanEquipmentSpanEquipmentAffix[] parentAffixes)
+        public SpanEquipmentAffixedToParent(Guid spanEquipmentId, UtilityNetworkHop utilityHop)
         {
             SpanEquipmentId = spanEquipmentId;
-            ParentAffixes = parentAffixes;
+            NewUtilityHop = utilityHop;
         }
     }
 }

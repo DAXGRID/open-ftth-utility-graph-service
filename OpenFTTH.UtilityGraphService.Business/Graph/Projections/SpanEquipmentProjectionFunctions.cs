@@ -506,18 +506,18 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentAffixedToParent @event)
         {
-            List<SpanEquipmentSpanEquipmentAffix> newParentAffixes = new();
+            List<UtilityNetworkHop> newHopList = new();
 
-            // add existing affixes
-            if (existingSpanEquipment.ParentAffixes != null && existingSpanEquipment.ParentAffixes.Length > 0)
-                newParentAffixes.AddRange(existingSpanEquipment.ParentAffixes);
+            // add existing hops
+            if (existingSpanEquipment.UtilityNetworkHops != null && existingSpanEquipment.UtilityNetworkHops.Length > 0)
+                newHopList.AddRange(existingSpanEquipment.UtilityNetworkHops);
 
             // add new affixes
-            newParentAffixes.AddRange(@event.ParentAffixes);
+            newHopList.Add(@event.NewUtilityHop);
 
             return existingSpanEquipment with
             {
-               ParentAffixes = newParentAffixes.ToArray()
+                UtilityNetworkHops = newHopList.ToArray()
             };
         }
     }

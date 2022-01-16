@@ -142,9 +142,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                             new TerminalEquipmentAZConnectivityViewLineInfo(GetConnectorSymbol(terminal, terminal))
                             {
                                 A = GetAEndInfo(equipmentData, terminal),
-                                Z = new TerminalEquipmentConnectivityViewEndInfo(
-                                    new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name)
-                                ),
+                                Z = GetZEndInfo(equipmentData, terminal)
                             }
                         );
                     }
@@ -179,9 +177,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             var terminalInfo = new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
 
-            var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
+            var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].A;
 
-            var connectedToText = CreateConnectedToString(relevantEquipmentData, traceInfo);
+            var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
 
             return new TerminalEquipmentConnectivityViewEndInfo(terminalInfo)
             {
@@ -189,7 +187,21 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             };
         }
 
-        private string? CreateConnectedToString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        private TerminalEquipmentConnectivityViewEndInfo GetZEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        {
+            var terminalInfo = new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
+
+            var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
+
+            var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
+
+            return new TerminalEquipmentConnectivityViewEndInfo(terminalInfo)
+            {
+                ConnectedTo = connectedToText
+            };
+        }
+
+        private string? CreateConnectedToSpanEquipmentString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
         {
             if (traceInfo == null)
                 return null;
@@ -210,7 +222,41 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             relevantEquipmentData.RouteNetworkElements = GatherRelevantRouteNodeInformation(_queryDispatcher, endNodesIds);
 
+            TryFindAandZ(relevantEquipmentData);
+
             return relevantEquipmentData;
+        }
+
+        private void TryFindAandZ(RelevantEquipmentData relevantEquipmentData)
+        {
+            foreach (var tracedTerminal in relevantEquipmentData.TracedTerminals.Values)
+            {
+                // the lower the more A-ish
+                int upstreamRank = 0;
+                int downstreamRank = 1000;
+
+                if (tracedTerminal.Upstream != null)
+                {
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Upstream.EndTerminal.RouteNodeId];
+
+                    if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
+                        upstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                }
+
+
+                if (tracedTerminal.Downstream != null)
+                {
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Downstream.EndTerminal.RouteNodeId];
+
+                    if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
+                        downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                }
+
+                if (upstreamRank > downstreamRank)
+                    tracedTerminal.UpstreamIsZ = true;
+                else
+                    tracedTerminal.UpstreamIsZ = false;
+            }
         }
 
         private Dictionary<Guid, TraceInfo> TraceAllTerminals(TerminalEquipment terminalEquipment)
@@ -351,16 +397,25 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             public TraceEndInfo? Upstream { get; set; }
             public TraceEndInfo? Downstream { get; set; }
 
-            public bool DownstreamIsZ {get; set;}
+            public bool UpstreamIsZ {get; set;}
             public TraceEndInfo? Z
             {
                 get
                 {
-                    if (DownstreamIsZ) return Downstream;
-                    else return Upstream;
+                    if (UpstreamIsZ) return Upstream;
+                    else return Downstream;
                 }
             }
-            
+
+            public TraceEndInfo? A
+            {
+                get
+                {
+                    if (!UpstreamIsZ) return Upstream;
+                    else return Downstream;
+                }
+            }
+
         }
 
         private record TraceEndInfo

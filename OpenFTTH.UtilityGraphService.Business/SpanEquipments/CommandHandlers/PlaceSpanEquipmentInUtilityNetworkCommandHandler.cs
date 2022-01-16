@@ -71,7 +71,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 command.SpanEquipmentSpecificationId,
                 walkOfInterestId,
                 traceRoutingHopsResult.Value.ValidatedRouteNetworkWalk.RouteNetworkElementRefs,
-                traceRoutingHopsResult.Value.SpanEquipmentSpanEquipmentAffixes.ToArray(),
+                traceRoutingHopsResult.Value.UtilityHops.ToArray(),
                 command.ManufacturerId,
                 command.NamingInfo,
                 command.LifecycleInfo,
@@ -105,11 +105,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (traceAllHopsResult.IsFailed)
                 return Result.Fail(traceAllHopsResult.Errors.First());
 
-            var segmentTraceResults = traceAllHopsResult.Value;
+            var hopResults = traceAllHopsResult.Value;
 
 
             // Make sure walks can be connected together
-            var checkAndReverseSpanSegmentTracesResult = CheckAndReverseSpanSegmentTraces(segmentTraceResults);
+            var checkAndReverseSpanSegmentTracesResult = CheckAndReverseSpanSegmentTraces(hopResults);
 
             if (checkAndReverseSpanSegmentTracesResult.IsFailed)
                 return Result.Fail(checkAndReverseSpanSegmentTracesResult.Errors.First());
@@ -118,34 +118,40 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Connect walks together
             RouteNetworkElementIdList routeNeworkElements = new RouteNetworkElementIdList();
 
-            routeNeworkElements.AddRange(segmentTraceResults[0].ValidatedRouteNetworkWalk.RouteNetworkElementRefs);
+            routeNeworkElements.AddRange(hopResults[0].ValidatedRouteNetworkWalk.RouteNetworkElementRefs);
 
-            for (int subWalkIndex = 1; subWalkIndex < segmentTraceResults.Count; subWalkIndex++)
+            for (int subWalkIndex = 1; subWalkIndex < hopResults.Count; subWalkIndex++)
             {
-                for (int routeNetworkElementIndex = 1; routeNetworkElementIndex < segmentTraceResults[subWalkIndex].ValidatedRouteNetworkWalk.RouteNetworkElementRefs.Count; routeNetworkElementIndex++)
+                for (int routeNetworkElementIndex = 1; routeNetworkElementIndex < hopResults[subWalkIndex].ValidatedRouteNetworkWalk.RouteNetworkElementRefs.Count; routeNetworkElementIndex++)
                 {
-                    routeNeworkElements.Add(segmentTraceResults[subWalkIndex].ValidatedRouteNetworkWalk.RouteNetworkElementRefs[routeNetworkElementIndex]);
+                    routeNeworkElements.Add(hopResults[subWalkIndex].ValidatedRouteNetworkWalk.RouteNetworkElementRefs[routeNetworkElementIndex]);
                 }
             }
 
-            // Create span equipment parent affixes
-            List<SpanEquipmentSpanEquipmentAffix> affixes = new();
+            // Create utility hops
+            List<UtilityNetworkHop> utilityNetworkHops = new();
 
-            foreach (var segmentTrace in segmentTraceResults)
+            foreach (var hopResult in hopResults)
             {
-                if (segmentTrace.UtilityNetworkTrace != null)
+                if (hopResult.UtilityNetworkTrace != null)
                 {
-                    foreach (var segmentId in segmentTrace.UtilityNetworkTrace.SpanSegmentIds)
+                    List<SpanEquipmentSpanEquipmentAffix> affixes = new();
+
+                    foreach (var segmentId in hopResult.UtilityNetworkTrace.SpanSegmentIds)
                     {
-                        SpanEquipmentAffixDirectionEnum direction = segmentTrace.IsReversed ? SpanEquipmentAffixDirectionEnum.Backward : SpanEquipmentAffixDirectionEnum.Forward;
+                        SpanEquipmentAffixDirectionEnum direction = hopResult.IsReversed ? SpanEquipmentAffixDirectionEnum.Backward : SpanEquipmentAffixDirectionEnum.Forward;
 
                         affixes.Add(new SpanEquipmentSpanEquipmentAffix(segmentId, direction));
                     }
+
+                    //hopResult.UtilityNetworkTrace.
+
+                    utilityNetworkHops.Add(new UtilityNetworkHop(hopResult.ValidatedRouteNetworkWalk.FromNodeId, hopResult.ValidatedRouteNetworkWalk.ToNodeId, affixes.ToArray()));
                 }
             }
 
             return Result.Ok(
-                new ProcessRoutingHopsResult(new ValidatedRouteNetworkWalk(routeNeworkElements), affixes)
+                new ProcessRoutingHopsResult(new ValidatedRouteNetworkWalk(routeNeworkElements), utilityNetworkHops)
             );
         }
 
@@ -171,23 +177,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     else if (currentSubWalk.ToNodeId == prevSubWalk.ToNodeId)
                     {
                         // We reverse the current one
-                        segmentTraceResults[i].ValidatedRouteNetworkWalk = currentSubWalk.Reverse();
-                        segmentTraceResults[i].IsReversed = true;
+                        segmentTraceResults[i].Reverse();
                     }
                     else if (currentSubWalk.FromNodeId == prevSubWalk.FromNodeId)
                     {
                         // We reverse the prev one
-                        segmentTraceResults[i - 1].ValidatedRouteNetworkWalk = prevSubWalk.Reverse();
-                        segmentTraceResults[i - 1].IsReversed = true;
+                        segmentTraceResults[i - 1].Reverse();
                     }
                     else if (currentSubWalk.ToNodeId == prevSubWalk.FromNodeId)
                     {
                         // We reverse both
-                        segmentTraceResults[i].ValidatedRouteNetworkWalk = currentSubWalk.Reverse();
-                        segmentTraceResults[i].IsReversed = true;
-
-                        segmentTraceResults[i - 1].ValidatedRouteNetworkWalk = prevSubWalk.Reverse();
-                        segmentTraceResults[i - 1].IsReversed = true;
+                        segmentTraceResults[i].Reverse();
+                        segmentTraceResults[i - 1].Reverse();
                     }
                     else
                     {
@@ -223,8 +224,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     if (tracedHopResult.IsFailed)
                         return Result.Fail(tracedHopResult.Errors.First());
 
-                    if (tracedHopResult.Value.ValidatedRouteNetworkWalk.FromNodeId != routingHop.StartRouteNode && tracedHopResult.Value.ValidatedRouteNetworkWalk.ToNodeId != routingHop.StartRouteNode)
+                    if (tracedHopResult.Value.ValidatedRouteNetworkWalk.FromNodeId == routingHop.StartRouteNode)
+                    {
+                        // do nothing, the segment trace direction is ok
+                    }
+                    else if (tracedHopResult.Value.ValidatedRouteNetworkWalk.ToNodeId == routingHop.StartRouteNode)
+                    {
+                        tracedHopResult.Value.Reverse();
+                    }
+                    else
+                    {
                         return Result.Fail(new PlaceSpanEquipmentInUtilityNetworkError(PlaceSpanEquipmentInUtilityNetworkErrorCodes.SPAN_SEGMENT_NOT_RELATED_TO_ROUTE_NODE, $"The span segment: {tracedHopResult.Value.SegmentId} do not start or end in route node: {routingHop.StartRouteNode}"));
+                    }
 
                     processedHopsResult.Add(tracedHopResult.Value);
                 }
@@ -304,22 +315,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
 
-            var traceBuilder = new SwissArmyKnifeTracer(_queryDispatcher, _utilityNetwork);
+            var traceBuilder = new ConduitSpanSegmentTracer(_queryDispatcher, _utilityNetwork);
 
-            var traceInfo = traceBuilder.Trace(new List<SpanEquipment> { spanEquipment }, spanSegmentIdToTrace);
+            var traceInfo = traceBuilder.Trace(spanSegmentIdToTrace);
 
-            if (traceInfo == null || traceInfo.RouteNetworkTraces.Count != 1)
+            if (traceInfo == null || traceInfo.RouteNetworkWalk == null)
             {
-                return Result.Fail(new PlaceSpanEquipmentInUtilityNetworkError(PlaceSpanEquipmentInUtilityNetworkErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected 1 route network trace result, got {traceInfo?.RouteNetworkTraces?.Count}"));
+                return Result.Fail(new PlaceSpanEquipmentInUtilityNetworkError(PlaceSpanEquipmentInUtilityNetworkErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected 1 route network walk, but got none."));
             }
 
-            if (traceInfo == null || traceInfo.UtilityNetworkTraceBySpanSegmentId.Count != 1)
+            if (traceInfo == null || traceInfo.UtilityNetworkTrace == null)
             {
-                return Result.Fail(new PlaceSpanEquipmentInUtilityNetworkError(PlaceSpanEquipmentInUtilityNetworkErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected 1 utility network trace result, got {traceInfo?.UtilityNetworkTraceBySpanSegmentId?.Count}"));
+                return Result.Fail(new PlaceSpanEquipmentInUtilityNetworkError(PlaceSpanEquipmentInUtilityNetworkErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected 1 utility network trace result, got got none."));
             }
 
             var walk = new RouteNetworkElementIdList();
-            walk.AddRange(traceInfo.RouteNetworkTraces[0].RouteSegmentIds);
+            walk.AddRange(traceInfo.RouteNetworkWalk);
 
             var validateInterestCommand = new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("PlaceSpanEquipmentInRouteNetwork", Guid.Empty), walk);
 
@@ -329,7 +340,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Result.Fail(validateInterestResult.Errors.First());
 
             return Result.Ok(
-                new ProcessedHopResult(spanSegmentIdToTrace, validateInterestResult.Value, traceInfo.UtilityNetworkTraceBySpanSegmentId.Values.First())
+                new ProcessedHopResult(spanSegmentIdToTrace, validateInterestResult.Value, traceInfo.UtilityNetworkTrace)
             );
         }
 
@@ -361,20 +372,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             public ValidatedRouteNetworkWalk ValidatedRouteNetworkWalk { get; set; }
 
-            public List<SpanEquipmentSpanEquipmentAffix> SpanEquipmentSpanEquipmentAffixes { get; set; }
+            public UtilityNetworkHop[] UtilityHops { get; set; }
 
-            public ProcessRoutingHopsResult(ValidatedRouteNetworkWalk validatedRouteNetworkWalk, List<SpanEquipmentSpanEquipmentAffix> spanEquipmentSpanEquipmentAffixes)
+            public ProcessRoutingHopsResult(ValidatedRouteNetworkWalk validatedRouteNetworkWalk, List<UtilityNetworkHop> utilityHops)
             {
                 ValidatedRouteNetworkWalk = validatedRouteNetworkWalk;
-                this.SpanEquipmentSpanEquipmentAffixes = spanEquipmentSpanEquipmentAffixes;
+                this.UtilityHops = utilityHops.ToArray();
             }
         }
 
         class ProcessedHopResult
         {
-            public ValidatedRouteNetworkWalk ValidatedRouteNetworkWalk { get; set; }
-            public bool IsReversed { get; set; }
-            public UtilityNetworkTraceResult? UtilityNetworkTrace { get; }
+            public ValidatedRouteNetworkWalk ValidatedRouteNetworkWalk { get; protected set; }
+            public bool IsReversed { get; protected set; }
+            public UtilityNetworkTraceResult? UtilityNetworkTrace { get; protected set; }
             public Guid? SegmentId { get; }
 
             public ProcessedHopResult(Guid? segmentId, ValidatedRouteNetworkWalk validatedRouteNetworkWalk, UtilityNetworkTraceResult? utilityNetworkTrace)
@@ -382,6 +393,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 SegmentId = segmentId;
                 ValidatedRouteNetworkWalk = validatedRouteNetworkWalk;
                 UtilityNetworkTrace = utilityNetworkTrace;
+            }
+
+            public void Reverse()
+            {
+                if (ValidatedRouteNetworkWalk != null)
+                {
+                    ValidatedRouteNetworkWalk = ValidatedRouteNetworkWalk.Reverse();
+                }
+
+                if (UtilityNetworkTrace != null)
+                {
+                    UtilityNetworkTrace = UtilityNetworkTrace.Reverse();
+                }
+
+                IsReversed = IsReversed == false ? true : false;
             }
         }
 
