@@ -3,10 +3,9 @@
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
 {
     /// <summary>
-    /// Terminal equipment structure (i.e. a splice tray, splitter module or line card)
-    /// with properties suitable for a connectivity view
+    /// Span equipment connectiviy view - i.e. some cable or conduit
     /// </summary>
-    public record TerminalEquipmentConnectivityViewTerminalStructureInfo
+    public record SpanEquipmentAZConnectivityViewEquipmentInfo
     {
         public Guid Id { get; init; }
         public string Category { get; init; }
@@ -14,9 +13,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public string SpecName { get; init; }
         public string? Info { get; init; }
 
-        public TerminalEquipmentAZConnectivityViewLineInfo[] Lines { get; init; }
+        public SpanEquipmentAZConnectivityViewLineInfo[] Lines { get; init; }
 
-        public TerminalEquipmentConnectivityViewTerminalStructureInfo(Guid id, string category, string name, string specName, TerminalEquipmentAZConnectivityViewLineInfo[] lines)
+        public SpanEquipmentAZConnectivityViewEquipmentInfo(Guid id, string category, string name, string specName, SpanEquipmentAZConnectivityViewLineInfo[] lines)
         {
             Id = id;
             Category = category;

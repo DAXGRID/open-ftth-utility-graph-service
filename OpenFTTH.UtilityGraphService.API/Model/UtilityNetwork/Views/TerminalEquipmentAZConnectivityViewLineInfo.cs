@@ -7,8 +7,8 @@
     {
         public string ConnectorSymbol { get; init; }
 
-        public TerminalEquipmentConnectivityViewEndInfo? A { get; init; }
-        public TerminalEquipmentConnectivityViewEndInfo? Z { get; init; }
+        public TerminalEquipmentAZConnectivityViewEndInfo? A { get; init; }
+        public TerminalEquipmentAZConnectivityViewEndInfo? Z { get; init; }
 
         public TerminalEquipmentAZConnectivityViewLineInfo(string connectorSymbol)
         {

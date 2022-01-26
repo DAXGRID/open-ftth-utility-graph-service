@@ -80,10 +80,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var rackSpec = _rackSpecifications[rack.SpecificationId];
 
-            TerminalEquipmentConnectivityViewNodeStructureInfo rackStructure =
-                new TerminalEquipmentConnectivityViewNodeStructureInfo(rack.Id, "Rack", rack.Name, rackSpec.Name);
+            TerminalEquipmentAZConnectivityViewNodeStructureInfo rackStructure =
+                new TerminalEquipmentAZConnectivityViewNodeStructureInfo(rack.Id, "Rack", rack.Name, rackSpec.Name);
 
-            List<TerminalEquipmentConnectivityViewEquipmentInfo> equipmentInfos = new();
+            List<TerminalEquipmentAZConnectivityViewEquipmentInfo> equipmentInfos = new();
 
             foreach (var mount in rack.SubrackMounts)
             {
@@ -102,7 +102,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                     terminalEquipments: equipmentInfos.ToArray()
                 )
                 {
-                    ParentNodeStructures = new TerminalEquipmentConnectivityViewNodeStructureInfo[] { rackStructure }
+                    ParentNodeStructures = new TerminalEquipmentAZConnectivityViewNodeStructureInfo[] { rackStructure }
                 }
             );
         }
@@ -111,21 +111,21 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             return (
                 new TerminalEquipmentAZConnectivityViewModel(
-                    terminalEquipments: new TerminalEquipmentConnectivityViewEquipmentInfo[] {
+                    terminalEquipments: new TerminalEquipmentAZConnectivityViewEquipmentInfo[] {
                        BuildTerminalEquipmentView(query, terminalEquipment)
                     }
                 )
             );
         }
 
-        private TerminalEquipmentConnectivityViewEquipmentInfo BuildTerminalEquipmentView(GetTerminalEquipmentConnectivityView query, TerminalEquipment terminalEquipment, Guid? parentStructureId = null)
+        private TerminalEquipmentAZConnectivityViewEquipmentInfo BuildTerminalEquipmentView(GetTerminalEquipmentConnectivityView query, TerminalEquipment terminalEquipment, Guid? parentStructureId = null)
         {
             if (!_terminalEquipmentSpecifications.TryGetValue(terminalEquipment.SpecificationId, out var terminalEquipmentSpecification))
                 throw new ApplicationException($"Invalid/corrupted terminal equipment instance: {terminalEquipment.Id} Has reference to non-existing terminal equipment specification with id: {terminalEquipment.SpecificationId}");
 
             var equipmentData = GatherRelevantTerminalEquipmentData(terminalEquipment);
 
-            List<TerminalEquipmentConnectivityViewTerminalStructureInfo> terminalStructureInfos = new();
+            List<TerminalEquipmentAZConnectivityViewTerminalStructureInfo> terminalStructureInfos = new();
 
             foreach (var terminalStructure in terminalEquipment.TerminalStructures)
             {
@@ -149,7 +149,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 }
 
                 terminalStructureInfos.Add(
-                    new TerminalEquipmentConnectivityViewTerminalStructureInfo(
+                    new TerminalEquipmentAZConnectivityViewTerminalStructureInfo(
                         id: terminalStructure.Id,
                         category: terminalStructureSpecification.Category,
                         name: terminalStructure.Name,
@@ -160,7 +160,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             }
 
             return (
-                new TerminalEquipmentConnectivityViewEquipmentInfo(
+                new TerminalEquipmentAZConnectivityViewEquipmentInfo(
                        id: terminalEquipment.Id,
                        category: terminalEquipmentSpecification.Category,
                        name: terminalEquipment.Name == null ? "NO NAME" : terminalEquipment.Name,
@@ -173,29 +173,29 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             );
         }
 
-        private TerminalEquipmentConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        private TerminalEquipmentAZConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
         {
-            var terminalInfo = new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
+            var terminalInfo = new TerminalEquipmentAZConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
 
             var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].A;
 
             var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
 
-            return new TerminalEquipmentConnectivityViewEndInfo(terminalInfo)
+            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo)
             {
                 ConnectedTo = connectedToText
             };
         }
 
-        private TerminalEquipmentConnectivityViewEndInfo GetZEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        private TerminalEquipmentAZConnectivityViewEndInfo GetZEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
         {
-            var terminalInfo = new TerminalEquipmentConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
+            var terminalInfo = new TerminalEquipmentAZConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
 
             var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
 
             var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
 
-            return new TerminalEquipmentConnectivityViewEndInfo(terminalInfo)
+            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo)
             {
                 ConnectedTo = connectedToText
             };

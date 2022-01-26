@@ -8,14 +8,14 @@
         /// <summary>
         /// Optionally array of node structures - i.e. racks - that the terminal equipment are placed within
         /// </summary>
-        public TerminalEquipmentConnectivityViewNodeStructureInfo[]? ParentNodeStructures {get; init;}
+        public TerminalEquipmentAZConnectivityViewNodeStructureInfo[]? ParentNodeStructures {get; init;}
 
         /// <summary>
         /// All terminal equipments to be displayed
         /// </summary>
-        public TerminalEquipmentConnectivityViewEquipmentInfo[] TerminalEquipments { get; init; }
+        public TerminalEquipmentAZConnectivityViewEquipmentInfo[] TerminalEquipments { get; init; }
 
-        public TerminalEquipmentAZConnectivityViewModel(TerminalEquipmentConnectivityViewEquipmentInfo[] terminalEquipments)
+        public TerminalEquipmentAZConnectivityViewModel(TerminalEquipmentAZConnectivityViewEquipmentInfo[] terminalEquipments)
         {
             TerminalEquipments = terminalEquipments;
         }

@@ -5,7 +5,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
     /// <summary>
     /// Terminal equipment - i.e. a some splice closure,  subrack etc.
     /// </summary>
-    public record TerminalEquipmentConnectivityViewEquipmentInfo
+    public record TerminalEquipmentAZConnectivityViewEquipmentInfo
     {
         public Guid Id { get; init; }
         public Guid? ParentNodeStructureId { get; init; }
@@ -14,9 +14,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public string SpecName { get; init; }
         public string? Info { get; init; }
 
-        public TerminalEquipmentConnectivityViewTerminalStructureInfo[] TerminalStructures { get; init; }
+        public TerminalEquipmentAZConnectivityViewTerminalStructureInfo[] TerminalStructures { get; init; }
 
-        public TerminalEquipmentConnectivityViewEquipmentInfo(Guid id, string category, string name, string specName, TerminalEquipmentConnectivityViewTerminalStructureInfo[] terminalStructures)
+        public TerminalEquipmentAZConnectivityViewEquipmentInfo(Guid id, string category, string name, string specName, TerminalEquipmentAZConnectivityViewTerminalStructureInfo[] terminalStructures)
         {
             Id = id;
             Category = category;

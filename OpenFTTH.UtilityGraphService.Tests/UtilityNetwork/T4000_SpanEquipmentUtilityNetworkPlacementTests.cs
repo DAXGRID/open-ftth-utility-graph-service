@@ -159,9 +159,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 new RoutingHop(TestRouteNetwork.HH_10, routeThroughSpanSegment3Id)
             };
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, routingHops)
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_216Fiber, routingHops)
             {
-                NamingInfo = new NamingInfo("Hans", "Grethe"),
+                NamingInfo = new NamingInfo("K666", null),
                 MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
                 ManufacturerId = Guid.NewGuid()
             };
