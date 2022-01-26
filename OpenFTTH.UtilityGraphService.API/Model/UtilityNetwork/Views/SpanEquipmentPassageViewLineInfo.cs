@@ -13,10 +13,16 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public string? ConduitId { get; init; }
         public string? OuterConduitInfo { get; init; }
         public string? InnerConduitInfo { get; init; }
+        public Guid[] RouteSegmentIds { get; }
+        public string[] RouteSegmentGeometries { get; }
 
         public SpanEquipmentPassageViewLineInfo(Guid spanSegmentId)
         {
             SpanSegmentId = spanSegmentId;
+
+            // TODO: Implementation missing
+            RouteSegmentIds = new Guid[0];
+            RouteSegmentGeometries = new string[0];
         }
     }
 }
