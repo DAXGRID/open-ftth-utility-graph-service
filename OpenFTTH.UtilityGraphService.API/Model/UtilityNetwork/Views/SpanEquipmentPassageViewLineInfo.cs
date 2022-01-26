@@ -16,6 +16,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public Guid[] RouteSegmentIds { get; }
         public string[] RouteSegmentGeometries { get; }
 
+        public double SegmentLength { get; init; }
+        public double CumulativeDistance { get; init; }
+
         public SpanEquipmentPassageViewLineInfo(Guid spanSegmentId)
         {
             SpanSegmentId = spanSegmentId;
