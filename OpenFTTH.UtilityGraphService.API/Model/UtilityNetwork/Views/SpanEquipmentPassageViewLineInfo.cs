@@ -8,16 +8,18 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
     public record SpanEquipmentPassageViewLineInfo
     {
         public Guid SpanSegmentId { get; }
-        public string? From { get; init; }
-        public string? To { get; init; }
+        public Guid FromNodeId { get; set; }
+        public Guid ToNodeId { get; set;  }
+        public string? From { get; set; }
+        public string? To { get; set; }
         public string? ConduitId { get; init; }
         public string? OuterConduitInfo { get; init; }
         public string? InnerConduitInfo { get; init; }
-        public Guid[] RouteSegmentIds { get; }
-        public string[] RouteSegmentGeometries { get; }
+        public Guid[] RouteSegmentIds { get; init; }
+        public string[] RouteSegmentGeometries { get; init; }
 
         public double SegmentLength { get; init; }
-        public double CumulativeDistance { get; init; }
+        public double CumulativeDistance { get; set; }
 
         public SpanEquipmentPassageViewLineInfo(Guid spanSegmentId)
         {
@@ -26,6 +28,19 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
             // TODO: Implementation missing
             RouteSegmentIds = new Guid[0];
             RouteSegmentGeometries = new string[0];
+        }
+
+        public void Reverse(double newTotalLength)
+        {
+            CumulativeDistance = newTotalLength;
+
+            var oldFromNode = FromNodeId;
+            FromNodeId = ToNodeId;
+            ToNodeId = oldFromNode;
+
+            var oldFrom = From;
+            From = To;
+            To = oldFrom;
         }
     }
 }

@@ -19,6 +19,8 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.Tests.Util;
+using OpenFTTH.Schematic.Business.IO;
+using OpenFTTH.Schematic.API.Queries;
 
 #nullable disable
 
@@ -130,10 +132,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Check that trace only include outer jacket of cable
             traceQueryResult.Value.RouteNetworkTraces.Count().Should().Be(1);
+
+    
         }
 
 
-        [Fact, Order(2)]
+        [Fact, Order(3)]
         public async void TestPlaceSpanEquipmentUsingThreeHopFromCO1ToHH1ToHH10ToCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -211,31 +215,32 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placedSpanEquipment.UtilityNetworkHops[2].ToNodeId.Should().Be(TestRouteNetwork.CC_1);
         }
 
-        [Fact, Order(3)]
+        [Fact, Order(4)]
         public async void TestPlaceSpanEquipmentUsingOneParentHopAndOneRouteHop_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             var routeThroughSpanEquipment1Id = TestUtilityNetwork.MultiConduit_Ø110_CO_1_to_HH_1;
+            var routeThroughSpanEquipment2Id = TestUtilityNetwork.FlexConduit_40_Red_HH_2_to_FP_2;
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipment1Id, out var routeThoughSpanEquipment1);
 
             // Setup
             var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
-            // First we go from CO_1 to HH_1 through the Ø110 to HH_1, then in the route network to HH_2
+            // First we go from CO_1 to HH_1 through the Ø110 to HH_1, then in the route network to HH_2, then in conduit to FP_2, then in route network back to HH_2
             var routingHops = new RoutingHop[]
             {
                 new RoutingHop(TestRouteNetwork.CO_1, routeThroughSpanEquipment1Id, 0),
-                new RoutingHop(
-                    new Guid[] { TestRouteNetwork.HH_1, TestRouteNetwork.S2, TestRouteNetwork.HH_2 }
-                ),
+                new RoutingHop(new Guid[] { TestRouteNetwork.HH_1, TestRouteNetwork.S2, TestRouteNetwork.HH_2 }),
+                new RoutingHop(TestRouteNetwork.HH_2, routeThroughSpanEquipment2Id, 0),
+                new RoutingHop(new Guid[] { TestRouteNetwork.FP_2, TestRouteNetwork.S3, TestRouteNetwork.HH_2 }),
             };
 
-            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Multi_Ø32_3x10, routingHops)
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_96Fiber, routingHops)
             {
-                NamingInfo = new NamingInfo("Hans", "Grethe"),
-                MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
+                NamingInfo = new NamingInfo("1u-1r-1u-1r", "Grethe"),
+                MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "Red stripe" },
                 ManufacturerId = Guid.NewGuid()
             };
 
@@ -257,21 +262,83 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var walkOfInterest = routeNetworkQueryResult.Value.Interests[placedSpanEquipment.WalkOfInterestId];
 
-            walkOfInterest.RouteNetworkElementRefs.Count.Should().Be(5);
+            walkOfInterest.RouteNetworkElementRefs.Count.Should().Be(9);
 
             walkOfInterest.RouteNetworkElementRefs.First().Should().Be(TestRouteNetwork.CO_1);
             walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.HH_2);
 
             // Check parent relationship
             placedSpanEquipment.UtilityNetworkHops.Should().NotBeNull();
-            placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(1);
+            placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(2);
             placedSpanEquipment.UtilityNetworkHops[0].ParentAffixes.Single(p => p.SpanSegmentId == routeThoughSpanEquipment1.SpanStructures[0].SpanSegments[0].Id && p.Direction == SpanEquipmentAffixDirectionEnum.Forward).Should().NotBeNull();
+        }
+
+        [Fact, Order(5)]
+        public async void TestPlaceSpanEquipmentUsingOneHopFromCO1ToSP1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            // The span equipment/segment where to route the child span equipment
+            var routeThroughSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_CO_1_to_HH_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipmentId, out var routeThoughSpanEquipment);
+
+            var routeThroughSpanSegmentId = routeThoughSpanEquipment.SpanStructures[3].SpanSegments[0].Id;
+
+
+            // Setup command
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+
+            var routingHops = new RoutingHop[]
+            {
+                new RoutingHop(TestRouteNetwork.CO_1, routeThroughSpanSegmentId)
+            };
+
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_12Fiber, routingHops)
+            {
+                NamingInfo = new NamingInfo("K667", null),
+                MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
+                ManufacturerId = Guid.NewGuid()
+            };
+
+            // Act
+            var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInUtilityNetwork, Result>(placeSpanEquipmentCommand);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(placeSpanEquipmentCommand.SpanEquipmentId, out var placedSpanEquipment);
+
+            var routeNetworkQueryResult = await _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+              new GetRouteNetworkDetails(new InterestIdList() { placedSpanEquipment.WalkOfInterestId })
+              {
+                  RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementAndInterestObjects
+              }
+            );
+
+            var traceQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { placeSpanEquipmentCommand.SpanEquipmentId })
+               {
+                   EquipmentDetailsFilter = new EquipmentDetailsFilterOptions()
+                   {
+                       IncludeRouteNetworkTrace = true
+                   }
+               }
+            );
+
+            // Assert
+            placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
+            routeNetworkQueryResult.IsSuccess.Should().BeTrue();
+            traceQueryResult.IsSuccess.Should().BeTrue();
+
+            // Check walk of interest
+            var walkOfInterest = routeNetworkQueryResult.Value.Interests[placedSpanEquipment.WalkOfInterestId];
+
+            walkOfInterest.RouteNetworkElementRefs.First().Should().Be(TestRouteNetwork.CO_1);
+            walkOfInterest.RouteNetworkElementRefs.Last().Should().Be(TestRouteNetwork.SP_1);
         }
 
 
 
-        [Fact, Order(4)]
-        public async void TestAffixExistingSpanEquipmentToConduit_ShouldSucceed()
+        [Fact, Order(10)]
+        public async void TestMovingCableFromRouteNetworkInto_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -330,7 +397,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             movedSpanEquipment.UtilityNetworkHops.Count().Should().Be(1);
         }
 
-        [Fact, Order(10)]
+
+        [Fact, Order(100)]
         public async void TestPlaceSpanEquipmentRouteByIndexFromNodeWithNoConduitEnds_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -363,7 +431,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             ((PlaceSpanEquipmentInUtilityNetworkError)placeSpanEquipmentResult.Errors.First()).Code.Should().Be(PlaceSpanEquipmentInUtilityNetworkErrorCodes.SPAN_SEGMENT_NOT_RELATED_TO_ROUTE_NODE);
         }
 
-        [Fact, Order(11)]
+        [Fact, Order(101)]
         public async void TestPlaceSpanEquipmentWithInvalidRouteNetworkWalk_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -400,7 +468,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placeSpanEquipmentResult.IsFailed.Should().BeTrue();
         }
 
-        [Fact, Order(12)]
+        [Fact, Order(102)]
         public async void TestPlaceSpanEquipmenWithHoleBetweenHops_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -440,7 +508,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
 
-        [Fact, Order(13)]
+        [Fact, Order(102)]
         public async void TestPlaceSpanEquipmentRouteBySpanEquipmentFromNodeWithNoConduitEnds_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -477,7 +545,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
-        [Fact, Order(14)]
+        [Fact, Order(104)]
         public async void TestPlaceSpanEquipmenInHopThatRunsForthAndBackInTheSameRouteSegment_ShouldSucceed()
         {
             // Connect sub conduit 1 and 2 of the same multi conduit in CC_1

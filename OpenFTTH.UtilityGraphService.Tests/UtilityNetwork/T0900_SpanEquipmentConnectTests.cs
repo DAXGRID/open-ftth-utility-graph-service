@@ -3,6 +3,8 @@ using FluentAssertions;
 using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.Schematic.API.Queries;
+using OpenFTTH.Schematic.Business.IO;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -36,20 +38,20 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
-        [Fact, Order(10)]
-        public async void TestConnect5x10To3x10ConduitAtCC_1_ShouldSucceed()
+        [Fact, Order(1)]
+        public async void TestConnect6x10InnerConduit4To3x10AtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
-            var sutConnectToSpanEquipment = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
+            var sutConnectFromSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
+            var sutConnectToSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 
-            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
-            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipmentId, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipmentId, out var sutToSpanEquipment);
 
-            // Connect inner conduit 2 in 5x10 with inner conduit 3 in 3x10
+            // Connect inner conduit 4 in 6x10 with inner conduit 3 in 3x10
             var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToConnect: new Guid[] {
@@ -61,11 +63,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
 
             var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
-               new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipment })
+               new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipmentId })
             );
 
             var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
-              new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipment })
+              new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipmentId })
             );
 
             // Assert
@@ -73,13 +75,49 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             fromEquipmentQueryResult.IsSuccess.Should().BeTrue();
             toEquipmentQueryResult.IsSuccess.Should().BeTrue();
 
-            var fromEquipmentAfterConnect = fromEquipmentQueryResult.Value.SpanEquipment[sutConnectFromSpanEquipment];
+            var fromEquipmentAfterConnect = fromEquipmentQueryResult.Value.SpanEquipment[sutConnectFromSpanEquipmentId];
             fromEquipmentAfterConnect.SpanStructures[4].SpanSegments[0].ToTerminalId.Should().NotBeEmpty();
             
             var terminalId = fromEquipmentAfterConnect.SpanStructures[4].SpanSegments[0].ToTerminalId;
 
-            var toEquipmentAfterConnect = toEquipmentQueryResult.Value.SpanEquipment[sutConnectToSpanEquipment];
+            var toEquipmentAfterConnect = toEquipmentQueryResult.Value.SpanEquipment[sutConnectToSpanEquipmentId];
             toEquipmentAfterConnect.SpanStructures[3].SpanSegments[0].FromTerminalId.Should().Be(terminalId);
+        }
+
+        [Fact, Order(2)]
+        public async void TestConnect6x10InnerConduit3To5x10AtCC_1_ShouldSucceed()
+        {
+            MakeSureTestConduitIsCutAtCC_1();
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutConnectFromSpanEquipmentId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
+            var sutConnectToSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_CC_1_to_SP_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipmentId, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipmentId, out var sutToSpanEquipment);
+
+            // Connect inner conduit 3 in 6x10 with inner conduit 4 in 5x10
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CC_1,
+                spanSegmentsToConnect: new Guid[] {
+                    sutFromSpanEquipment.SpanStructures[3].SpanSegments[0].Id,
+                    sutToSpanEquipment.SpanStructures[4].SpanSegments[0].Id,
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipmentId })
+            );
+
+            var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+              new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipmentId })
+            );
+
+            // Assert
+            connectResult.IsSuccess.Should().BeTrue();
         }
 
         [Fact, Order(11)]

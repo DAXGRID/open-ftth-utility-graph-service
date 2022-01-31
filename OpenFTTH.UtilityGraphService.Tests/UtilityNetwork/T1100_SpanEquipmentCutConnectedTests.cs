@@ -4,6 +4,8 @@ using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.Schematic.API.Queries;
+using OpenFTTH.Schematic.Business.IO;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -68,7 +70,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Assert
             connectResult.IsSuccess.Should().BeTrue();
-        }
+          }
 
         [Fact, Order(2)]
         public async void CutConduitInCC1_ShouldSucceed()
@@ -179,7 +181,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
             ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.HH_2);
-
         }
 
 
@@ -231,7 +232,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipment, out var spanEquipmentBeforeCut);
 
-            // Connect inner conduit 1
+            // Disconnect inner conduit 1
             var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.HH_2,
                 spanSegmentsToDisconnect: new Guid[] {
@@ -258,7 +259,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
             ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.HH_2);
-
         }
 
         [Fact, Order(6)]
@@ -297,7 +297,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             ((UtilityGraphConnectedTerminal)traceResult.Downstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.CO_1);
             ((UtilityGraphConnectedTerminal)traceResult.Upstream.Last()).RouteNodeId.Should().Be(TestRouteNetwork.SP_1);
-
         }
     }
 }

@@ -16,8 +16,4 @@
     <PackageReference Include="OpenFTTH.RouteNetwork.API" Version="1.6.7" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Model\UtilityNetwork\Tracing\" />
-  </ItemGroup>
-
 </Project>

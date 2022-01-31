@@ -88,10 +88,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var firstNodeContainerResult = await _commandDispatcher.HandleAsync<PlaceNodeContainerInRouteNetwork, Result>(placeNodeContainerCommand1);
 
             // Second node container om same node
-            var registerNodeOfInterestCommand2 = new RegisterNodeOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestRouteNetwork.FP_2);
-            var registerNodeOfInterestCommandResult2 = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand2).Result;
+            //var registerNodeOfInterestCommand2 = new RegisterNodeOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestRouteNetwork.FP_2);
+            //var registerNodeOfInterestCommandResult2 = _commandDispatcher.HandleAsync<RegisterNodeOfInterest, Result<RouteNetworkInterest>>(registerNodeOfInterestCommand2).Result;
 
-            var placeNodeContainerCommand2 = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult2.Value)
+            var placeNodeContainerCommand2 = new PlaceNodeContainerInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.Conduit_Closure_Emtelle_Branch_Box, registerNodeOfInterestCommandResult1.Value)
             {
                 ManufacturerId = TestSpecifications.Manu_Emtelle
             };

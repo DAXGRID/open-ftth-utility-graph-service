@@ -4,6 +4,8 @@ using FluentResults;
 using OpenFTTH.CQRS;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
+using OpenFTTH.Schematic.API.Queries;
+using OpenFTTH.Schematic.Business.IO;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -40,7 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact, Order(1)]
         public async void TestDisconnect5x10From3x10ConduitAtCC_1_ShouldSucceed()
         {
-            MakeSureTestConduitIsCutAndConnectedAtCC_1();
+           MakeSureTestConduitIsCutAndConnectedAtCC_1();
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -50,7 +52,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
 
-            // Disconnect inner conduit 4 in 5x10 from inner conduit 3 in 3x10
+            // Disconnect inner conduit 4 in 6x10 from inner conduit 3 in 3x10
             var disconnectCmd = new DisconnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.CC_1,
                 spanSegmentsToDisconnect: new Guid[] {

@@ -38,12 +38,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
-        [Fact, Order(1)]
-        public async void GetSpanEquipmentPassageViewOnCable_ShouldSucceed()
+        [Fact, Order(2)]
+        public async void GetSpanEquipmentPassageViewOnComplexCableWithManyHops_ShouldSucceed()
         {
-            var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
+            var sutRouteNetworkElementId = TestRouteNetwork.FP_2;
 
-            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNetworkElementId, "K666");
+            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNetworkElementId, "1u-1r-1u-1r");
 
             var connectivityTrace = new GetSpanEquipmentPassageView(sutRouteNetworkElementId, new Guid[] { cable.Id });
 
@@ -56,16 +56,64 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityQueryResult.IsSuccess.Should().BeTrue();
 
             var viewModel = connectivityQueryResult.Value;
+
+            // Check from and to node names
+            viewModel.SpanEquipments[0].Lines.Count().Should().Be(4);
+            viewModel.SpanEquipments[0].Lines[0].From.Should().Be("CO-1");
+            viewModel.SpanEquipments[0].Lines[0].To.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[1].From.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[1].To.Should().Be("HH-2");
+            viewModel.SpanEquipments[0].Lines[2].From.Should().Be("HH-2");
+            viewModel.SpanEquipments[0].Lines[2].To.Should().Be("FP-2");
+            viewModel.SpanEquipments[0].Lines[3].From.Should().Be("FP-2");
+            viewModel.SpanEquipments[0].Lines[3].To.Should().Be("HH-2");
+
+            // Check segment ids and that segment geometry exists for each hop
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S1);
+
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S2);
+
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S3);
+
+            viewModel.SpanEquipments[0].Lines[3].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[3].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[3].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S3);
+
+            // Check length
+            double totalLength = 0;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[0].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().Be(totalLength);
+            
+            viewModel.SpanEquipments[0].Lines[1].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[1].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[1].CumulativeDistance.Should().Be(totalLength);
+
+            viewModel.SpanEquipments[0].Lines[2].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[2].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[2].CumulativeDistance.Should().Be(totalLength);
+
+            viewModel.SpanEquipments[0].Lines[3].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[3].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[3].CumulativeDistance.Should().Be(totalLength);
         }
 
+
         [Fact, Order(2)]
-        public async void GetSpanEquipmentPassageViewOnConduit_ShouldSucceed()
+        public async void GetSpanEquipmentPassageViewOnCableK667_ShouldSucceed()
         {
+            // NB: cable K667 goes through connected conduits
             var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
 
-            var conduit = FindSpanEquipmentRelatedToRouteNetworkElementById(sutRouteNetworkElementId, TestUtilityNetwork.MultiConduit_10x10_HH_1_to_HH_10);
+            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNetworkElementId, "K667");
 
-            var connectivityTrace = new GetSpanEquipmentPassageView(sutRouteNetworkElementId, new Guid[] { conduit.Id });
+            var connectivityTrace = new GetSpanEquipmentPassageView(sutRouteNetworkElementId, new Guid[] { cable.Id });
 
             // Act
             var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentPassageView, Result<SpanEquipmentPassageViewModel>>(
@@ -76,6 +124,110 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityQueryResult.IsSuccess.Should().BeTrue();
 
             var viewModel = connectivityQueryResult.Value;
+
+            // Check from and to node names
+            viewModel.SpanEquipments[0].Lines.Count().Should().Be(3);
+            viewModel.SpanEquipments[0].Lines[0].From.Should().Be("CO-1");
+            viewModel.SpanEquipments[0].Lines[0].To.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[1].From.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[1].To.Should().Be("CC-1");
+            viewModel.SpanEquipments[0].Lines[2].From.Should().Be("CC-1");
+            viewModel.SpanEquipments[0].Lines[2].To.Should().Be("SP-1");
+
+            // Check segment ids and that segment geometry exists for each hop
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S1);
+
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds.Count().Should().Be(2);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentGeometries.Count().Should().Be(2);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S2);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds[1].Should().Be(TestRouteNetwork.S4);
+
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S5);
+
+
+            // Check length
+            double totalLength = 0;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[0].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().Be(totalLength);
+
+            viewModel.SpanEquipments[0].Lines[1].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[1].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[1].CumulativeDistance.Should().Be(totalLength);
+
+            viewModel.SpanEquipments[0].Lines[2].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[2].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[2].CumulativeDistance.Should().Be(totalLength);
+        }
+
+
+        [Fact, Order(1)]
+        public async void GetSpanEquipmentPassageViewOnConduit_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var routeThroughSpanEquipmentId = TestUtilityNetwork.MultiConduit_5x10_CO_1_to_HH_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipmentId, out var routeThoughSpanEquipment);
+
+            var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
+
+            // Sub conduit 3
+            var sutSpanSegmentId = routeThoughSpanEquipment.SpanStructures[3].SpanSegments[0].Id;
+
+            var connectivityTrace = new GetSpanEquipmentPassageView(sutRouteNetworkElementId, new Guid[] { sutSpanSegmentId });
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentPassageView, Result<SpanEquipmentPassageViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            // Check from and to node names
+            viewModel.SpanEquipments[0].Lines.Count().Should().Be(3);
+            viewModel.SpanEquipments[0].Lines[0].From.Should().Be("CO-1");
+            viewModel.SpanEquipments[0].Lines[0].To.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[1].From.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[1].To.Should().Be("CC-1");
+            viewModel.SpanEquipments[0].Lines[2].From.Should().Be("CC-1");
+            viewModel.SpanEquipments[0].Lines[2].To.Should().Be("SP-1");
+
+            // Check segment ids and that segment geometry exists for each hop
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S1);
+
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds.Count().Should().Be(2);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentGeometries.Count().Should().Be(2);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S2);
+            viewModel.SpanEquipments[0].Lines[1].RouteSegmentIds[1].Should().Be(TestRouteNetwork.S4);
+
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentIds.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentGeometries.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[2].RouteSegmentIds[0].Should().Be(TestRouteNetwork.S5);
+
+
+            // Check length
+            double totalLength = 0;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[0].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().Be(totalLength);
+
+            viewModel.SpanEquipments[0].Lines[1].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[1].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[1].CumulativeDistance.Should().Be(totalLength);
+
+            viewModel.SpanEquipments[0].Lines[2].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[2].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[2].CumulativeDistance.Should().Be(totalLength);
         }
 
 

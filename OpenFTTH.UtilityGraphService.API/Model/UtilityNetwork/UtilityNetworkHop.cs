@@ -13,6 +13,9 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             FromNodeId = fromNodeId;
             ToNodeId = toNodeId;
             ParentAffixes = parentAffixes;
+
+            if (parentAffixes.Length == 0)
+                throw new ApplicationException("A utility hop must always have at least one parent affix");
         }
     }
 }

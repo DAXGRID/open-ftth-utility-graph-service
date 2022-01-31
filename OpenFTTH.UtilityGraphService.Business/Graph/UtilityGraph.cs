@@ -44,13 +44,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public UtilityGraphTraceResult Trace(Guid id)
         {
-            var result = new UtilityGraphTraceResult() { TerminalOrSpanSegmentId = id };
 
             if (_graphElementsById.TryGetValue(id, out var utilityGraphElement))
             {
                 if (utilityGraphElement is UtilityGraphDisconnectedSegment)
                 {
-                    var disconnectedSegment = utilityGraphElement as UtilityGraphDisconnectedSegment;
+                    return new UtilityGraphTraceResult(id, null, Array.Empty<IGraphObject>(), Array.Empty<IGraphObject>());
                 }
                 else if (utilityGraphElement is UtilityGraphConnectedSegment)
                 {
@@ -58,9 +57,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     var version = _objectManager.GetLatestCommitedVersion();
 
-                    result.Upstream = UpstreamSegmentTrace(connectedSegment, version).ToArray();
+                    var upstream = UpstreamSegmentTrace(connectedSegment, version).ToArray();
+                    var downstream = DownstreamSegmentTrace(connectedSegment, version).ToArray();
 
-                    result.Downstream = DownstreamSegmentTrace(connectedSegment, version).ToArray();
+                    return new UtilityGraphTraceResult(id, connectedSegment, downstream, upstream);
                 }
                 else if (utilityGraphElement is IUtilityGraphTerminalRef)
                 {
@@ -76,13 +76,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                         if (nTerminalNeigbours == 1)
                         {
-                            result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                            var upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                            return new UtilityGraphTraceResult(id, terminal, Array.Empty<IGraphObject>(), upstream);
                         }
                         else if (nTerminalNeigbours == 2)
                         {
-                            result.Upstream = UpstreamTerminalTrace(terminal, version).ToArray();
-                            result.Downstream = DownstreamTerminalTrace(terminal, version).ToArray();
+                            var upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                            var downstream = DownstreamTerminalTrace(terminal, version).ToArray();
 
+                            return new UtilityGraphTraceResult(id, terminal, downstream, upstream);
                         }
                         else
                         {
@@ -92,9 +94,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            return result;
+            return new UtilityGraphTraceResult(id, null, Array.Empty<IGraphObject>(), Array.Empty<IGraphObject>());
         }
-
        
 
         private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
