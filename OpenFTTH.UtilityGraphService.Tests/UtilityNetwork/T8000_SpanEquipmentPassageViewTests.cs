@@ -38,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
-        [Fact, Order(2)]
+        [Fact, Order(1)]
         public async void GetSpanEquipmentPassageViewOnComplexCableWithManyHops_ShouldSucceed()
         {
             var sutRouteNetworkElementId = TestRouteNetwork.FP_2;
@@ -164,9 +164,47 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             viewModel.SpanEquipments[0].Lines[2].CumulativeDistance.Should().Be(totalLength);
         }
 
+        [Fact, Order(0)]
+        public async void GetSpanEquipmentPassageViewNonConnectedConduit_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-        [Fact, Order(1)]
-        public async void GetSpanEquipmentPassageViewOnConduit_ShouldSucceed()
+            var routeThroughSpanEquipmentId = TestUtilityNetwork.MultiConduit_10x10_HH_1_to_HH_10;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(routeThroughSpanEquipmentId, out var routeThoughSpanEquipment);
+
+            var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
+
+            // Sub conduit 1
+            var sutSpanSegmentId = routeThoughSpanEquipment.SpanStructures[1].SpanSegments[0].Id;
+
+            var connectivityTrace = new GetSpanEquipmentPassageView(sutRouteNetworkElementId, new Guid[] { sutSpanSegmentId });
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentPassageView, Result<SpanEquipmentPassageViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            // Check from and to node names
+            viewModel.SpanEquipments[0].Lines.Count().Should().Be(1);
+            viewModel.SpanEquipments[0].Lines[0].From.Should().Be("HH-1");
+            viewModel.SpanEquipments[0].Lines[0].To.Should().Be("HH-10");
+
+            // Check length
+            double totalLength = 0;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().BeGreaterThan(0);
+            totalLength += viewModel.SpanEquipments[0].Lines[0].SegmentLength;
+            viewModel.SpanEquipments[0].Lines[0].SegmentLength.Should().Be(totalLength);
+        }
+
+
+        [Fact, Order(11)]
+        public async void GetSpanEquipmentPassageViewOnConnectedConduit_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

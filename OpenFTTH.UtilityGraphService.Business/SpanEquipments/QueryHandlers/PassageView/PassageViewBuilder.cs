@@ -201,8 +201,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
 
                     tracedHopsToReturn.Add(
                         new SegmentTraceHopInfo(
-                            fromNodeId: fromNodeId,
-                            toNodeId: toNodeId,
+                            fromNodeId: fromNodeId != Guid.Empty ? fromNodeId : spanEquipment.NodesOfInterestIds[spanSegment.FromNodeOfInterestIndex],
+                            toNodeId: toNodeId != Guid.Empty ? toNodeId : spanEquipment.NodesOfInterestIds[spanSegment.ToNodeOfInterestIndex],
                             spanEquipment: spanEquipment,
                             spanStructureIndex: spanSegmentGraphElement.StructureIndex,
                             spanSegment: spanSegment,
