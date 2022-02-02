@@ -48,25 +48,58 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
             _spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
+            var relatedData = FetchRelatedEquipments(_queryDispatcher, query.routeNodeId).Value;
+
             if (_utilityNetwork.TryGetEquipment<TerminalEquipment>(query.spanOrTerminalEquipmentId, out var terminalEquipment))
             {
-                return Task.FromResult(Result.Ok(BuildConnectivityFaceConnectionsForTerminalEquipment(terminalEquipment, query)));
+                return Task.FromResult(Result.Ok(BuildConnectivityFaceConnectionsForTerminalEquipment(terminalEquipment, query, relatedData)));
             }
             else if (_utilityNetwork.TryGetEquipment<SpanEquipment>(query.spanOrTerminalEquipmentId, out var spanEquipment))
             {
-
+                return Task.FromResult(Result.Ok(BuildConnectivityFaceConnectionsForSpanEquipment(spanEquipment, query, relatedData)));
             }
             else
                 return Task.FromResult(Result.Fail<List<ConnectivityFaceConnection>>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Cannot find any span or terminal equipment with id: {query.spanOrTerminalEquipmentId}")));
-
-
-            return null;
         }
 
-        private List<ConnectivityFaceConnection> BuildConnectivityFaceConnectionsForTerminalEquipment(TerminalEquipment terminalEquipment, GetConnectivityFaceConnections query)
+        private List<ConnectivityFaceConnection> BuildConnectivityFaceConnectionsForSpanEquipment(SpanEquipment spanEquipment, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
         {
-            var relatedData = FetchRelatedEquipments(_queryDispatcher, query.routeNodeId).Value;
+            List<ConnectivityFaceConnection> connectivityFacesResult = new();
 
+            for (int structureIndex = 1; structureIndex < spanEquipment.SpanStructures.Count(); structureIndex++)
+            {
+                connectivityFacesResult.Add(BuildConnectivityInfoForSpanSegment(spanEquipment, structureIndex, query, relatedData));
+            }
+
+            return connectivityFacesResult;
+        }
+
+        private ConnectivityFaceConnection BuildConnectivityInfoForSpanSegment(SpanEquipment spanEquipment, int structureIndex, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
+        {
+            var spanEquipmentSpecification = _spanEquipmentSpecifications[spanEquipment.SpecificationId];
+
+            // TODO: Support making breakout on cable
+            var spanSegmentId = spanEquipment.SpanStructures[structureIndex].SpanSegments[0].Id;
+
+            var spanSegmentTraceResult = _utilityNetwork.Graph.Trace(spanSegmentId);
+
+            bool isConnected = CheckIfConnected(spanSegmentTraceResult, query);
+
+            var numberOfFibers = spanEquipment.SpanStructures.Count() - 1;
+
+            var equipmentName = spanEquipment.Name + " (" + numberOfFibers + ") - Fiber " + structureIndex;
+
+            return new ConnectivityFaceConnection()
+            {
+                TerminalOrSegmentId = spanSegmentId,
+                Name = equipmentName,
+                EndInfo = null,
+                IsConnected = isConnected
+            };
+        }
+
+        private List<ConnectivityFaceConnection> BuildConnectivityFaceConnectionsForTerminalEquipment(TerminalEquipment terminalEquipment, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
+        {
             List<ConnectivityFaceConnection> connectivityFacesResult = new();
 
             foreach(var terminalStructure in terminalEquipment.TerminalStructures)
@@ -86,7 +119,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
 
-            bool isConnected = CheckIfTerminalIsConnected(terminalTraceResult, query);
+            bool isConnected = CheckIfConnected(terminalTraceResult, query);
 
             var rackName = GetRackName(relatedData, terminalEquipment.Id);
 
@@ -108,12 +141,12 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             };
         }
 
-        private bool CheckIfTerminalIsConnected(UtilityGraphTraceResult terminalTraceResult, GetConnectivityFaceConnections query)
+        private bool CheckIfConnected(UtilityGraphTraceResult traceResult, GetConnectivityFaceConnections query)
         {
-            if (query.DirectionType == ConnectivityDirectionEnum.Ingoing && terminalTraceResult.Upstream.Count() > 1)
+            if (query.DirectionType == ConnectivityDirectionEnum.Ingoing && traceResult.Upstream.Count() > 1)
                 return true;
 
-            if (query.DirectionType == ConnectivityDirectionEnum.Outgoing && terminalTraceResult.Downstream.Count() > 1)
+            if (query.DirectionType == ConnectivityDirectionEnum.Outgoing && traceResult.Downstream.Count() > 1)
                 return true;
 
             return false;

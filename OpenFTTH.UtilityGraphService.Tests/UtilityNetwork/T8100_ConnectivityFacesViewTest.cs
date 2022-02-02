@@ -41,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         public async void QueryConnectivityFacesInJ1_ShouldSucceed()
         {
             // Setup
-            var sutRouteNodeId = TestRouteNetwork.J_1;
+            var sutRouteNodeId = TestRouteNetwork.CC_1;
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -56,47 +56,42 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var connectivityFaces = connectivityQueryResult.Value;
 
-            connectivityFaces.Count.Should().BeGreaterThan(4);
+            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment).Should().BeGreaterThan(0);
+            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment).Should().BeGreaterThan(0);
 
-            // Get face connections
-            var connectivityFaceConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, connectivityFaces[0].EquipmentId, connectivityFaces[0].DirectionType);
+            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
 
-            var connectivityFaceConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
-                connectivityFaceConnectionsQuery
+            var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
+
+            // Get face connections for terminal equipment
+            var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.DirectionType);
+
+            var terminalEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
+                terminalEquipmentConnectionsQuery
+            );
+            terminalEquipmentConnectionsQueryResult.IsSuccess.Should().BeTrue();
+
+            var terminalEquipmentConnections = terminalEquipmentConnectionsQueryResult.Value;
+
+            terminalEquipmentConnections.Count.Should().BeGreaterThan(4);
+
+
+            // Get face connections for span equipment
+            var spanEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.DirectionType);
+
+            var spanEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
+                spanEquipmentConnectionsQuery
             );
 
-            connectivityFaceConnectionsQueryResult.IsSuccess.Should().BeTrue();
+            spanEquipmentConnectionsQueryResult.IsSuccess.Should().BeTrue();
 
-            var faceConnections = connectivityFaceConnectionsQueryResult.Value;
+            var spanEquipmentConnections = spanEquipmentConnectionsQueryResult.Value;
 
-            faceConnections.Count.Should().BeGreaterThan(4);
-
+            spanEquipmentConnections.Count.Should().BeGreaterThan(4);
         }
 
 
 
-        [Fact, Order(2)]
-        public async void QueryConnectivityFacesInCC1_ShouldSucceed()
-        {
-            // Setup
-            var sutRouteNodeId = TestRouteNetwork.CC_1;
 
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-
-            var connectivityQuery = new GetConnectivityFaces(sutRouteNodeId);
-
-
-            // Act
-            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
-                connectivityQuery
-            );
-
-            // Assert
-            connectivityQueryResult.IsSuccess.Should().BeTrue();
-
-            var viewModel = connectivityQueryResult.Value;
-
-        }
     }
 }
