@@ -54,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Get cable
             var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
 
-            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<EquipmentConnectivityFace>>>(
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
                 connectivityQuery
             );
 

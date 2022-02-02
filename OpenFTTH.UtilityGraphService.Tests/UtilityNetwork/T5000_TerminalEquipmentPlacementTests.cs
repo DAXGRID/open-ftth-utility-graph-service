@@ -19,13 +19,13 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(5000)]
-    public class T5000_TerminalEquipmentTests
+    public class T5000_TerminalEquipmentPlacementTests
     {
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
 
-        public T5000_TerminalEquipmentTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public T5000_TerminalEquipmentPlacementTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
@@ -370,59 +370,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A != null && l.Z != null).Should().Be(24);
             viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal != null && l.Z.Terminal != null).Should().Be(24);
             viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal.Id != Guid.Empty && l.Z.Terminal.Id != Guid.Empty).Should().Be(24);
-        }
-
-
-        [Fact, Order(1000)]
-        public async void QueryConnectivityFacesInJ1_ShouldSucceed()
-        {
-            // Setup
-            var sutRouteNodeId = TestRouteNetwork.J_1;
-
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-
-            var connectivityQuery = new GetConnectivityFaces(sutRouteNodeId);
-
-
-            // Act
-            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<EquipmentConnectivityFace>>>(
-                connectivityQuery
-            );
-
-            // Assert
-            connectivityQueryResult.IsSuccess.Should().BeTrue();
-
-            var viewModel = connectivityQueryResult.Value;
-
-            viewModel.Count.Should().BeGreaterThan(4);
-
-        }
-
-
-
-        [Fact, Order(1001)]
-        public async void QueryConnectivityFacesInCC1_ShouldSucceed()
-        {
-            // Setup
-            var sutRouteNodeId = TestRouteNetwork.CC_1;
-
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-
-            var connectivityQuery = new GetConnectivityFaces(sutRouteNodeId);
-
-
-            // Act
-            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<EquipmentConnectivityFace>>>(
-                connectivityQuery
-            );
-
-            // Assert
-            connectivityQueryResult.IsSuccess.Should().BeTrue();
-
-            var viewModel = connectivityQueryResult.Value;
-
         }
     }
 }

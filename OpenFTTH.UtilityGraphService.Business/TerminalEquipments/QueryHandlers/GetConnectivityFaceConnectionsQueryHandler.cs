@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
+using OpenFTTH.UtilityGraphService.Business.Graph.Trace;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
@@ -23,7 +24,7 @@ using System.Threading.Tasks;
 namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 {
     public class GetConnectivityFaceConnectionsQueryHandler
-        : IQueryHandler<GetConnectivityFaceConnections, Result<List<EquipmentConnectivityFaceConnectionInfo>>>
+        : IQueryHandler<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>
     {
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
-        public Task<Result<List<EquipmentConnectivityFaceConnectionInfo>>> HandleAsync(GetConnectivityFaceConnections query)
+        public Task<Result<List<ConnectivityFaceConnection>>> HandleAsync(GetConnectivityFaceConnections query)
         {
             _rackSpecifications = _eventStore.Projections.Get<RackSpecificationsProjection>().Specifications;
             _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
@@ -49,59 +50,203 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             if (_utilityNetwork.TryGetEquipment<TerminalEquipment>(query.spanOrTerminalEquipmentId, out var terminalEquipment))
             {
-                // Find all terminal ends
-                FindAllTerminalEnds(terminalEquipment, query.DirectionType);
+                return Task.FromResult(Result.Ok(BuildConnectivityFaceConnectionsForTerminalEquipment(terminalEquipment, query)));
             }
-            else if (_utilityNetwork.TryGetEquipment<TerminalEquipment>(query.spanOrTerminalEquipmentId, out var spanEquipment))
+            else if (_utilityNetwork.TryGetEquipment<SpanEquipment>(query.spanOrTerminalEquipmentId, out var spanEquipment))
             {
 
             }
             else
-                return Task.FromResult(Result.Fail<List<EquipmentConnectivityFaceConnectionInfo>>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Cannot find any span or terminal equipment with id: {query.spanOrTerminalEquipmentId}")));
+                return Task.FromResult(Result.Fail<List<ConnectivityFaceConnection>>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Cannot find any span or terminal equipment with id: {query.spanOrTerminalEquipmentId}")));
 
-        
-            return Task.FromResult(Result.Ok(BuildConnectivityFaceConnections()));
+
+            return null;
         }
 
-        private void FindAllTerminalEnds(TerminalEquipment terminalEquipment, ConnectivityDirectionEnum directionType)
+        private List<ConnectivityFaceConnection> BuildConnectivityFaceConnectionsForTerminalEquipment(TerminalEquipment terminalEquipment, GetConnectivityFaceConnections query)
         {
-            
-        }
+            var relatedData = FetchRelatedEquipments(_queryDispatcher, query.routeNodeId).Value;
 
-        private List<EquipmentConnectivityFaceConnectionInfo> BuildConnectivityFaceConnections()
-        {
-            List<EquipmentConnectivityFaceConnectionInfo> connectivityFacesResult = new();
+            List<ConnectivityFaceConnection> connectivityFacesResult = new();
 
-            /*
-            connectivityFacesResult.Add(new EquipmentConnectivityFaceConnectionInfo()
+            foreach(var terminalStructure in terminalEquipment.TerminalStructures)
             {
-                Id = Guid.NewGuid(),
-                Name = $"Rack 1 - LISA Tray 1 - Splice Pin {i}",
-                EndInfo = $"GALARH OLT 1-1-{i % 2} <- KINA WDM 1-2-{i}",
-                IsConnected = true
-            });
-            */
-
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    connectivityFacesResult.Add(BuildConnectivityInfoForTerminal(terminalEquipment, terminalStructure, terminal, query, relatedData));
+                }
+            }
 
             return connectivityFacesResult;
         }
 
-        private void FetchRelatedData(GetConnectivityFaceConnections query)
+        private ConnectivityFaceConnection BuildConnectivityInfoForTerminal(TerminalEquipment terminalEquipment, TerminalStructure terminalStructure, Terminal terminal, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
         {
-            if (_utilityNetwork.TryGetEquipment<TerminalEquipment>(query.spanOrTerminalEquipmentId, out var terminalEquipment))
-            {
+            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
 
+            var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
+
+            bool isConnected = CheckIfTerminalIsConnected(terminalTraceResult, query);
+
+            var rackName = GetRackName(relatedData, terminalEquipment.Id);
+
+            string? rackInfo = null;
+
+            if (terminalEquipmentSpecification.IsRackEquipment)
+            {
+                rackInfo = GetRackName(relatedData, terminalEquipment.Id) + " - ";
+            }
+
+            var equipmentName = rackInfo + "Tray " + terminalStructure.Name + " - Søm " + terminal.Name + " (" + terminalEquipmentSpecification.ShortName + ")";
+
+            return new ConnectivityFaceConnection()
+            {
+                TerminalOrSegmentId = terminal.Id,
+                Name = equipmentName,
+                EndInfo = null,
+                IsConnected = isConnected
+            };
+        }
+
+        private bool CheckIfTerminalIsConnected(UtilityGraphTraceResult terminalTraceResult, GetConnectivityFaceConnections query)
+        {
+            if (query.DirectionType == ConnectivityDirectionEnum.Ingoing && terminalTraceResult.Upstream.Count() > 1)
+                return true;
+
+            if (query.DirectionType == ConnectivityDirectionEnum.Outgoing && terminalTraceResult.Downstream.Count() > 1)
+                return true;
+
+            return false;
+        }
+
+        private string? GetRackName(RouteNetworkElementRelatedData data, Guid equipmentId)
+        {
+            if (data.NodeContainer != null && data.NodeContainer.Racks != null)
+            {
+                foreach (var rack in data.NodeContainer.Racks)
+                {
+                    foreach (var rackMount in rack.SubrackMounts)
+                    {
+                        if (rackMount.TerminalEquipmentId == equipmentId)
+                            return rack.Name;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static Result<RouteNetworkElementRelatedData> FetchRelatedEquipments(IQueryDispatcher queryDispatcher, Guid routeNetworkElementId)
+        {
+            RouteNetworkElementRelatedData result = new RouteNetworkElementRelatedData();
+
+            result.RouteNetworkElementId = routeNetworkElementId;
+
+            // Query all route node interests
+            var routeNetworkInterestQuery = new GetRouteNetworkDetails(new RouteNetworkElementIdList() { routeNetworkElementId })
+            {
+                RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementAndInterestObjects
+            };
+
+            Result<GetRouteNetworkDetailsResult> interestsQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(routeNetworkInterestQuery).Result;
+
+            if (interestsQueryResult.IsFailed)
+                return Result.Fail(interestsQueryResult.Errors.First());
+
+            result.InterestRelations = interestsQueryResult.Value.RouteNetworkElements.First().InterestRelations.ToDictionary(r => r.RefId);
+
+            result.RouteNetworkInterests = interestsQueryResult.Value.Interests;
+
+            var interestIdList = new InterestIdList();
+            interestIdList.AddRange(result.InterestRelations.Values.Select(r => r.RefId));
+
+            // Only query for equipments if interests are returned from the route network query
+            if (interestIdList.Count > 0)
+            {
+                // Query all the equipments related to the route network element
+                var equipmentQueryResult = queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                    new GetEquipmentDetails(interestIdList)
+                    {
+                        EquipmentDetailsFilter = new EquipmentDetailsFilterOptions() { IncludeRouteNetworkTrace = true }
+                    }
+                ).Result;
+
+                if (equipmentQueryResult.IsFailed)
+                    return Result.Fail(equipmentQueryResult.Errors.First());
+
+                result.SpanEquipments = equipmentQueryResult.Value.SpanEquipment;
+                result.RouteNetworkTraces = equipmentQueryResult.Value.RouteNetworkTraces;
+
+                if (equipmentQueryResult.Value.NodeContainers != null && equipmentQueryResult.Value.NodeContainers.Count > 0)
+                {
+                    result.NodeContainer = equipmentQueryResult.Value.NodeContainers.First();
+                    result.NodeContainerRouteNetworkElementId = interestsQueryResult.Value.Interests[result.NodeContainer.InterestId].RouteNetworkElementRefs[0];
+                }
+
+                // Query all route network elements of all the equipments
+                var routeNetworkElementsQuery = new GetRouteNetworkDetails(interestIdList);
+                Result<GetRouteNetworkDetailsResult> routeElementsQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(routeNetworkElementsQuery).Result;
+
+                result.RouteNetworkElements = routeElementsQueryResult.Value.RouteNetworkElements;
             }
             else
             {
-
+                result.RouteNetworkElements = new LookupCollection<RouteNetworkElement>();
+                result.SpanEquipments = new LookupCollection<SpanEquipmentWithRelatedInfo>();
             }
 
+            // Query terminal equipments
+            List<Guid> terminalEquipmentIds = new();
 
+            if (result.NodeContainer != null)
+            {
+                if (result.NodeContainer.Racks != null)
+                {
+                    foreach (var rack in result.NodeContainer.Racks)
+                    {
+                        foreach (var mount in rack.SubrackMounts)
+                            terminalEquipmentIds.Add(mount.TerminalEquipmentId);
+                    }
+                }
 
+                if (result.NodeContainer.TerminalEquipmentReferences != null)
+                {
+                    foreach (var terminalEquipmentReference in result.NodeContainer.TerminalEquipmentReferences)
+                    {
+                        terminalEquipmentIds.Add(terminalEquipmentReference);
+                    }
+                }
+            }
+
+            if (terminalEquipmentIds.Count > 0)
+            {
+                var terminalEquipmentQueryResult = queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                    new GetEquipmentDetails(new EquipmentIdList(terminalEquipmentIds))
+                ).Result;
+
+                if (terminalEquipmentQueryResult.IsFailed)
+                    return Result.Fail(terminalEquipmentQueryResult.Errors.First());
+
+                result.TerminalEquipments = terminalEquipmentQueryResult.Value.TerminalEquipment;
+            }
+
+            return Result.Ok(result);
+        }
+
+        public class RouteNetworkElementRelatedData
+        {
+            public Guid RouteNetworkElementId { get; set; }
+            public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
+            public LookupCollection<RouteNetworkInterest> RouteNetworkInterests { get; set; }
+            public LookupCollection<SpanEquipmentWithRelatedInfo> SpanEquipments { get; set; }
+            public LookupCollection<TerminalEquipment> TerminalEquipments { get; set; }
+            public LookupCollection<API.Model.Trace.RouteNetworkTraceResult> RouteNetworkTraces { get; set; }
+            public Dictionary<Guid, RouteNetworkElementInterestRelation> InterestRelations { get; set; }
+            public NodeContainer NodeContainer { get; set; }
+            public Guid NodeContainerRouteNetworkElementId { get; set; }
         }
 
 
-   
+
     }
 }

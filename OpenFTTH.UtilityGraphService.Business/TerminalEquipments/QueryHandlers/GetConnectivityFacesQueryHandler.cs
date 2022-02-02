@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 {
     public class GetConnectivityFacesQueryHandler
-        : IQueryHandler<GetConnectivityFaces, Result<List<EquipmentConnectivityFace>>>
+        : IQueryHandler<GetConnectivityFaces, Result<List<ConnectivityFace>>>
     {
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -39,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
-        public Task<Result<List<EquipmentConnectivityFace>>> HandleAsync(GetConnectivityFaces query)
+        public Task<Result<List<ConnectivityFace>>> HandleAsync(GetConnectivityFaces query)
         {
             _rackSpecifications = _eventStore.Projections.Get<RackSpecificationsProjection>().Specifications;
             _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
@@ -49,16 +49,14 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             var relatedEquipmentsResult = FetchRelatedEquipments(_queryDispatcher, query.routeNodeId);
 
             if (relatedEquipmentsResult.IsFailed)
-                return Task.FromResult(Result.Fail<List<EquipmentConnectivityFace>>(relatedEquipmentsResult.Errors.First()));
+                return Task.FromResult(Result.Fail<List<ConnectivityFace>>(relatedEquipmentsResult.Errors.First()));
 
             return Task.FromResult(Result.Ok(BuildConnectivityFaces(relatedEquipmentsResult.Value)));
         }
 
-
-
-        private List<EquipmentConnectivityFace> BuildConnectivityFaces(RouteNetworkElementRelatedData data)
+        private List<ConnectivityFace> BuildConnectivityFaces(RouteNetworkElementRelatedData data)
         {
-            List<EquipmentConnectivityFace> connectivityFacesResult = new();
+            List<ConnectivityFace> connectivityFacesResult = new();
 
             // Add cable span equipments
             foreach (var spanEquipment in data.SpanEquipments.Where(s => s.IsCable))
@@ -73,7 +71,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                     var trace = data.RouteNetworkTraces[data.SpanEquipments[spanEquipment.Id].RouteNetworkTraceRefs.First().TraceId];
 
                     connectivityFacesResult.Add(
-                       new EquipmentConnectivityFace()
+                       new ConnectivityFace()
                        {
                            EquipmentId = spanEquipment.Id,
                            EquipmentKind = ConnectivityEquipmentKindEnum.SpanEquipment,
@@ -102,7 +100,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 if (HasSpliceSide(terminalEquipment))
                 {
                     connectivityFacesResult.Add(
-                        new EquipmentConnectivityFace()
+                        new ConnectivityFace()
                         {
                             EquipmentId = terminalEquipment.Id,
                             EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
@@ -116,11 +114,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 if (HasPatchSide(terminalEquipment))
                 {
                     connectivityFacesResult.Add(
-                        new EquipmentConnectivityFace()
+                        new ConnectivityFace()
                         {
                             EquipmentId = terminalEquipment.Id,
                             EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
-                            DirectionType = ConnectivityDirectionEnum.Ingoing,
+                            DirectionType = ConnectivityDirectionEnum.Outgoing,
                             DirectionName = "Patch Side",
                             EquipmentName = equipmentName
                         }

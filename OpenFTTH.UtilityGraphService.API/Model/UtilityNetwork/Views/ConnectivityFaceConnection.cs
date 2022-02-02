@@ -2,9 +2,9 @@
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
 {
-    public record EquipmentConnectivityFaceConnectionInfo
+    public record ConnectivityFaceConnection
     {
-        public Guid Id { get; set; }
+        public Guid TerminalOrSegmentId { get; set; }
         public string Name { get; set; }
         public string EndInfo { get; set; }
         public bool IsConnected { get; set; }

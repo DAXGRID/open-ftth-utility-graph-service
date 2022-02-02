@@ -2,7 +2,7 @@
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
 {
-    public record EquipmentConnectivityFace
+    public record ConnectivityFace
     {
         public ConnectivityDirectionEnum DirectionType { get; set; }
         public string DirectionName { get; set; }
