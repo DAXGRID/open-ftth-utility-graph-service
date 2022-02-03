@@ -136,6 +136,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 var terminalEquipmentId = Guid.NewGuid();
 
+                if (command.NumberOfEquipments == 1)
+                    terminalEquipmentId = command.TerminalEquipmentId;
+
                 var placeTerminalEquipmentResult = terminalEquipmentAR.Place(
                     commandContext,
                     terminalEquipmentSpecifications,
