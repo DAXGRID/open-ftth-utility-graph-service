@@ -64,7 +64,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
 
             // Get face connections for terminal equipment
-            var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.DirectionType);
+            var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.FaceKind);
 
             var terminalEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
                 terminalEquipmentConnectionsQuery
@@ -77,7 +77,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // Get face connections for span equipment
-            var spanEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.DirectionType);
+            var spanEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
 
             var spanEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
                 spanEquipmentConnectionsQuery

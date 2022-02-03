@@ -9,6 +9,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public Guid SpanEquipmentId { get; }
         public ushort StructureIndex { get; }
         public ushort SegmentIndex { get; }
+        public bool IsPatch { get; set; }
 
         public UtilityGraphConnectedSegment(Guid id, GraphNode? fromNode, GraphNode? toNode, Guid spanEquipmentId, UInt16 structureIndex, UInt16 segmentIndex) : base(id, fromNode, toNode)
         {

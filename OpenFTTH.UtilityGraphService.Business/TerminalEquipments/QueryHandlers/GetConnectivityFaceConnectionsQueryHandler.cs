@@ -83,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var spanSegmentTraceResult = _utilityNetwork.Graph.Trace(spanSegmentId);
 
-            bool isConnected = CheckIfConnected(spanSegmentTraceResult, query);
+            bool isConnected = CheckIfCableIsConnected(spanSegmentTraceResult, query.FaceType);
 
             var numberOfFibers = spanEquipment.SpanStructures.Count() - 1;
 
@@ -96,6 +96,14 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 EndInfo = null,
                 IsConnected = isConnected
             };
+        }
+
+        private bool CheckIfCableIsConnected(UtilityGraphTraceResult spanSegmentTraceResult, FaceKindEnum directionType)
+        {
+            if (spanSegmentTraceResult.Upstream.Count() > 0 && spanSegmentTraceResult.Upstream.Count() > 0)
+                return true;
+            else
+                return false;
         }
 
         private List<ConnectivityFaceConnection> BuildConnectivityFaceConnectionsForTerminalEquipment(TerminalEquipment terminalEquipment, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
@@ -119,9 +127,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
 
-            bool isConnected = CheckIfConnected(terminalTraceResult, query);
-
-            var rackName = GetRackName(relatedData, terminalEquipment.Id);
+            bool isConnected = CheckIfTerminalIsConnected(terminalTraceResult, query.FaceType);
 
             string? rackInfo = null;
 
@@ -141,16 +147,97 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             };
         }
 
-        private bool CheckIfConnected(UtilityGraphTraceResult traceResult, GetConnectivityFaceConnections query)
+        private bool CheckIfTerminalIsConnected(UtilityGraphTraceResult traceResult, FaceKindEnum directionType)
         {
-            if (query.DirectionType == ConnectivityDirectionEnum.Ingoing && traceResult.Upstream.Count() > 1)
+            if (directionType == FaceKindEnum.SpliceSide && CheckIfTerminalIsSpliced(traceResult))
                 return true;
 
-            if (query.DirectionType == ConnectivityDirectionEnum.Outgoing && traceResult.Downstream.Count() > 1)
+            else if (directionType == FaceKindEnum.PatchSide && CheckIfTerminalIsPatched(traceResult))
+                return true;
+
+            else
+                return false;
+        }
+
+        private bool CheckIfTerminalIsPatched(UtilityGraphTraceResult traceResult)
+        {
+            if (CheckIfTerminalIsPatchedUpstream(traceResult))
+                return true;
+
+            if (CheckIfTerminalIsPatchedDownstream(traceResult))
                 return true;
 
             return false;
         }
+
+        private bool CheckIfTerminalIsSpliced(UtilityGraphTraceResult traceResult)
+        {
+            if (CheckIfTerminalIsSplicedUpstream(traceResult))
+                return true;
+
+            if (CheckIfTerminalIsSplicedDownstream(traceResult))
+                return true;
+
+            return false;
+        }
+
+        private bool CheckIfTerminalIsPatchedUpstream(UtilityGraphTraceResult traceResult)
+        {
+            if (traceResult.Upstream.Count() > 0)
+            {
+                if (traceResult.Upstream.First() is UtilityGraphConnectedSegment connectedSegment)
+                {
+                    if (connectedSegment.IsPatch)
+                    return true; 
+                }
+            }
+
+            return false;
+        }
+
+        private bool CheckIfTerminalIsPatchedDownstream(UtilityGraphTraceResult traceResult)
+        {
+            if (traceResult.Downstream.Count() > 0)
+            {
+                if (traceResult.Upstream.First() is UtilityGraphConnectedSegment connectedSegment)
+                {
+                    if (connectedSegment.IsPatch)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CheckIfTerminalIsSplicedUpstream(UtilityGraphTraceResult traceResult)
+        {
+            if (traceResult.Upstream.Count() > 0)
+            {
+                if (traceResult.Upstream.First() is UtilityGraphConnectedSegment connectedSegment)
+                {
+                    if (!connectedSegment.IsPatch)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CheckIfTerminalIsSplicedDownstream(UtilityGraphTraceResult traceResult)
+        {
+            if (traceResult.Downstream.Count() > 0)
+            {
+                if (traceResult.Upstream.First() is UtilityGraphConnectedSegment connectedSegment)
+                {
+                    if (!connectedSegment.IsPatch)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+
 
         private string? GetRackName(RouteNetworkElementRelatedData data, Guid equipmentId)
         {

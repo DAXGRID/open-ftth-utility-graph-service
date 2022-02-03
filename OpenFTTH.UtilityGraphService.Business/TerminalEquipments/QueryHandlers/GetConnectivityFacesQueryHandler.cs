@@ -75,8 +75,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                        {
                            EquipmentId = spanEquipment.Id,
                            EquipmentKind = ConnectivityEquipmentKindEnum.SpanEquipment,
-                           DirectionType = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? ConnectivityDirectionEnum.Outgoing : ConnectivityDirectionEnum.Ingoing,
-                           DirectionName = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? "Mod " + trace.ToRouteNodeName : "Mod " + trace.FromRouteNodeName,
+                           FaceKind = FaceKindEnum.SpliceSide,
+                           FaceName = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? "Mod " + trace.ToRouteNodeName : "Mod " + trace.FromRouteNodeName,
                            EquipmentName = spanEquipment.Name + " " + spanEquipmentSpecification.Name
                        }
                    );
@@ -104,8 +104,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                         {
                             EquipmentId = terminalEquipment.Id,
                             EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
-                            DirectionType = ConnectivityDirectionEnum.Ingoing,
-                            DirectionName = "Splice Side",
+                            FaceKind = FaceKindEnum.SpliceSide,
+                            FaceName = "Splice Side",
                             EquipmentName = equipmentName
                         }
                     );
@@ -118,8 +118,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                         {
                             EquipmentId = terminalEquipment.Id,
                             EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
-                            DirectionType = ConnectivityDirectionEnum.Outgoing,
-                            DirectionName = "Patch Side",
+                            FaceKind = FaceKindEnum.PatchSide,
+                            FaceName = "Patch Side",
                             EquipmentName = equipmentName
                         }
                     );
