@@ -30,11 +30,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             {
                 var terminalTraceResult = _utilityNetwork.Graph.Trace(utilityGraphTerminalRef.TerminalId);
 
-
-                return Task.FromResult(BuildConnectivityTrace());
+                return Task.FromResult(NotConnected());
             }
 
-            return Task.FromResult(BuildConnectivityTrace());
+            return Task.FromResult(NotConnected());
+        }
+
+        private Result<ConnectivityTraceView> NotConnected()
+        {
+            return Result.Ok(new ConnectivityTraceView("Not connected", new ConnectivityTraceViewHopInfo[] { }));
         }
 
 
