@@ -52,6 +52,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 Guid.NewGuid(), 
                 new UserContext("test", Guid.Empty), 
                 sutNodeContainerId,
+                Guid.NewGuid(),
                 TestSpecifications.Rack_ESTI,
                 "Rack 1",
                 80
@@ -94,6 +95,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 Guid.NewGuid(),
                 new UserContext("test", Guid.Empty),
                 sutNodeContainerId,
+                Guid.NewGuid(),
                 TestSpecifications.Rack_ESTI,
                 "Rack 2",
                 80

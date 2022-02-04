@@ -46,6 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var placeRackResult = nodeContainerAR.PlaceRack(
                 commandContext,
+                command.RackId,
                 command.RackSpecificationId,
                 command.RackName,
                 command.RackPosition,
