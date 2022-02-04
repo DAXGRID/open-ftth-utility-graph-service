@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
+namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 {
     public class GetConnectivityTraceQueryHandler
         : IQueryHandler<GetConnectivityTraceView, Result<ConnectivityTraceView>>
@@ -26,8 +26,18 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         public Task<Result<ConnectivityTraceView>> HandleAsync(GetConnectivityTraceView query)
         {
+            if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(query.TerminalOrSpanSegmentId, out var utilityGraphTerminalRef))
+            {
+                var terminalTraceResult = _utilityNetwork.Graph.Trace(utilityGraphTerminalRef.TerminalId);
+
+
+                return Task.FromResult(BuildConnectivityTrace());
+            }
+
             return Task.FromResult(BuildConnectivityTrace());
         }
+
+
 
         private Result<ConnectivityTraceView> BuildConnectivityTrace()
         {

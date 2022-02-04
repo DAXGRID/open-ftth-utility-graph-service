@@ -76,7 +76,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             _eventStore.Aggregates.Store(spanEquipmentAR);
 
-            NotifyExternalServicesAboutConnectivityChange(firstSpanSegmentGraphElement.SpanEquipmentId, GetNodeIdsFromTerminalIds(connects.Select(c => c.TerminalId)), "EquipmentConnectivityModification.Connect");
+            NotifyExternalServicesAboutConnectivityChange(firstSpanSegmentGraphElement.SpanEquipmentId, GetNodeIdsFromTerminalIds(connects.Select(c => c.TerminalId)), "FiberConnectivityModification.Connect");
 
 
             return Task.FromResult(Result.Ok());
