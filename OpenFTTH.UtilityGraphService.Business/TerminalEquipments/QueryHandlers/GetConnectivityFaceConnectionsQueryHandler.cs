@@ -100,7 +100,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private bool CheckIfCableIsConnected(UtilityGraphTraceResult spanSegmentTraceResult, FaceKindEnum directionType)
         {
-            if (spanSegmentTraceResult.Upstream.Count() > 0 && spanSegmentTraceResult.Upstream.Count() > 0)
+            if (spanSegmentTraceResult.Upstream.Count() > 0 && spanSegmentTraceResult.Downstream.Count() > 0)
                 return true;
             else
                 return false;
