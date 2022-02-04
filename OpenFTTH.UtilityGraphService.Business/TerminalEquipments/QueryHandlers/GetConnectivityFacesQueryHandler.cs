@@ -59,70 +59,76 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             List<ConnectivityFace> connectivityFacesResult = new();
 
             // Add cable span equipments
-            foreach (var spanEquipment in data.SpanEquipments.Where(s => s.IsCable))
+            if (data.SpanEquipments != null)
             {
-                var spanEquipmentSpecification = _spanEquipmentSpecifications[spanEquipment.SpecificationId];
-
-
-                var relType = data.InterestRelations[spanEquipment.WalkOfInterestId];
-
-                if (relType.RelationKind != RouteNetworkInterestRelationKindEnum.PassThrough && relType.RelationKind != RouteNetworkInterestRelationKindEnum.InsideNode)
+                foreach (var spanEquipment in data.SpanEquipments.Where(s => s.IsCable))
                 {
-                    var trace = data.RouteNetworkTraces[data.SpanEquipments[spanEquipment.Id].RouteNetworkTraceRefs.First().TraceId];
+                    var spanEquipmentSpecification = _spanEquipmentSpecifications[spanEquipment.SpecificationId];
 
-                    connectivityFacesResult.Add(
-                       new ConnectivityFace()
-                       {
-                           EquipmentId = spanEquipment.Id,
-                           EquipmentKind = ConnectivityEquipmentKindEnum.SpanEquipment,
-                           FaceKind = FaceKindEnum.SpliceSide,
-                           FaceName = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? "Mod " + trace.ToRouteNodeName : "Mod " + trace.FromRouteNodeName,
-                           EquipmentName = spanEquipment.Name + " " + spanEquipmentSpecification.Name
-                       }
-                   );
+
+                    var relType = data.InterestRelations[spanEquipment.WalkOfInterestId];
+
+                    if (relType.RelationKind != RouteNetworkInterestRelationKindEnum.PassThrough && relType.RelationKind != RouteNetworkInterestRelationKindEnum.InsideNode)
+                    {
+                        var trace = data.RouteNetworkTraces[data.SpanEquipments[spanEquipment.Id].RouteNetworkTraceRefs.First().TraceId];
+
+                        connectivityFacesResult.Add(
+                           new ConnectivityFace()
+                           {
+                               EquipmentId = spanEquipment.Id,
+                               EquipmentKind = ConnectivityEquipmentKindEnum.SpanEquipment,
+                               FaceKind = FaceKindEnum.SpliceSide,
+                               FaceName = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? "Mod " + trace.ToRouteNodeName : "Mod " + trace.FromRouteNodeName,
+                               EquipmentName = spanEquipment.Name + " " + spanEquipmentSpecification.Name
+                           }
+                       );
+                    }
                 }
             }
 
             // Add terminal equipments
-            foreach (var terminalEquipment in data.TerminalEquipments)
+            if (data.TerminalEquipments != null)
             {
-                var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
-
-                string? rackInfo = null;
-
-                if (terminalEquipmentSpecification.IsRackEquipment)
+                foreach (var terminalEquipment in data.TerminalEquipments)
                 {
-                    rackInfo = GetRackName(data, terminalEquipment.Id) + "-";
-                }
+                    var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
 
-                var equipmentName = terminalEquipmentSpecification.ShortName + " " + rackInfo + terminalEquipment.Name;
+                    string? rackInfo = null;
 
-                if (HasSpliceSide(terminalEquipment))
-                {
-                    connectivityFacesResult.Add(
-                        new ConnectivityFace()
-                        {
-                            EquipmentId = terminalEquipment.Id,
-                            EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
-                            FaceKind = FaceKindEnum.SpliceSide,
-                            FaceName = "Splice Side",
-                            EquipmentName = equipmentName
-                        }
-                    );
-                }
+                    if (terminalEquipmentSpecification.IsRackEquipment)
+                    {
+                        rackInfo = GetRackName(data, terminalEquipment.Id) + "-";
+                    }
 
-                if (HasPatchSide(terminalEquipment))
-                {
-                    connectivityFacesResult.Add(
-                        new ConnectivityFace()
-                        {
-                            EquipmentId = terminalEquipment.Id,
-                            EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
-                            FaceKind = FaceKindEnum.PatchSide,
-                            FaceName = "Patch Side",
-                            EquipmentName = equipmentName
-                        }
-                    );
+                    var equipmentName = terminalEquipmentSpecification.ShortName + " " + rackInfo + terminalEquipment.Name;
+
+                    if (HasSpliceSide(terminalEquipment))
+                    {
+                        connectivityFacesResult.Add(
+                            new ConnectivityFace()
+                            {
+                                EquipmentId = terminalEquipment.Id,
+                                EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
+                                FaceKind = FaceKindEnum.SpliceSide,
+                                FaceName = "Splice Side",
+                                EquipmentName = equipmentName
+                            }
+                        );
+                    }
+
+                    if (HasPatchSide(terminalEquipment))
+                    {
+                        connectivityFacesResult.Add(
+                            new ConnectivityFace()
+                            {
+                                EquipmentId = terminalEquipment.Id,
+                                EquipmentKind = ConnectivityEquipmentKindEnum.TerminalEquipment,
+                                FaceKind = FaceKindEnum.PatchSide,
+                                FaceName = "Patch Side",
+                                EquipmentName = equipmentName
+                            }
+                        );
+                    }
                 }
             }
 

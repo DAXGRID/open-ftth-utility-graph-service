@@ -181,7 +181,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
 
-            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo)
+            FaceKindEnum faceKind = GetAEndFaceKind(relevantEquipmentData, terminal);
+
+            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
             {
                 ConnectedTo = connectedToText
             };
@@ -195,10 +197,83 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
 
-            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo)
+            FaceKindEnum faceKind = GetZEndFaceKind(relevantEquipmentData, terminal);
+
+            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
             {
                 ConnectedTo = connectedToText
             };
+        }
+
+        private FaceKindEnum GetZEndFaceKind(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        {
+            if (terminal.ConnectorType == null)
+                return FaceKindEnum.SpliceSide;
+
+            var faceKind = GetAEndFaceKind(relevantEquipmentData, terminal);
+
+            if (faceKind == FaceKindEnum.SpliceSide)
+                return FaceKindEnum.PatchSide;
+            else
+                return FaceKindEnum.SpliceSide;
+        }
+
+        private FaceKindEnum GetAEndFaceKind(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        {
+            if (terminal.ConnectorType == null)
+                return FaceKindEnum.SpliceSide;
+
+            bool aConnected = false;
+            bool aIsPatched = false;
+            bool aIsSpliced = false;
+                       
+
+            if (relevantEquipmentData.TracedTerminals[terminal.Id].A != null)
+            {
+                aConnected = true;
+
+                var a = relevantEquipmentData.TracedTerminals[terminal.Id].A;
+
+                if (a.NeighborSegment.IsPatch)
+                {
+                    aIsPatched = true;
+                }
+                else
+                {
+                    aIsSpliced = true;
+                }
+            }
+
+            bool zConnected = false;
+            bool zIsPatched = false;
+            bool zIsSpliced = false;
+
+            if (relevantEquipmentData.TracedTerminals[terminal.Id].Z != null)
+            {
+                zConnected = true;
+
+                var z = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
+
+                if (z.NeighborSegment.IsPatch)
+                {
+                    zIsPatched = true;
+                }
+                else
+                {
+                    zIsSpliced = true;
+                }
+            }
+
+            if (!aConnected && !zConnected)
+                return FaceKindEnum.PatchSide;
+
+            if (aIsPatched)
+                return FaceKindEnum.PatchSide;
+
+            if (zIsSpliced)
+                return FaceKindEnum.PatchSide;
+
+            return FaceKindEnum.SpliceSide;
         }
 
         private string? CreateConnectedToSpanEquipmentString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)

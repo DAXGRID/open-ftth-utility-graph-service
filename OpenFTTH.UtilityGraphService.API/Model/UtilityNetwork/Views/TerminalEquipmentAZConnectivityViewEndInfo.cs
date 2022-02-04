@@ -3,13 +3,14 @@
     public record TerminalEquipmentAZConnectivityViewEndInfo
     {
         public TerminalEquipmentAZConnectivityViewTerminalInfo Terminal { get; init; }
-
+        public FaceKindEnum FaceKind { get; init; }
         public string? ConnectedTo { get; init; }
         public string? End { get; init; }
 
-        public TerminalEquipmentAZConnectivityViewEndInfo(TerminalEquipmentAZConnectivityViewTerminalInfo terminal)
+        public TerminalEquipmentAZConnectivityViewEndInfo(TerminalEquipmentAZConnectivityViewTerminalInfo terminal, FaceKindEnum faceKind)
         {
             Terminal = terminal;
+            FaceKind = faceKind;
         }
     }
 }

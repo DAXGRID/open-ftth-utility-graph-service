@@ -127,9 +127,76 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             teInfoToAssert.TerminalStructures[0].Lines[0].A.Should().NotBeNull();
             teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().NotBeNull();
             teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().Be($"{sutCableName} (72) Fiber 2");
+        }
+
+        [Fact, Order(2)]
+        public async void CheckThatLISAInJ1Has24PatchesAnd24SplicesInTray_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.J_1;
+
+            var connectivityQuery = new GetConnectivityFaces(sutNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var face = viewModel.First(f => f.EquipmentName.StartsWith("LISA APC"));
 
 
+            // Check equipment connectivity view
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, face.EquipmentId);
 
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
+            );
+
+            connectivityViewResult.IsSuccess.Should().BeTrue();
+
+            var connectivityTraceView = connectivityViewResult.Value;
+
+            connectivityTraceView.TerminalEquipments.First().TerminalStructures.First().Lines.Count(l => (l.A != null && l.A.FaceKind == FaceKindEnum.SpliceSide) || (l.Z != null && l.Z.FaceKind == FaceKindEnum.SpliceSide)).Should().Be(24);
+            connectivityTraceView.TerminalEquipments.First().TerminalStructures.First().Lines.Count(l => (l.A != null && l.A.FaceKind == FaceKindEnum.PatchSide) || (l.Z != null && l.Z.FaceKind == FaceKindEnum.PatchSide)).Should().Be(24);
+        }
+
+        [Fact, Order(3)]
+        public async void CheckThatBUDIInCC1Has0Patches12SplicesInTray_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CC_1;
+
+            var connectivityQuery = new GetConnectivityFaces(sutNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var face = viewModel.First(f => f.EquipmentName.StartsWith("BUDI"));
+
+
+            // Check equipment connectivity view
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, face.EquipmentId);
+
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
+            );
+
+            connectivityViewResult.IsSuccess.Should().BeTrue();
+
+            var connectivityTraceView = connectivityViewResult.Value;
+
+            connectivityTraceView.TerminalEquipments.First().TerminalStructures.First().Lines.Count(l => (l.A != null && l.A.FaceKind == FaceKindEnum.SpliceSide) || (l.Z != null && l.Z.FaceKind == FaceKindEnum.SpliceSide)).Should().Be(12);
+            connectivityTraceView.TerminalEquipments.First().TerminalStructures.First().Lines.Count(l => (l.A != null && l.A.FaceKind == FaceKindEnum.PatchSide) || (l.Z != null && l.Z.FaceKind == FaceKindEnum.PatchSide)).Should().Be(0);
         }
 
 

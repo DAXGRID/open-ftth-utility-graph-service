@@ -9,7 +9,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
 {
     public static class TestTerminalEquipmentConnectivityViewData
     {
-
+        /*
         public static TerminalEquipmentAZConnectivityViewModel LISAODFRack()
         {
             // Create rack with 80 LISA trays places in two holder, whith a splitter panel inbetween
@@ -493,6 +493,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.TestData
         {
             return new TerminalEquipmentAZConnectivityViewTerminalInfo(Guid.NewGuid(), name);
         }
+        */
 
     }
 }
