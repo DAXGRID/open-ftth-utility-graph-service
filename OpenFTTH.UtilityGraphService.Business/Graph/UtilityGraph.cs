@@ -230,11 +230,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 throw new ArgumentException($"A span segment with id: {spanSegment.Id} already exists in the graph.");
         }
 
-        internal void AddDisconnectedTerminal(TerminalEquipment terminalEquipment, Guid terminalId, UInt16 structureIndex, UInt16 terminalIndex)
+        internal void AddDisconnectedTerminal(Guid routeNodeId, TerminalEquipment terminalEquipment, Guid terminalId, UInt16 structureIndex, UInt16 terminalIndex)
         {
             var terminal = terminalEquipment.TerminalStructures[structureIndex].Terminals[terminalIndex];
 
-            var disconnectedGraphTerminal = new UtilityGraphDisconnectedTerminal(terminalId, terminalEquipment.Id, structureIndex, terminalIndex);
+            var disconnectedGraphTerminal = new UtilityGraphDisconnectedTerminal(routeNodeId, terminalId, terminalEquipment.Id, structureIndex, terminalIndex);
 
             if (!_graphElementsById.TryAdd(terminal.Id, disconnectedGraphTerminal))
                 throw new ArgumentException($"A terminal with id: {terminal.Id} already exists in the graph.");

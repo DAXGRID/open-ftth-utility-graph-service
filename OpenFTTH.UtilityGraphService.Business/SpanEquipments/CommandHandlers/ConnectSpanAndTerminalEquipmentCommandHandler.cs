@@ -62,17 +62,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanSegmentGraphElement.SpanEquipmentId);
 
+            var connects = BuildConnects(command.SpanSegmentsIds, command.TerminalIds);
+
             var spanEquipmentConnectResult = spanEquipmentAR.ConnectCableSpanSegmentsWithTerminals(
                 cmdContext: cmdContext,
                 routeNodeId: command.RouteNodeId,
                 specification: spanEquipmentSpecifications[firstSpanSegmentGraphElement.SpanEquipment(_utilityNetwork).SpecificationId],
-                connects: BuildConnects(command.SpanSegmentsIds, command.TerminalIds)
+                connects: connects
             );
 
             if (spanEquipmentConnectResult.IsFailed)
                 return Task.FromResult(Result.Fail(spanEquipmentConnectResult.Errors.First()));
 
             _eventStore.Aggregates.Store(spanEquipmentAR);
+
+            NotifyExternalServicesAboutConnectivityChange(firstSpanSegmentGraphElement.SpanEquipmentId, GetNodeIdsFromTerminalIds(connects.Select(c => c.TerminalId)), "EquipmentConnectivityModification.Connect");
+
 
             return Task.FromResult(Result.Ok());
         }
@@ -87,6 +92,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
 
             return connects.ToArray();
+        }
+
+        private Guid[] GetNodeIdsFromTerminalIds(IEnumerable<Guid> terminalIds)
+        {
+            HashSet<Guid> nodeIds = new();
+
+            foreach (var terminalId in terminalIds)
+            {
+                if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminalId, out var terminalRef))
+                {
+                    nodeIds.Add(terminalRef.RouteNodeId);
+                }
+            }
+
+            return nodeIds.ToArray();
         }
 
         private ValidatedRouteNetworkWalk GetInterestInformation(SpanEquipment spanEquipment)
@@ -106,7 +126,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
         }
    
-        private async void NotifyExternalServicesAboutConnectivityChange(Guid spanEquipmentId, Guid routeNodeId, string category)
+        private async void NotifyExternalServicesAboutConnectivityChange(Guid spanEquipmentId, Guid[] routeNodeIds, string category)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
@@ -122,33 +142,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     applicationInfo: null,
                     category: category,
                     idChangeSets: idChangeSets.ToArray(),
-                    affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
+                    affectedRouteNetworkElementIds: routeNodeIds
                 );
 
             await _externalEventProducer.Produce(_topicName, updatedEvent);
-        }
-
-        private async void NotifyExternalServicesAboutMerge(Guid spanEquipmentId, Guid[] affectedRouteNetworkElements)
-        {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
-            {
-                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Addition, new Guid[] { spanEquipmentId })
-            };
-
-            var updatedEvent =
-                new RouteNetworkElementContainedEquipmentUpdated(
-                    eventType: typeof(RouteNetworkElementContainedEquipmentUpdated).Name,
-                    eventId: Guid.NewGuid(),
-                    eventTimestamp: DateTime.UtcNow,
-                    applicationName: "UtilityNetworkService",
-                    applicationInfo: null,
-                    category: "EquipmentModification.Merge",
-                    idChangeSets: idChangeSets.ToArray(),
-                    affectedRouteNetworkElementIds: affectedRouteNetworkElements
-                );
-
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
-
         }
 
 

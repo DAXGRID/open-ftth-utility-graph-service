@@ -260,8 +260,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private void StoreAndIndexVirginTerminalEquipment(TerminalEquipment terminalEquipment)
         {
-            // Store the new span equipment in memory
+            // Store the new terminal equipment in memory
             _terminalEquipmentByEquipmentId.TryAdd(terminalEquipment.Id, terminalEquipment);
+
+            var nodeContainer = _nodeContainerByEquipmentId[terminalEquipment.NodeContainerId];
 
             // Add terminals to the graph
             for (UInt16 structureIndex = 0; structureIndex < terminalEquipment.TerminalStructures.Length; structureIndex++)
@@ -273,7 +275,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     var terminal = terminalStructure.Terminals[terminalIndex];
 
                     // We're dealing with a virgin terminal
-                    _utilityGraph.AddDisconnectedTerminal(terminalEquipment, terminal.Id, structureIndex, terminalIndex);
+                    _utilityGraph.AddDisconnectedTerminal(nodeContainer.RouteNodeId, terminalEquipment, terminal.Id, structureIndex, terminalIndex);
                 }
             }
         }

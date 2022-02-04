@@ -11,6 +11,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
     /// </summary>
     public class UtilityGraphDisconnectedTerminal : IUtilityGraphTerminalRef
     {
+        public Guid RouteNodeId { get; }
         public Guid TerminalId { get; }
         public Guid TerminalEquipmentId { get; }
         public UInt16 StructureIndex { get; }
@@ -40,8 +41,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             throw new ApplicationException($"Cannot find terminial equipment with id: {TerminalEquipmentId}. State corrupted!");
         }
 
-        public UtilityGraphDisconnectedTerminal(Guid terminalId, Guid terminalEquipmentId, ushort structureIndex, ushort terminalIndex)
+        public UtilityGraphDisconnectedTerminal(Guid routeNodeId, Guid terminalId, Guid terminalEquipmentId, ushort structureIndex, ushort terminalIndex)
         {
+            RouteNodeId = routeNodeId;
             TerminalId = terminalId;
             TerminalEquipmentId = terminalEquipmentId;
             StructureIndex = structureIndex;
