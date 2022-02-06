@@ -201,7 +201,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
 
-            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var spanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var cableSpanEquipment);
 
 
             // ACT (do the connect between cable and equipment)
@@ -209,10 +209,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: sutNodeId,
-                spanEquipmentId: spanEquipment.Id,
+                spanEquipmentId: cableSpanEquipment.Id,
                 spanSegmentsIds: new Guid[] {
-                    spanEquipment.SpanStructures[2].SpanSegments[0].Id, // Fiber 2
-                    spanEquipment.SpanStructures[3].SpanSegments[0].Id  // Fiber 3
+                    cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id, // Fiber 2
+                    cableSpanEquipment.SpanStructures[3].SpanSegments[0].Id  // Fiber 3
                 },
                 terminalEquipmentId: terminalEquipment.Id,
                 terminalIds: new Guid[] {
@@ -226,13 +226,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectCmdResult.IsSuccess.Should().BeTrue();
 
             // Trace tray 1 fiber 1 (should not be connected to anything)
-            var fiber1TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
+            var fiber1TraceResult = utilityNetwork.Graph.Trace(cableSpanEquipment.SpanStructures[1].SpanSegments[0].Id);
 
             fiber1TraceResult.Upstream.Length.Should().Be(0);
             fiber1TraceResult.Downstream.Length.Should().Be(0);
 
             // Trace 2
-            var fiber2TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[2].SpanSegments[0].Id);
+            var fiber2TraceResult = utilityNetwork.Graph.Trace(cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id);
 
             var downstreamTerminalFromTrace = fiber2TraceResult.Downstream.First(t => t.Id == terminalEquipment.TerminalStructures[1].Terminals[0].Id) as IUtilityGraphTerminalRef;
 
@@ -256,7 +256,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 connectivityFaceQuery
             );
 
-            var spanEquipmentFace = connectivityFaceQueryResult.Value.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
+            var spanEquipmentFace = connectivityFaceQueryResult.Value.First(f => f.EquipmentId == cableSpanEquipment.Id);
 
             // Get face connections for span equipment in CO_1 (where it is spliced)
             var spanEquipmentConnectionsQueryInCO1 = new GetConnectivityFaceConnections(sutNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
@@ -270,8 +270,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var spanEquipmentConnectionsInCO1 = spanEquipmentConnectionsQueryInCO1Result.Value;
 
             spanEquipmentConnectionsInCO1[0].IsConnected.Should().BeFalse();
-            spanEquipmentConnectionsInCO1[1].IsConnected.Should().BeFalse();
-            spanEquipmentConnectionsInCO1[2].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[1].IsConnected.Should().BeTrue();
+            spanEquipmentConnectionsInCO1[2].IsConnected.Should().BeTrue();
             spanEquipmentConnectionsInCO1[3].IsConnected.Should().BeFalse();
 
 

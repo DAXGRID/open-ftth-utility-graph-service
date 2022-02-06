@@ -79,6 +79,27 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(3)]
+        public async void GetSpanEquipmentConnectivityViewOnCableK69373563_ShouldSucceed()
+        {
+            var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
+
+            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNetworkElementId, "K69373563");
+
+            var connectivityTrace = new GetSpanEquipmentConnectivityView(sutRouteNetworkElementId, new Guid[] { cable.Id });
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentConnectivityView, Result<SpanEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+        }
+
+
 
         private SpanEquipment? FindSpanEquipmentRelatedToRouteNetworkElementByName(Guid routeNetworkElementId, string spanEquipmentName)
         {

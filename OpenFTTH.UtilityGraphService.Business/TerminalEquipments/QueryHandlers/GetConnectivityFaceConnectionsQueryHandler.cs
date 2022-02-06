@@ -100,12 +100,16 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private bool CheckIfCableIsConnected(UtilityGraphTraceResult spanSegmentTraceResult, Guid nodeId, FaceKindEnum directionType)
         {
+            System.Diagnostics.Debug.WriteLine($"IsConnected checking cable end at node: {nodeId}");
             if (spanSegmentTraceResult.Upstream.Count() > 1)
             {
                 var terminal = spanSegmentTraceResult.Upstream[1] as IUtilityGraphTerminalRef;
 
                 if (terminal != null && terminal.RouteNodeId == nodeId && !terminal.IsDummyEnd)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Terminal {terminal} at upstream is not a dummy.");
                     return true;
+                }
             }
 
             if (spanSegmentTraceResult.Downstream.Count() > 1)
@@ -113,7 +117,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 var terminal = spanSegmentTraceResult.Downstream[1] as IUtilityGraphTerminalRef;
 
                 if (terminal != null && terminal.RouteNodeId == nodeId && !terminal.IsDummyEnd)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Terminal {terminal} at upstream is not a dummy.");
+
                     return true;
+                }
             }
 
             return false;

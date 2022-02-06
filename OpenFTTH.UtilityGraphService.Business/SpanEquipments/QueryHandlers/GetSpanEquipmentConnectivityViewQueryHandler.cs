@@ -158,7 +158,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                 return null;
 
             var terminalEquipment = traceInfo.NeighborTerminal.TerminalEquipment(_utilityNetwork);
-            var fiber = traceInfo.NeighborTerminal.StructureIndex;
+
+
 
             return  $"{terminalEquipment.Name}";
         }
@@ -277,7 +278,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
 
             // Get neighbor terminal
-            var neighborTerminal = trace.First();
+            var neighborTerminal = trace[1];
 
             if (!(neighborTerminal is UtilityGraphConnectedTerminal))
                 throw new ApplicationException($"Expected neighbor to be a UtilityGraphConnectedTerminal. Please check trace on span segment with id: {tracedSpanSegmentId}");
