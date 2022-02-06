@@ -179,13 +179,12 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].A;
 
-            var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
-
             FaceKindEnum faceKind = GetAEndFaceKind(relevantEquipmentData, terminal);
 
             return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
             {
-                ConnectedTo = connectedToText
+                ConnectedTo = CreateConnectedToString(relevantEquipmentData, traceInfo),
+                End = CreateEndString(relevantEquipmentData, traceInfo)
             };
         }
 
@@ -195,13 +194,12 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
 
-            var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
-
             FaceKindEnum faceKind = GetZEndFaceKind(relevantEquipmentData, terminal);
 
             return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
             {
-                ConnectedTo = connectedToText
+                ConnectedTo = CreateConnectedToString(relevantEquipmentData, traceInfo),
+                End = CreateEndString(relevantEquipmentData, traceInfo)
             };
         }
 
@@ -276,7 +274,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             return FaceKindEnum.SpliceSide;
         }
 
-        private string? CreateConnectedToSpanEquipmentString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        private string? CreateConnectedToString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
         {
             if (traceInfo == null)
                 return null;
@@ -286,6 +284,29 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             return  $"{spanEquipment.Name} ({spanEquipment.SpanStructures.Length - 1}) Fiber {fiber}";
         }
+
+        private string? CreateEndString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        {
+            if (traceInfo == null)
+                return null;
+
+            var nodeName = relevantEquipmentData.GetNodeName(traceInfo.EndTerminal.RouteNodeId);
+
+            if (traceInfo.EndTerminal.IsDummyEnd)
+                return $"{nodeName} løs ende";
+
+            var terminalEquipment = traceInfo.EndTerminal.TerminalEquipment(_utilityNetwork);
+
+            var terminalStructure = traceInfo.EndTerminal.TerminalStructure(_utilityNetwork);
+
+            var terminal = traceInfo.EndTerminal.Terminal(_utilityNetwork);
+        
+            if (nodeName != null)
+                nodeName += " ";
+
+            return $"{nodeName}{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+        }
+
 
         private RelevantEquipmentData GatherRelevantTerminalEquipmentData(TerminalEquipment terminalEquipment)
         {
@@ -465,6 +486,17 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             public Dictionary<Guid, TraceInfo> TracedTerminals { get; set; }
             public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
+
+            internal string? GetNodeName(Guid routeNodeId)
+            {
+                if (RouteNetworkElements != null && RouteNetworkElements.ContainsKey(routeNodeId))
+                {
+                    var node = RouteNetworkElements[routeNodeId];
+                    return node.Name;
+                }
+
+                return null;
+            }
         }
 
         private record TraceInfo

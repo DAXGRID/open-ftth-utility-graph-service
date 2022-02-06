@@ -97,7 +97,81 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityQueryResult.IsSuccess.Should().BeTrue();
 
             var viewModel = connectivityQueryResult.Value;
+
+            var fiber2Line = viewModel.SpanEquipments.First().Lines[1];
         }
+
+
+        [Fact, Order(4)]
+        public async void GetTerminalEquipmentConnectivityViewOnCO1_ShouldSucceed()
+        {
+
+            // Get faces
+            var connectivityFaceQuery = new GetConnectivityFaces(TestRouteNetwork.CO_1);
+
+            var connectivityFaceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityFaceQuery
+            );
+
+            connectivityFaceQueryResult.IsSuccess.Should().BeTrue();
+
+            var connectivityFaces = connectivityFaceQueryResult.Value;
+
+            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment).Should().BeGreaterThan(0);
+            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment).Should().BeGreaterThan(0);
+
+            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
+
+            var connectivityTrace = new GetTerminalEquipmentConnectivityView(TestRouteNetwork.CO_1, terminalEquipmentFace.EquipmentId);
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+        }
+
+
+        [Fact, Order(4)]
+        public async void GetTerminalEquipmentConnectivityViewOnCC1_ShouldSucceed()
+        {
+
+            // Get faces
+            var connectivityFaceQuery = new GetConnectivityFaces(TestRouteNetwork.CC_1);
+
+            var connectivityFaceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityFaceQuery
+            );
+
+            connectivityFaceQueryResult.IsSuccess.Should().BeTrue();
+
+            var connectivityFaces = connectivityFaceQueryResult.Value;
+
+            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment).Should().BeGreaterThan(0);
+            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment).Should().BeGreaterThan(0);
+
+            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
+
+            var connectivityTrace = new GetTerminalEquipmentConnectivityView(TestRouteNetwork.CC_1, terminalEquipmentFace.EquipmentId);
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+
+        }
+
+
 
 
 

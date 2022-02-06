@@ -78,8 +78,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
             List<SpanEquipmentAZConnectivityViewLineInfo> lineInfos = new();
 
-            foreach (var spanStructure in spanEquipment.SpanStructures)
+            for (int spanStructureIndex = 1; spanStructureIndex < spanEquipment.SpanStructures.Length; spanStructureIndex++)
             {
+                var spanStructure = spanEquipment.SpanStructures[spanStructureIndex];
+
                 var spanSegmentToTrace = GetSpanSegmentToTrace(query.RouteNetworkElementId, spanEquipment, spanStructure);
 
                 lineInfos.Add(
@@ -125,18 +127,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             // TODO: Fix so that it uses routeNetworkElementId to 
             return spanStructure.SpanSegments.First();
         }
-
      
 
         private SpanEquipmentAZConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, SpanSegment spanSegment)
         {
             var traceInfo = relevantEquipmentData.TracedSegments[spanSegment.Id].A;
 
-            var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
-
             return new SpanEquipmentAZConnectivityViewEndInfo()
             {
-                ConnectedTo = connectedToText
+                ConnectedTo = CreateConnectedToString(relevantEquipmentData, traceInfo),
+                End = CreateEndString(relevantEquipmentData, traceInfo)
             };
         }
 
@@ -144,24 +144,52 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
         {
             var traceInfo = relevantEquipmentData.TracedSegments[spanSegment.Id].Z;
 
-            var connectedToText = CreateConnectedToSpanEquipmentString(relevantEquipmentData, traceInfo);
-
             return new SpanEquipmentAZConnectivityViewEndInfo()
             {
-                ConnectedTo = connectedToText
+                ConnectedTo = CreateConnectedToString(relevantEquipmentData, traceInfo),
+                End = CreateEndString(relevantEquipmentData, traceInfo)
             };
         }
 
-        private string? CreateConnectedToSpanEquipmentString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        private string? CreateConnectedToString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
         {
             if (traceInfo == null)
                 return null;
 
             var terminalEquipment = traceInfo.NeighborTerminal.TerminalEquipment(_utilityNetwork);
 
+            var terminalStructure = traceInfo.NeighborTerminal.TerminalStructure(_utilityNetwork);
 
+            var terminal = traceInfo.NeighborTerminal.Terminal(_utilityNetwork);
 
-            return  $"{terminalEquipment.Name}";
+            var nodeName = relevantEquipmentData.GetNodeName(traceInfo.NeighborTerminal.RouteNodeId);
+
+            if (nodeName != null)
+                nodeName += " ";
+
+            return  $"{nodeName}{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+        }
+
+        private string? CreateEndString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        {
+            if (traceInfo == null)
+                return null;
+
+            var nodeName = relevantEquipmentData.GetNodeName(traceInfo.EndTerminal.RouteNodeId);
+
+            if (traceInfo.EndTerminal.IsDummyEnd)
+                return $"{nodeName} løs ende";
+
+            var terminalEquipment = traceInfo.EndTerminal.TerminalEquipment(_utilityNetwork);
+
+            var terminalStructure = traceInfo.EndTerminal.TerminalStructure(_utilityNetwork);
+
+            var terminal = traceInfo.EndTerminal.Terminal(_utilityNetwork);
+
+            if (nodeName != null)
+                nodeName += " ";
+
+            return $"{nodeName}{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
         }
 
         private RelevantEquipmentData GatherRelevantSpanEquipmentData(SpanEquipment spanEquipment)
@@ -322,6 +350,17 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
         {
             public Dictionary<Guid, TraceInfo> TracedSegments { get; set; }
             public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
+
+            internal string? GetNodeName(Guid routeNodeId)
+            {
+                if (RouteNetworkElements != null && RouteNetworkElements.ContainsKey(routeNodeId))
+                {
+                    var node = RouteNetworkElements[routeNodeId];
+                    return node.Name;
+                }
+
+                return null;
+            }
         }
 
         private record TraceInfo
