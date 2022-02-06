@@ -12,5 +12,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         Guid TerminalId { get; }
         ushort StructureIndex { get; }
         ushort TerminalIndex { get; }
+
+        bool IsDummyEnd { get; }
     }
 }

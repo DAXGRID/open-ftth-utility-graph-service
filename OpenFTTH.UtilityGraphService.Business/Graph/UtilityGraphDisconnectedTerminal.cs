@@ -17,6 +17,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public UInt16 StructureIndex { get; }
         public UInt16 TerminalIndex { get; }
 
+        public bool IsDummyEnd => TerminalId == Guid.Empty;
+
         public TerminalEquipment TerminalEquipment(UtilityNetworkProjection utilityNetwork)
         {
             if (utilityNetwork.TryGetEquipment<TerminalEquipment>(TerminalEquipmentId, out var terminalEquipment))

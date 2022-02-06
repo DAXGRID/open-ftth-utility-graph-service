@@ -127,9 +127,159 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             teInfoToAssert.TerminalStructures[0].Lines[0].A.Should().NotBeNull();
             teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().NotBeNull();
             teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().Be($"{sutCableName} (72) Fiber 2");
+
+            // Check faces and face connections
+            var connectivityFaceQuery = new GetConnectivityFaces(sutNodeId);
+
+            var connectivityFaceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityFaceQuery
+            );
+
+            var spanEquipmentFace = connectivityFaceQueryResult.Value.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
+
+            // Get face connections for span equipment in CC_1 (where it is spliced)
+            var spanEquipmentConnectionsQueryInCC1 = new GetConnectivityFaceConnections(sutNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
+
+            var spanEquipmentConnectionsQueryInCC1Result = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
+                spanEquipmentConnectionsQueryInCC1
+            );
+
+            spanEquipmentConnectionsQueryInCC1Result.IsSuccess.Should().BeTrue();
+
+            var spanEquipmentConnectionsInCC1 = spanEquipmentConnectionsQueryInCC1Result.Value;
+
+            spanEquipmentConnectionsInCC1[0].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCC1[1].IsConnected.Should().BeTrue();
+            spanEquipmentConnectionsInCC1[2].IsConnected.Should().BeTrue();
+            spanEquipmentConnectionsInCC1[3].IsConnected.Should().BeFalse();
+
+            // Get face connections for span equipment in CO_1 (where it is not spliced)
+            var spanEquipmentConnectionsQueryInCO1 = new GetConnectivityFaceConnections(TestRouteNetwork.CO_1, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
+
+            var spanEquipmentConnectionsQueryInCO1Result = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
+                spanEquipmentConnectionsQueryInCO1
+            );
+
+            spanEquipmentConnectionsQueryInCO1Result.IsSuccess.Should().BeTrue();
+
+            var spanEquipmentConnectionsInCO1 = spanEquipmentConnectionsQueryInCO1Result.Value;
+
+            spanEquipmentConnectionsInCO1[0].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[1].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[2].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[3].IsConnected.Should().BeFalse();
+
+
         }
 
         [Fact, Order(2)]
+        public async void ConnectFirstTerminalEquipmentInCO1WithFiberCable_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+            var sutCableName = "K69373563";
+
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipment);
+
+            // Get cable
+            var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var spanEquipment);
+
+
+            // ACT (do the connect between cable and equipment)
+            var connectCmd = new ConnectSpanEquipmentAndTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                spanEquipmentId: spanEquipment.Id,
+                spanSegmentsIds: new Guid[] {
+                    spanEquipment.SpanStructures[2].SpanSegments[0].Id, // Fiber 2
+                    spanEquipment.SpanStructures[3].SpanSegments[0].Id  // Fiber 3
+                },
+                terminalEquipmentId: terminalEquipment.Id,
+                terminalIds: new Guid[] {
+                    terminalEquipment.TerminalStructures[1].Terminals[0].Id,  // Tray 1 Pin 1
+                    terminalEquipment.TerminalStructures[1].Terminals[1].Id   // Tray 1 Pin 2
+                }
+            );
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+
+            // Trace tray 1 fiber 1 (should not be connected to anything)
+            var fiber1TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
+
+            fiber1TraceResult.Upstream.Length.Should().Be(0);
+            fiber1TraceResult.Downstream.Length.Should().Be(0);
+
+            // Trace 2
+            var fiber2TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[2].SpanSegments[0].Id);
+
+            var downstreamTerminalFromTrace = fiber2TraceResult.Downstream.First(t => t.Id == terminalEquipment.TerminalStructures[1].Terminals[0].Id) as IUtilityGraphTerminalRef;
+
+            var equipmentFromTracedTerminal = downstreamTerminalFromTrace.TerminalEquipment(utilityNetwork);
+
+            equipmentFromTracedTerminal.Should().Be(terminalEquipment);
+
+            // Trace tray 1 terminal 1
+            var term4TraceResult = utilityNetwork.Graph.Trace(terminalEquipment.TerminalStructures[1].Terminals[0].Id);
+
+            term4TraceResult.Downstream.Length.Should().Be(0);
+            term4TraceResult.Upstream.Length.Should().Be(2); // a segment and a terminal at the end
+            ((UtilityGraphConnectedTerminal)term4TraceResult.Upstream.Last()).RouteNodeId.Should().NotBeEmpty();
+
+
+
+            // Check faces and face connections
+            var connectivityFaceQuery = new GetConnectivityFaces(sutNodeId);
+
+            var connectivityFaceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityFaceQuery
+            );
+
+            var spanEquipmentFace = connectivityFaceQueryResult.Value.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
+
+            // Get face connections for span equipment in CO_1 (where it is spliced)
+            var spanEquipmentConnectionsQueryInCO1 = new GetConnectivityFaceConnections(sutNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
+
+            var spanEquipmentConnectionsQueryInCO1Result = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
+                spanEquipmentConnectionsQueryInCO1
+            );
+
+            spanEquipmentConnectionsQueryInCO1Result.IsSuccess.Should().BeTrue();
+
+            var spanEquipmentConnectionsInCO1 = spanEquipmentConnectionsQueryInCO1Result.Value;
+
+            spanEquipmentConnectionsInCO1[0].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[1].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[2].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[3].IsConnected.Should().BeFalse();
+
+
+
+        }
+
+
+        [Fact, Order(100)]
         public async void CheckThatLISAInJ1Has24PatchesAnd24SplicesInTray_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -164,7 +314,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityTraceView.TerminalEquipments.First().TerminalStructures.First().Lines.Count(l => (l.A != null && l.A.FaceKind == FaceKindEnum.PatchSide) || (l.Z != null && l.Z.FaceKind == FaceKindEnum.PatchSide)).Should().Be(24);
         }
 
-        [Fact, Order(3)]
+
+
+        [Fact, Order(101)]
         public async void CheckThatBUDIInCC1Has0Patches12SplicesInTray_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
@@ -200,7 +352,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
-        [Fact, Order(10)]
+        [Fact, Order(102)]
         public async void GetConnectivityTraceView_ShouldSucceed()
         {
             var connectivityTrace = new GetConnectivityTraceView(Guid.NewGuid(), Guid.NewGuid());

@@ -292,6 +292,32 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             thirdEquipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
         }
 
+        [Fact, Order(12)]
+        public async void PlaceTerminalEquipmentInCO1_ShouldSucceed()
+        {
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                nodeContainerId: TestUtilityNetwork.NodeContainer_CO_1,
+                Guid.NewGuid(),
+                terminalEquipmentSpecificationId: TestSpecifications.SpliceClosure_BUDI1S_16SCTrays,
+                numberOfEquipments: 1,
+                startSequenceNumber: 1,
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameAndNumber,
+                namingInfo: new NamingInfo("Splice Closure", null)
+            );
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+
+            var nodeContainerQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { placeEquipmentCmd.NodeContainerId })
+            );
+
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+
 
 
         [Fact, Order(100)]

@@ -111,11 +111,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastDownstreamSegment.InV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else if (lastDownstreamSegment.OutV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else
                 {
@@ -141,11 +141,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastDownstreamSegment.InV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else if (lastDownstreamSegment.OutV(version) == null)
                 {
-                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    downstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastDownstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastDownstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else
                 {
@@ -169,11 +169,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastUpstreamSegment.OutV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else if (lastUpstreamSegment.InV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else
                 {
@@ -199,11 +199,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 if (lastUpstreamSegment.OutV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).ToNodeOfInterestIndex]));
                 }
                 else if (lastUpstreamSegment.InV(version) == null)
                 {
-                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.NewGuid(), lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
+                    upstreamTrace.Add(new UtilityGraphConnectedTerminal(Guid.Empty, lastUpstreamSegment.SpanEquipment(_utilityNetworkProjection).NodesOfInterestIds[lastUpstreamSegment.SpanSegment(_utilityNetworkProjection).FromNodeOfInterestIndex]));
                 }
                 else
                 {

@@ -9,8 +9,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public Guid RouteNodeId { get; }
         public ushort StructureIndex => throw new NotImplementedException();
         public ushort TerminalIndex => throw new NotImplementedException();
-
         public Guid TerminalId => Id;
+        public bool IsDummyEnd => TerminalId == Guid.Empty;
 
         public UtilityGraphConnectedTerminal(Guid id, Guid nodeOfInterestId) : base(id)
         {

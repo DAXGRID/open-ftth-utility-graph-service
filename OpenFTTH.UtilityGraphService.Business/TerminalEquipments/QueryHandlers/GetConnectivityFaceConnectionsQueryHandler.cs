@@ -83,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var spanSegmentTraceResult = _utilityNetwork.Graph.Trace(spanSegmentId);
 
-            bool isConnected = CheckIfCableIsConnected(spanSegmentTraceResult, query.FaceType);
+            bool isConnected = CheckIfCableIsConnected(spanSegmentTraceResult, query.routeNodeId, query.FaceType);
 
             var numberOfFibers = spanEquipment.SpanStructures.Count() - 1;
 
@@ -98,12 +98,26 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             };
         }
 
-        private bool CheckIfCableIsConnected(UtilityGraphTraceResult spanSegmentTraceResult, FaceKindEnum directionType)
+        private bool CheckIfCableIsConnected(UtilityGraphTraceResult spanSegmentTraceResult, Guid nodeId, FaceKindEnum directionType)
         {
-            if (spanSegmentTraceResult.Upstream.Count() > 0 && spanSegmentTraceResult.Downstream.Count() > 0)
-                return true;
-            else
-                return false;
+            if (spanSegmentTraceResult.Upstream.Count() > 1)
+            {
+                var terminal = spanSegmentTraceResult.Upstream[1] as IUtilityGraphTerminalRef;
+
+                if (terminal != null && terminal.RouteNodeId == nodeId && !terminal.IsDummyEnd)
+                    return true;
+            }
+
+            if (spanSegmentTraceResult.Downstream.Count() > 1)
+            {
+                var terminal = spanSegmentTraceResult.Downstream[1] as IUtilityGraphTerminalRef;
+
+                if (terminal != null && terminal.RouteNodeId == nodeId && !terminal.IsDummyEnd)
+                    return true;
+            }
+
+            return false;
+
         }
 
         private List<ConnectivityFaceConnection> BuildConnectivityFaceConnectionsForTerminalEquipment(TerminalEquipment terminalEquipment, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
