@@ -277,6 +277,60 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentConnectionsInCO1[3].IsConnected.Should().BeFalse();
         }
 
+        [Fact, Order(3)]
+        public async void ConnectFirstRackEquipmentInCO1WithFiberCable_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+            var sutCableName = "K69373563";
+
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
+
+            // Get cable
+            var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var cableSpanEquipment);
+
+
+            // ACT (do the connect between cable and equipment)
+            var connectCmd = new ConnectSpanEquipmentAndTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                spanEquipmentId: cableSpanEquipment.Id,
+                spanSegmentsIds: new Guid[] {
+                    cableSpanEquipment.SpanStructures[4].SpanSegments[0].Id, // Fiber 4
+                },
+                terminalEquipmentId: terminalEquipment.Id,
+                terminalIds: new Guid[] {
+                    terminalEquipment.TerminalStructures[0].Terminals[0].Id,  // Tray 1 Pin 1
+                }
+            );
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+
+         }
+
+
         [Fact, Order(50)]
         public async void TestTrace_ShouldSucceed()
         {

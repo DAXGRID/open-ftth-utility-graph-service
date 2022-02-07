@@ -35,32 +35,51 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
         }
 
-  
 
         [Fact, Order(1)]
+        public async void TerminalEquipmentConnectivityTraceInCO1RackEquipment_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+            var sutCableName = "K69373563";
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
+
+
+            // Get connectivity trace
+            var connectivityTraceQuery = new GetConnectivityTraceView(sutRouteNodeId, terminalEquipment.TerminalStructures[0].Terminals[0].Id);
+
+            var connectivityTraceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityTraceView, Result<ConnectivityTraceView>>(
+                connectivityTraceQuery
+            );
+
+            var hops = connectivityTraceQueryResult.Value.Hops;
+        }
+
+
+        [Fact, Order(2)]
         public async void TerminalEquipmentConnectivityTraceInCC1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+            var sutCableName = "K69373563";
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            // Get faces
-            var connectivityFaceQuery = new GetConnectivityFaces(sutRouteNodeId);
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
 
-            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
-                connectivityFaceQuery
-            );
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipment);
 
-            connectivityQueryResult.IsSuccess.Should().BeTrue();
-
-            var connectivityFaces = connectivityQueryResult.Value;
-
-            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment).Should().BeGreaterThan(0);
-
-            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
-
-            utilityNetwork.TryGetEquipment<TerminalEquipment>(terminalEquipmentFace.EquipmentId, out var terminalEquipment);
 
             // Get connectivity trace
             var connectivityTraceQuery = new GetConnectivityTraceView(sutRouteNodeId, terminalEquipment.TerminalStructures[0].Terminals[0].Id);
@@ -69,7 +88,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 connectivityTraceQuery
             );
 
-
+            var hops = connectivityTraceQueryResult.Value.Hops;
         }
 
 

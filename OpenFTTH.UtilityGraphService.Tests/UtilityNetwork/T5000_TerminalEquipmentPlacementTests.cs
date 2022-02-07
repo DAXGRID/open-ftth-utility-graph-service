@@ -137,7 +137,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(10)]
-        public async void PlaceFirstTwoTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        public async void PlaceFirstTwoTerminalEquipmentInJ1Rack1_ShouldSucceed()
         {
             // Setup
             var sutNodeContainer = TestUtilityNetwork.NodeContainer_J_1;
@@ -209,7 +209,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(11)]
-        public async void PlaceThirdTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        public async void PlaceThirdTerminalEquipmentInJ1Rack1_ShouldSucceed()
         {
             // Setup
             var sutNodeContainer = TestUtilityNetwork.NodeContainer_J_1;

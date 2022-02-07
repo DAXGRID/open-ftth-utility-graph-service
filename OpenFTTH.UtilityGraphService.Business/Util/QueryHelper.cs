@@ -52,6 +52,62 @@ namespace OpenFTTH.UtilityGraphService.Business.Util
             return Result.Fail(new Error($"Failed to find node container in route node with id: {routeNodeId}"));
         }
 
+        public static Result<Dictionary<Guid,NodeContainer>> GetNodeContainersFromRouteNodeIds(IQueryDispatcher queryDispatcher, Guid[] routeNodeIds)
+        {
+            Dictionary<Guid, NodeContainer> result = new();
+
+            var idsToQuery = new RouteNetworkElementIdList();
+            idsToQuery.AddRange(routeNodeIds);
+
+            // Query all route node interests
+            var routeNetworkInterestQuery = new GetRouteNetworkDetails(idsToQuery)
+            {
+                RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementOnly
+            };
+
+            Result<GetRouteNetworkDetailsResult> interestsQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(routeNetworkInterestQuery).Result;
+
+            if (interestsQueryResult.IsFailed)
+                return Result.Fail(interestsQueryResult.Errors.First());
+
+            var interestIdList = new InterestIdList();
+
+            if (interestsQueryResult.Value.RouteNetworkElements != null)
+            {
+                foreach (var routeNetworkElement in interestsQueryResult.Value.RouteNetworkElements)
+                {
+                    if (routeNetworkElement.InterestRelations != null)
+                        interestIdList.AddRange(routeNetworkElement.InterestRelations.Select(r => r.RefId));
+                }
+            }
+
+            // Only query for equipments if interests are returned from the route network query
+            if (interestIdList.Count > 0)
+            {
+                // Query all the equipments related to the route network element
+                var equipmentQueryResult = queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                    new GetEquipmentDetails(interestIdList)
+                    {
+                        EquipmentDetailsFilter = new EquipmentDetailsFilterOptions() { IncludeRouteNetworkTrace = false }
+                    }
+                ).Result;
+
+                if (equipmentQueryResult.IsFailed)
+                    return Result.Fail(equipmentQueryResult.Errors.First());
+
+                if (equipmentQueryResult.Value.NodeContainers != null && equipmentQueryResult.Value.NodeContainers.Count > 0)
+                {
+                    
+
+                    foreach (var nodeContainer in equipmentQueryResult.Value.NodeContainers)
+                        result.Add(nodeContainer.Id, nodeContainer);
+                }
+            }
+
+            return Result.Ok(result);
+        }
+
+
         public static ValidatedRouteNetworkWalk GetWalkOfInterest(IQueryDispatcher queryDispatcher, SpanEquipment spanEquipment)
         {
             // Get interest information from existing span equipment

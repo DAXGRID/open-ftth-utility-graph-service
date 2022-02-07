@@ -194,10 +194,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private bool CheckIfTerminalIsSpliced(UtilityGraphTraceResult traceResult)
         {
-            if (CheckIfTerminalIsSplicedUpstream(traceResult))
-                return true;
-
-            if (CheckIfTerminalIsSplicedDownstream(traceResult))
+            if (CheckIfTerminalIsSplicedUpstream(traceResult) && CheckIfTerminalIsSplicedDownstream(traceResult))
                 return true;
 
             return false;

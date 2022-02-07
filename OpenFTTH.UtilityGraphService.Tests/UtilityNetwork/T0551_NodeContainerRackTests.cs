@@ -49,8 +49,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerBeforeCommand);
 
             var placeRackCmd = new PlaceRackInNodeContainer(
-                Guid.NewGuid(), 
-                new UserContext("test", Guid.Empty), 
+                Guid.NewGuid(),
+                new UserContext("test", Guid.Empty),
                 sutNodeContainerId,
                 Guid.NewGuid(),
                 TestSpecifications.Rack_ESTI,
@@ -127,6 +127,68 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(nodeContainerBeforeCommand.RouteNodeId);
         }
 
+
+        [Fact, Order(3)]
+        public async void PlaceRackAndEquipmentInCO_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerBeforeCommand);
+
+            var placeRackCmd = new PlaceRackInNodeContainer(
+                Guid.NewGuid(),
+                new UserContext("test", Guid.Empty),
+                sutNodeContainerId,
+                Guid.NewGuid(),
+                TestSpecifications.Rack_ESTI,
+                "Rack 2",
+                80
+            );
+
+            var placeRackResult = await _commandDispatcher.HandleAsync<PlaceRackInNodeContainer, Result>(placeRackCmd);
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new InterestIdList() { nodeContainerBeforeCommand.InterestId })
+            );
+
+            // Assert
+            placeRackResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(4)]
+        public async void PlaceRackEquipmentInCO_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerBeforeCommand);
+
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+            correlationId: Guid.NewGuid(),
+            userContext: new UserContext("test", Guid.Empty),
+            nodeContainerId: sutNodeContainerId,
+            Guid.NewGuid(),
+            terminalEquipmentSpecificationId: TestSpecifications.Subrack_LISA_APC_UPC,
+            numberOfEquipments: 1,
+            startSequenceNumber: 5,
+            namingMethod: TerminalEquipmentNamingMethodEnum.NumberOnly,
+            namingInfo: null
+             )
+            {
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 0, SubrackPlacmentMethod.BottomUp)
+            };
+
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+
+
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
     }
 }
 

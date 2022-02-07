@@ -156,13 +156,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             if (traceInfo == null)
                 return null;
 
-            var terminalEquipment = traceInfo.NeighborTerminal.TerminalEquipment(_utilityNetwork);
+            var neighborTerminalRef = traceInfo.NeighborTerminal;
 
-            var terminalStructure = traceInfo.NeighborTerminal.TerminalStructure(_utilityNetwork);
+            if (neighborTerminalRef.IsDummyEnd)
+                return null;
 
-            var terminal = traceInfo.NeighborTerminal.Terminal(_utilityNetwork);
+            var terminalEquipment = neighborTerminalRef.TerminalEquipment(_utilityNetwork);
 
-            var nodeName = relevantEquipmentData.GetNodeName(traceInfo.NeighborTerminal.RouteNodeId);
+            var terminalStructure = neighborTerminalRef.TerminalStructure(_utilityNetwork);
+
+            var terminal = neighborTerminalRef.Terminal(_utilityNetwork);
+
+            var nodeName = relevantEquipmentData.GetNodeName(neighborTerminalRef.RouteNodeId);
 
             if (nodeName != null)
                 nodeName += " ";
