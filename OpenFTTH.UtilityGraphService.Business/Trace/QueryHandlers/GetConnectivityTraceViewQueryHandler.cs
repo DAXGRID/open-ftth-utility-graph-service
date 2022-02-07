@@ -38,13 +38,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
         {
             if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(query.TerminalOrSpanSegmentId, out var utilityGraphTerminalRef))
             {
-                return Task.FromResult(BuildTraceFromTerminal(utilityGraphTerminalRef));
+                return Task.FromResult(BuildTraceViewFromTerminal(utilityGraphTerminalRef));
+            }
+            else if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(query.TerminalOrSpanSegmentId, out var utilityGraphSegmentRef))
+            {
+                return Task.FromResult(BuildTraceViewFromSegment(query.TerminalOrSpanSegmentId, utilityGraphSegmentRef));
             }
 
             return Task.FromResult(NotConnected());
         }
 
-        private Result<ConnectivityTraceView> BuildTraceFromTerminal(IUtilityGraphTerminalRef utilityGraphTerminalRef)
+        private Result<ConnectivityTraceView> BuildTraceViewFromTerminal(IUtilityGraphTerminalRef utilityGraphTerminalRef)
         {
             var traceResult = _utilityNetwork.Graph.Trace(utilityGraphTerminalRef.TerminalId);
 
@@ -103,6 +107,59 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return Result.Ok(new ConnectivityTraceView("FK000000", hops.ToArray()));
 
         }
+
+        private Result<ConnectivityTraceView> BuildTraceViewFromSegment(Guid spanSegmentId, IUtilityGraphSegmentRef utilityGraphSegmentRef)
+        {
+            var traceResult = _utilityNetwork.Graph.Trace(spanSegmentId);
+
+            List<IGraphObject> traceElements = traceResult.All;
+
+            var relatedData = GatherRelevantRelatedData(_queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
+
+            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElements);
+
+            List<ConnectivityTraceViewHopInfo> hops = new();
+
+            int hopSeqNo = 1;
+
+            for (int graphElementIndex = 0; graphElementIndex < traceElements.Count; graphElementIndex++)
+            {
+                var currentGraphElement = traceElements[graphElementIndex];
+
+                if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
+                {
+                    string connectionCableInfo = "";
+
+                    if (graphElementIndex < (traceElements.Count - 1))
+                    {
+                        connectionCableInfo = GetConnectionInfo(relatedData, traceElements[graphElementIndex + 1] as IUtilityGraphSegmentRef);
+                    }
+
+                    hops.Add(
+                        new ConnectivityTraceViewHopInfo(
+                            1,
+                            level: 0,
+                            isSplitter: false,
+                            isTraceSource: false,
+                            node: relatedData.GetNodeName(terminalRef.RouteNodeId),
+                            equipment: CreateEquipmentString(relatedData, terminalRef),
+                            terminalStructure: "Kort 1",
+                            terminal: "Port 1",
+                            connectionInfo: connectionCableInfo,
+                            totalLength: 2,
+                            routeSegmentGeometries: Array.Empty<string>(),
+                            routeSegmentIds: Array.Empty<Guid>()
+                        )
+                    );
+
+                    hopSeqNo++;
+                }
+            }
+
+            return Result.Ok(new ConnectivityTraceView("FK000000", hops.ToArray()));
+
+        }
+
 
         private string GetConnectionInfo(RelevantRelatedData relatedData, IUtilityGraphSegmentRef? utilityGraphSegmentRef)
         {
