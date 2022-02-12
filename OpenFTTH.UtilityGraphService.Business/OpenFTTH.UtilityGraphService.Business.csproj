@@ -23,4 +23,8 @@
     <ProjectReference Include="..\OpenFTTH.UtilityGraphService.API\OpenFTTH.UtilityGraphService.API.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Trace\Util\" />
+  </ItemGroup>
+
 </Project>

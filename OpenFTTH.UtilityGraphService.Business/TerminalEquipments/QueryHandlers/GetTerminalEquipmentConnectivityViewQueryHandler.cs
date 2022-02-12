@@ -329,7 +329,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             {
                 // the lower the more A-ish
                 int upstreamRank = 0;
-                int downstreamRank = 1000;
+                int downstreamRank = 0;
 
                 if (tracedTerminal.Upstream != null)
                 {
@@ -337,6 +337,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         upstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                    else
+                        upstreamRank = 1000; // Simple node with no function specificed get the high value (equal low score for A)
                 }
 
 
@@ -346,6 +348,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                    else
+                        downstreamRank = 1000; // Simple node with no function node specified get the high value (equal low score for A)
                 }
 
                 if (upstreamRank > downstreamRank)

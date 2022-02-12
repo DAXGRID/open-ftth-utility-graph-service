@@ -214,33 +214,37 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
         private void TryFindAandZ(RelevantEquipmentData relevantEquipmentData)
         {
-            foreach (var tracedTerminal in relevantEquipmentData.TracedSegments.Values)
+            foreach (var tracedGraphElement in relevantEquipmentData.TracedSegments.Values)
             {
                 // the lower the more A-ish
                 int upstreamRank = 0;
-                int downstreamRank = 1000;
+                int downstreamRank = 0;
 
-                if (tracedTerminal.Upstream != null)
+                if (tracedGraphElement.Upstream != null)
                 {
-                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Upstream.EndTerminal.RouteNodeId];
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedGraphElement.Upstream.EndTerminal.RouteNodeId];
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         upstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                    else
+                        upstreamRank = 1000; // Simple node with no function specificed get the high value (equal low score for A)
                 }
 
 
-                if (tracedTerminal.Downstream != null)
+                if (tracedGraphElement.Downstream != null)
                 {
-                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Downstream.EndTerminal.RouteNodeId];
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedGraphElement.Downstream.EndTerminal.RouteNodeId];
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                    else
+                        downstreamRank = 1000; // Simple node with no function node specified get the high value (equal low score for A)
                 }
 
                 if (upstreamRank > downstreamRank)
-                    tracedTerminal.UpstreamIsZ = true;
+                    tracedGraphElement.UpstreamIsZ = true;
                 else
-                    tracedTerminal.UpstreamIsZ = false;
+                    tracedGraphElement.UpstreamIsZ = false;
             }
         }
 
