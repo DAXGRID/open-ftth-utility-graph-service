@@ -17,6 +17,7 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public NamingInfo? NamingInfo { get; }
         public Guid? ManufacturerId { get; init; }
         public LifecycleInfo? LifecycleInfo { get; init; }
+        public AddressInfo? AddressInfo { get; init; }
         public SubrackPlacementInfo? SubrackPlacementInfo { get; init; }
 
         public PlaceTerminalEquipmentInNodeContainer(Guid correlationId, UserContext userContext, Guid nodeContainerId, Guid terminalEquipmentId, Guid terminalEquipmentSpecificationId, int numberOfEquipments, int startSequenceNumber, TerminalEquipmentNamingMethodEnum namingMethod, NamingInfo? namingInfo) : base(correlationId, userContext)

@@ -48,7 +48,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 startSequenceNumber: 1,
                 namingMethod: TerminalEquipmentNamingMethodEnum.NameAndNumber,
                 namingInfo: new NamingInfo("Splice Closure", null)
-            );
+            )
+            {
+                AddressInfo = new AddressInfo(Guid.NewGuid(), Guid.NewGuid(), "hej")
+            };
 
             // Act
             var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
@@ -72,6 +75,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainerQueryResult.IsSuccess.Should().BeTrue();
             equipmentQueryResult.IsSuccess.Should().BeTrue();
 
+            // Check that address info is set
+            equipment.AddressInfo.Should().Be(placeEquipmentCmd.AddressInfo);
+
+            // Check that terminal is placed is placed in node container
             nodeContainer.TerminalEquipmentReferences.Count().Should().Be(1);
 
             equipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);

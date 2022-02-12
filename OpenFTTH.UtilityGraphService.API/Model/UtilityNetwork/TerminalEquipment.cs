@@ -12,11 +12,12 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public Guid? ManufacturerId { get; init; }
         public NamingInfo? NamingInfo { get; init; }
         public LifecycleInfo? LifecycleInfo { get; init; }
+        public AddressInfo? AddressInfo { get; init; }
 
         public string? Name => NamingInfo?.Name;
         public string? Description => NamingInfo?.Description;
 
-        public TerminalEquipment(Guid id, Guid specificationId, Guid nodeContainerId, TerminalStructure[] terminalStructures, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo)
+        public TerminalEquipment(Guid id, Guid specificationId, Guid nodeContainerId, TerminalStructure[] terminalStructures, Guid? manufacturerId, NamingInfo? namingInfo, LifecycleInfo? lifecycleInfo, AddressInfo? addressInfo)
         {
             Id = id;
             SpecificationId = specificationId;
@@ -25,6 +26,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             ManufacturerId = manufacturerId;
             NamingInfo = namingInfo;
             LifecycleInfo = lifecycleInfo;
+            AddressInfo = addressInfo;
         }
     }
 }

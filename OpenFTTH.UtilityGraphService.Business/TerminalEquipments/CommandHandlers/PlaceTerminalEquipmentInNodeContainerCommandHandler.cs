@@ -150,6 +150,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     command.NamingMethod,
                     command.NamingInfo,
                     command.LifecycleInfo,
+                    command.AddressInfo,
                     command.ManufacturerId
                 );
 

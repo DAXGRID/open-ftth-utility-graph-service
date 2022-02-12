@@ -35,6 +35,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             TerminalEquipmentNamingMethodEnum namingMethod,
             NamingInfo? namingInfo,
             LifecycleInfo? lifecycleInfo,
+            AddressInfo? addressInfo,
             Guid? manufacturerId
         )
         {
@@ -58,7 +59,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                terminalStructures: CreateTerminalStructuresFromSpecification(terminalEquipmentSpecifications[terminalEquipmentSpecificationId], terminalStructureSpecifications),
                manufacturerId: manufacturerId,
                namingInfo: CalculateName(namingInfo, sequenceNumber, namingMethod),
-               lifecycleInfo: lifecycleInfo
+               lifecycleInfo: lifecycleInfo,
+               addressInfo: addressInfo
             );
 
             var terminalEquipmentPlacedInNodeContainerEvent = new TerminalEquipmentPlacedInNodeContainer(terminalEquipment)
