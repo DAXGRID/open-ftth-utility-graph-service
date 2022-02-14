@@ -182,7 +182,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
 
-            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,

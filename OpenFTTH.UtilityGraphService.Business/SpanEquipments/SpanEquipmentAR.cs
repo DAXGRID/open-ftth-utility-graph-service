@@ -48,7 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #region Place Span Equipment
         public Result PlaceSpanEquipmentInRouteNetwork(
             CommandContext cmdContext,
-            LookupCollection<SpanEquipment> spanEquipments,
+            IReadOnlyDictionary<Guid, SpanEquipment> spanEquipments,
             LookupCollection<SpanEquipmentSpecification> spanEquipmentSpecifications,
             Guid spanEquipmentId, 
             Guid spanEquipmentSpecificationId,
@@ -101,8 +101,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         }
 
         public Result PlaceSpanEquipmentInUtilityNetwork(
-            CommandContext cmdContext, 
-            LookupCollection<SpanEquipment> spanEquipments, 
+            CommandContext cmdContext,
+            IReadOnlyDictionary<Guid,SpanEquipment> spanEquipments, 
             LookupCollection<SpanEquipmentSpecification> spanEquipmentSpecifications, 
             Guid spanEquipmentId, Guid spanEquipmentSpecificationId,
             Guid walkOfInterestId,
@@ -231,7 +231,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         #region Affix To Node Container
         public Result AffixToNodeContainer(
             CommandContext cmdContext,
-            LookupCollection<NodeContainer> nodeContainers,
+            IReadOnlyDictionary<Guid,NodeContainer> nodeContainers,
             RouteNetworkInterest spanEquipmentInterest,
             Guid nodeContainerRouteNodeId,
             Guid nodeContainerId,
@@ -294,7 +294,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        private bool IsAlreadyAffixedToNodeContainerInRouteNode(LookupCollection<NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId)
+        private bool IsAlreadyAffixedToNodeContainerInRouteNode(IReadOnlyDictionary<Guid,NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
@@ -311,7 +311,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return false;
         }
 
-        private bool SideHasChanged(LookupCollection<NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId, NodeContainerSideEnum nodeContainerIngoingSide)
+        private bool SideHasChanged(IReadOnlyDictionary<Guid,NodeContainer> nodeContainers, Guid nodeContainerRouteNodeId, NodeContainerSideEnum nodeContainerIngoingSide)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");

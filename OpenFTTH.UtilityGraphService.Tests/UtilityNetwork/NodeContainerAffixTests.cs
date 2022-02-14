@@ -45,7 +45,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
-            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,
@@ -75,7 +75,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
-            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
             var nodeContainerId = testConduit.NodeContainerAffixes.First(n => n.RouteNodeId == TestRouteNetwork.HH_2).NodeContainerId;
 
@@ -112,7 +112,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
-            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
             var utilityNetworkNotificationsBeforeAct = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
             var nodeContainerId = utilityNetworkNotificationsBeforeAct.First(n => n.AffectedRouteNetworkElementIds.Contains(TestRouteNetwork.HH_2) && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.ObjectType == "NodeContainer" && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification)).IdChangeSets.First(c => c.ObjectType == "NodeContainer").IdList[0];
@@ -148,7 +148,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
-            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 spanEquipmentOrSegmentId: testConduit.SpanStructures[0].SpanSegments[0].Id,

@@ -56,7 +56,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var walkOfInterestId = Guid.NewGuid();
 
-            var spanEquipments = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments;
+            var spanEquipments = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId;
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
             var spanEquipmentAR = new SpanEquipmentAR();

@@ -32,7 +32,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
         {
             var nodeContainerSpecifications = _eventStore.Projections.Get<NodeContainerSpecificationsProjection>().Specifications;
 
-            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
+            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainerByEquipmentId;
 
             if (!nodeContainers.TryGetValue(command.NodeContainerId, out var nodeContainer))
             {

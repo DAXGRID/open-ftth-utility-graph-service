@@ -39,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(RemoveNodeContainerFromRouteNetwork command)
         {
-            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
+            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainerByEquipmentId;
 
             if (!nodeContainers.TryGetValue(command.NodeContainerId, out var nodeContainer))
             {

@@ -311,7 +311,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 
-            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipments[testConduitId];
+            var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
             var nodeContainerId = testConduit.NodeContainerAffixes.First(n => n.RouteNodeId == TestRouteNetwork.CC_1).NodeContainerId;
 

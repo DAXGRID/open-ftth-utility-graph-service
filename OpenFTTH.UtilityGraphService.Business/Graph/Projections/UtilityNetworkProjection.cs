@@ -9,6 +9,7 @@ using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
@@ -25,10 +26,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public UtilityGraph Graph => _utilityGraph;
 
-        public LookupCollection<NodeContainer> NodeContainers => new LookupCollection<NodeContainer>(_nodeContainerByEquipmentId.Values);
+        public IReadOnlyDictionary<Guid, NodeContainer> NodeContainerByEquipmentId => _nodeContainerByEquipmentId;
 
-        public LookupCollection<SpanEquipment> SpanEquipments => new LookupCollection<SpanEquipment>(_spanEquipmentByEquipmentId.Values);
-        
+        public IReadOnlyDictionary<Guid, NodeContainer> NodeContainerByInterestId => _nodeContainerByInterestId;
+
+        public IReadOnlyDictionary<Guid, SpanEquipment> SpanEquipmentsByEquipmentId => _spanEquipmentByEquipmentId;
+
+        public IReadOnlyDictionary<Guid, SpanEquipment> SpanEquipmentsByInterestId => _spanEquipmentByInterestId;
+
+        public IReadOnlyDictionary<Guid, TerminalEquipment> TerminalEquipmentByEquipmentId => _terminalEquipmentByEquipmentId;
+
+
         public UtilityNetworkProjection()
         {
             _utilityGraph = new(this);

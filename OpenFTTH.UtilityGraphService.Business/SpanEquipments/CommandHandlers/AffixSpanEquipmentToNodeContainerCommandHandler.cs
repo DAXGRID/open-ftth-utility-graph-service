@@ -72,7 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!interestQueryResult.Value.Interests.TryGetValue(nodeContainer.InterestId, out _))
                 throw new ApplicationException($"No interest information were unexpectedly returned querying node container with id: {nodeContainer.Id} interest id: {nodeContainer.InterestId}");
 
-            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainers;
+            var nodeContainers = _eventStore.Projections.Get<UtilityNetworkProjection>().NodeContainerByEquipmentId;
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 

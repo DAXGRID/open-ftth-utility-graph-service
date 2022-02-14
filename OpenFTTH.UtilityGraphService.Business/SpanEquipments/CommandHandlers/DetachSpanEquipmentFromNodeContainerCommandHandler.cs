@@ -52,7 +52,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
 
             // TODO: Fix utility graph projection so this hack is not nessesary
-            spanEquipment = _utilityNetwork.SpanEquipments[spanEquipment.Id];
+            //spanEquipment = _utilityNetwork.SpanEquipments[spanEquipment.Id];
 
 
             // Find node container id in span equipment

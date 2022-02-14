@@ -37,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         public Result PlaceNodeContainerInRouteNetworkNode(
             CommandContext cmdContext,
-            LookupCollection<NodeContainer> nodeContainers,
+            IReadOnlyDictionary<Guid, NodeContainer> nodeContainers,
             LookupCollection<NodeContainerSpecification> nodeContainerSpecifications,
             Guid nodeContainerId, 
             Guid nodeContainerSpecificationId,
@@ -61,7 +61,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             if (!nodeContainerSpecifications.ContainsKey(nodeContainerSpecificationId))
                 return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.INVALID_NODE_CONTAINER_SPECIFICATION_ID_NOT_FOUND, $"Cannot find node container specification with id: {nodeContainerSpecificationId}"));
 
-            if (nodeContainers.Any(n => n.RouteNodeId == nodeOfInterest.RouteNetworkElementRefs[0]))
+            if (nodeContainers.Any(n => n.Value.RouteNodeId == nodeOfInterest.RouteNetworkElementRefs[0]))
                 return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.NODE_CONTAINER_ALREADY_EXISTS_IN_ROUTE_NODE, $"A node container already exist in the route node with id: {nodeOfInterest.RouteNetworkElementRefs[0]} Only one node container is allowed per route node.")); 
 
             var nodeContainer = new NodeContainer(nodeContainerId, nodeContainerSpecificationId, nodeOfInterest.Id, nodeOfInterest.RouteNetworkElementRefs[0])
