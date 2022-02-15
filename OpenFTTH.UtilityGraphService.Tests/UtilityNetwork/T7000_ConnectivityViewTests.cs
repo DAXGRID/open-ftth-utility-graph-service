@@ -21,13 +21,13 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(7000)]
-    public class T7000_SpanEquipmentConnectivityViewTests
+    public class T7000_ConnectivityViewTests
     {
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
 
-        public T7000_SpanEquipmentConnectivityViewTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public T7000_ConnectivityViewTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
@@ -56,6 +56,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityQueryResult.IsSuccess.Should().BeTrue();
 
             var viewModel = connectivityQueryResult.Value;
+            var firstSpanEquipment = viewModel.SpanEquipments.First();
+
+            firstSpanEquipment.Lines[0].Name.Should().Be("Tube 1 Fiber 1");
+            firstSpanEquipment.Lines[11].Name.Should().Be("Tube 1 Fiber 12");
+            firstSpanEquipment.Lines[12].Name.Should().Be("Tube 2 Fiber 1");
         }
 
         [Fact, Order(2)]
@@ -135,28 +140,21 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var viewModel = connectivityQueryResult.Value;
         }
 
-
         [Fact, Order(4)]
-        public async void GetTerminalEquipmentConnectivityViewOnCC1_ShouldSucceed()
+        public async void GetOneTrayRackTerminalEquipmentConnectivityViewInCO1_ShouldSucceed()
         {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            // Get faces
-            var connectivityFaceQuery = new GetConnectivityFaces(TestRouteNetwork.CC_1);
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
 
-            var connectivityFaceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
-                connectivityFaceQuery
-            );
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
 
-            connectivityFaceQueryResult.IsSuccess.Should().BeTrue();
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
 
-            var connectivityFaces = connectivityFaceQueryResult.Value;
-
-            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment).Should().BeGreaterThan(0);
-            connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment).Should().BeGreaterThan(0);
-
-            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
-
-            var connectivityTrace = new GetTerminalEquipmentConnectivityView(TestRouteNetwork.CC_1, terminalEquipmentFace.EquipmentId);
+            var connectivityTrace = new GetTerminalEquipmentConnectivityView(sutNodeId, terminalEquipment.Id);
 
             // Act
             var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
@@ -166,8 +164,67 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             connectivityQueryResult.IsSuccess.Should().BeTrue();
 
+            var viewModel = connectivityQueryResult.Value.TerminalEquipments.First();
+
+            var test = viewModel.TerminalStructures[0].Lines[0];
+
+
+        }
+
+        
+        [Fact, Order(5)]
+        public async void GetTerminalEquipmentConnectivityViewOnCC1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipment);
+
+            var connectivityTrace = new GetTerminalEquipmentConnectivityView(sutNodeId, terminalEquipment.Id);
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value.TerminalEquipments;
+
+        }
+
+        [Fact, Order(6)]
+        public async void K69373563ConnectivityViewTest_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+            var sutCableName = "K69373563";
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNodeId, "K69373563");
+
+            var connectivityTrace = new GetSpanEquipmentConnectivityView(sutRouteNodeId, new Guid[] { cable.Id });
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentConnectivityView, Result<SpanEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
             var viewModel = connectivityQueryResult.Value;
 
+            var lineThatConnectedToLisaInCO = viewModel.SpanEquipments.First().Lines[3];
 
         }
 

@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.Trace.Util;
 using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
@@ -85,7 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                 var spanSegmentToTrace = GetSpanSegmentToTrace(query.RouteNetworkElementId, spanEquipment, spanStructure);
 
                 lineInfos.Add(
-                    new SpanEquipmentAZConnectivityViewLineInfo(seqNo, GetSpanStructureName(spanEquipment, spanStructure), spanSegmentToTrace.Id)
+                    new SpanEquipmentAZConnectivityViewLineInfo(seqNo, equipmentData.GetSpanEquipmentTubeFiberString(spanEquipment, spanStructureIndex), spanSegmentToTrace.Id)
                     {
                         A = GetAEndInfo(equipmentData, spanSegmentToTrace),
                         Z = GetZEndInfo(equipmentData, spanSegmentToTrace)
@@ -199,13 +200,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
         private RelevantEquipmentData GatherRelevantSpanEquipmentData(SpanEquipment spanEquipment)
         {
-            RelevantEquipmentData relevantEquipmentData = new RelevantEquipmentData();
+            var tracedSegments = TraceAllSegments(spanEquipment);
 
-            relevantEquipmentData.TracedSegments = TraceAllSegments(spanEquipment);
+            var endNodesIds = GetEndNodeIdsFromTraceResult(tracedSegments.Values);
 
-            var endNodesIds = GetEndNodeIdsFromTraceResult(relevantEquipmentData.TracedSegments.Values);
+            RelevantEquipmentData relevantEquipmentData = new RelevantEquipmentData(_eventStore, _utilityNetwork, _queryDispatcher, endNodesIds);
 
-            relevantEquipmentData.RouteNetworkElements = GatherRelevantRouteNodeInformation(_queryDispatcher, endNodesIds);
+            relevantEquipmentData.TracedSegments = tracedSegments;
 
             TryFindAandZ(relevantEquipmentData);
 
@@ -355,20 +356,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             return interestQueryResult.Value.RouteNetworkElements;
         }
 
-        private record RelevantEquipmentData
+        private class RelevantEquipmentData : RouteNetworkDataHolder
         {
             public Dictionary<Guid, TraceInfo> TracedSegments { get; set; }
-            public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
 
-            internal string? GetNodeName(Guid routeNodeId)
+            public RelevantEquipmentData(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds)
+                : base(eventStore, utilityNetwork, queryDispatcher, nodeOfInterestIds)
             {
-                if (RouteNetworkElements != null && RouteNetworkElements.ContainsKey(routeNodeId))
-                {
-                    var node = RouteNetworkElements[routeNodeId];
-                    return node.Name;
-                }
-
-                return null;
             }
         }
 

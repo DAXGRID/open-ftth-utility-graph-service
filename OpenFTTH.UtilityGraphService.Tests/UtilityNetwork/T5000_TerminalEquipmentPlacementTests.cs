@@ -400,13 +400,15 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // check parent rack
             viewModel.ParentNodeStructures.Count().Should().Be(1);
 
+            var gpsTerminalEquipment = viewModel.TerminalEquipments.First(t => t.SpecName.Contains("GPS"));
+
             // check first equipmenmt
-            viewModel.TerminalEquipments[0].ParentNodeStructureId.Should().Be(nodeContainerBeforeCommand.Racks[0].Id);
-            viewModel.TerminalEquipments[0].TerminalStructures.Count().Should().Be(6);
-            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count().Should().Be(24);
-            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A != null && l.Z != null).Should().Be(24);
-            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal != null && l.Z.Terminal != null).Should().Be(24);
-            viewModel.TerminalEquipments[0].TerminalStructures[0].Lines.Count(l => l.A.Terminal.Id != Guid.Empty && l.Z.Terminal.Id != Guid.Empty).Should().Be(24);
+            gpsTerminalEquipment.ParentNodeStructureId.Should().Be(nodeContainerBeforeCommand.Racks[0].Id);
+            gpsTerminalEquipment.TerminalStructures.Count().Should().Be(6);
+            gpsTerminalEquipment.TerminalStructures[0].Lines.Count().Should().Be(24);
+            gpsTerminalEquipment.TerminalStructures[0].Lines.Count(l => l.A != null && l.Z != null).Should().Be(24);
+            gpsTerminalEquipment.TerminalStructures[0].Lines.Count(l => l.A.Terminal != null && l.Z.Terminal != null).Should().Be(24);
+            gpsTerminalEquipment.TerminalStructures[0].Lines.Count(l => l.A.Terminal.Id != Guid.Empty && l.Z.Terminal.Id != Guid.Empty).Should().Be(24);
         }
     }
 }

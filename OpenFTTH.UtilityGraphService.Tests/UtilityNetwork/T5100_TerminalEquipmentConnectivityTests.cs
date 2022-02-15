@@ -128,7 +128,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             teInfoToAssert.TerminalStructures[0].Lines[0].Z.Should().NotBeNull();
             teInfoToAssert.TerminalStructures[0].Lines[0].Z.ConnectedTo.Should().NotBeNull();
-            teInfoToAssert.TerminalStructures[0].Lines[0].Z.ConnectedTo.Should().Be($"{sutCableName} (72) Fiber 2");
+            teInfoToAssert.TerminalStructures[0].Lines[0].Z.ConnectedTo.Should().Be($"{sutCableName} (72) Tube 1 Fiber 2");
 
             // Check faces and face connections
             var connectivityFaceQuery = new GetConnectivityFaces(sutNodeId);

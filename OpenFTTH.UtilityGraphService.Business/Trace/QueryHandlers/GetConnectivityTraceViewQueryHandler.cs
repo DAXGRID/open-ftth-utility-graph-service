@@ -10,6 +10,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.Trace.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,7 +63,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                 traceElements.AddRange(traceResult.Downstream);
 
 
-            var relatedData = GatherRelevantRelatedData(_queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
+            var relatedData = new RouteNetworkDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
 
             ReverseIfNeeded(traceElements, relatedData.RouteNetworkElements);
 
@@ -90,7 +91,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             isSplitter: false,
                             isTraceSource: false,
                             node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: CreateEquipmentString(relatedData, terminalRef),
+                            equipment: relatedData.GetEquipmentStringWithoutStructureInfo(terminalRef),
                             terminalStructure: "Kort 1",
                             terminal: "Port 1",
                             connectionInfo: connectionCableInfo,
@@ -114,7 +115,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
             List<IGraphObject> traceElements = traceResult.All;
 
-            var relatedData = GatherRelevantRelatedData(_queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
+            var relatedData = new RouteNetworkDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
 
             ReverseIfNeeded(traceElements, relatedData.RouteNetworkElements);
 
@@ -142,7 +143,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             isSplitter: false,
                             isTraceSource: false,
                             node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: CreateEquipmentString(relatedData, terminalRef),
+                            equipment: relatedData.GetEquipmentStringWithoutStructureInfo(terminalRef),
                             terminalStructure: "Kort 1",
                             terminal: "Port 1",
                             connectionInfo: connectionCableInfo,
@@ -161,7 +162,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
         }
 
 
-        private string GetConnectionInfo(RelevantRelatedData relatedData, IUtilityGraphSegmentRef? utilityGraphSegmentRef)
+        private string GetConnectionInfo(RouteNetworkDataHolder relatedData, IUtilityGraphSegmentRef? utilityGraphSegmentRef)
         {
             var spanEquipment = utilityGraphSegmentRef.SpanEquipment(_utilityNetwork);
 
@@ -170,27 +171,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return $"{spanEquipment.Name} ({nFibers}) Fiber {utilityGraphSegmentRef.StructureIndex}";
         }
 
-        private string CreateEquipmentString(RelevantRelatedData relevantEquipmentData, IUtilityGraphTerminalRef terminalRef)
-        {
-
-            if (terminalRef.IsDummyEnd)
-                return $"løs ende";
-
-            var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
-
-            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
-
-            var terminal = terminalRef.Terminal(_utilityNetwork);
-
-            var terminalEquipmentSpec = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
-
-            var rackName = relevantEquipmentData.GetRackName(terminalRef.RouteNodeId, terminalEquipment.Id);
-
-            if (rackName != null)
-                return $"{rackName} - {terminalEquipment.Name} ({terminalEquipmentSpec.ShortName})";
-            else
-                return $"{terminalEquipment.Name} ({terminalEquipmentSpec.ShortName})";
-        }
+      
 
         private List<IGraphObject> ReverseIfNeeded(List<IGraphObject> trace, LookupCollection<RouteNetworkElement> routeNetworkElements)
         {
@@ -227,82 +208,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return Result.Ok(new ConnectivityTraceView("Not connected", new ConnectivityTraceViewHopInfo[] { }));
         }
 
-        private RelevantRelatedData GatherRelevantRelatedData(IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds)
-        {
-            RelevantRelatedData result = new();
-
-            RouteNetworkElementIdList idList = new();
-            idList.AddRange(nodeOfInterestIds);
-
-            var routeNetworkQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
-                new GetRouteNetworkDetails(idList)
-                {
-                    RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementOnly,
-                    RouteNetworkElementFilter = new RouteNetworkElementFilterOptions()
-                    {
-                        IncludeNamingInfo = true,
-                        IncludeRouteNodeInfo = true
-                    }
-                }
-            ).Result;
-
-            if (routeNetworkQueryResult.IsFailed)
-                throw new ApplicationException("Failed to query route network information. Got error: " + routeNetworkQueryResult.Errors.First().Message);
-
-            result.RouteNetworkElements = routeNetworkQueryResult.Value.RouteNetworkElements;
-
-            // Get node containers
-            foreach (var routeNetworkElement in result.RouteNetworkElements)
-            {
-                foreach (var interestRel in routeNetworkElement.InterestRelations)
-                {
-                    if (_utilityNetwork.TryGetEquipment<NodeContainer>(interestRel.RefId, out var nodeContainer))
-                    {
-                        result.NodeContainerByNodeId.Add(routeNetworkElement.Id, nodeContainer);
-                    }
-                }
-            }
-
-
-            return result;
-        }
-
-        private record RelevantRelatedData
-        {
-            public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
-
-            public Dictionary<Guid, NodeContainer> NodeContainerByNodeId = new();
-
-            internal string? GetNodeName(Guid routeNodeId)
-            {
-                if (RouteNetworkElements != null && RouteNetworkElements.ContainsKey(routeNodeId))
-                {
-                    var node = RouteNetworkElements[routeNodeId];
-                    return node.Name;
-                }
-
-                return null;
-            }
-
-            internal string? GetRackName(Guid routeNodeId, Guid terminalEquipmentId)
-            {
-                if (NodeContainerByNodeId.ContainsKey(routeNodeId))
-                {
-                    var container = NodeContainerByNodeId[routeNodeId];
-                    
-                    if (container.Racks != null)
-                    {
-                        foreach (var rack in container.Racks)
-                        {
-                            if (rack.SubrackMounts != null && rack.SubrackMounts.Any(m => m.TerminalEquipmentId == terminalEquipmentId))
-                                return rack.Name;
-                        }
-                    }
-                }
-
-                return null;
-            }
-        }
+      
 
 
         private ConnectivityTraceView BuildTestData()
