@@ -69,7 +69,7 @@ namespace OpenFTTH.TestData
                     return this;
 
                 // Place some conduits in the route network we can play with
-                MultiConduit_5x10_CO_1_to_HH_1 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
+                MultiConduit_5x10_CO_1_to_HH_1 = PlaceConduit(TestSpecifications.Multi_Ø40_5x10, new RouteNetworkElementIdList() { TestRouteNetwork.S1 }, null, "5x10_CO1_HH1");
                 MultiConduit_Ø110_CO_1_to_HH_1 = PlaceConduit(TestSpecifications.Tomrør_Ø110_Red, new RouteNetworkElementIdList() { TestRouteNetwork.S1 });
                 MultiConduit_6x10_HH_1_to_HH_10 = PlaceConduit(TestSpecifications.Multi_Ø40_6x10, new RouteNetworkElementIdList() { TestRouteNetwork.S2, TestRouteNetwork.S4, TestRouteNetwork.S13 });
                 MultiConduit_10x10_HH_1_to_HH_10 = PlaceConduit(TestSpecifications.Multi_Ø50_10x10, new RouteNetworkElementIdList() { TestRouteNetwork.S2, TestRouteNetwork.S4, TestRouteNetwork.S13 });
@@ -164,7 +164,7 @@ namespace OpenFTTH.TestData
             return this;
         }
 
-        private Guid PlaceConduit(Guid specificationId, RouteNetworkElementIdList walkIds, AddressInfo? addressInfo = null)
+        private Guid PlaceConduit(Guid specificationId, RouteNetworkElementIdList walkIds, AddressInfo? addressInfo = null, string? name = null)
         {
             // Register walk of interest
             var walkOfInterestId = Guid.NewGuid();
@@ -174,7 +174,8 @@ namespace OpenFTTH.TestData
             // Place conduit
             var placeSpanEquipmentCommand = new PlaceSpanEquipmentInRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), specificationId, registerWalkOfInterestCommandResult.Value)
             {
-                AddressInfo = addressInfo
+                AddressInfo = addressInfo,
+                NamingInfo = name == null ? null : new NamingInfo(name, null)
             };
 
             var placeSpanEquipmentResult = _commandDispatcher.HandleAsync<PlaceSpanEquipmentInRouteNetwork, Result>(placeSpanEquipmentCommand).Result;

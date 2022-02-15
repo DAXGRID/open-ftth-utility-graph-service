@@ -229,6 +229,29 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(7)]
+        public async void GetSpanEquipmentConnectivityViewOnConduit5x10_CO1_HH1_ShouldSucceed()
+        {
+            var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
+
+            var conduit = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNetworkElementId, "5x10_CO1_HH1");
+
+            var connectivityTrace = new GetSpanEquipmentConnectivityView(sutRouteNetworkElementId, new Guid[] { conduit.Id });
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetSpanEquipmentConnectivityView, Result<SpanEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var line = viewModel.SpanEquipments.First().Lines[1];
+        }
+
+
 
 
 

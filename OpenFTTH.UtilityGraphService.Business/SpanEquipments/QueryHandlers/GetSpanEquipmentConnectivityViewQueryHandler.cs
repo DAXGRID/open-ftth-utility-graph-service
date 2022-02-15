@@ -88,8 +88,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                 lineInfos.Add(
                     new SpanEquipmentAZConnectivityViewLineInfo(seqNo, equipmentData.GetSpanEquipmentTubeFiberString(spanEquipment, spanStructureIndex), spanSegmentToTrace.Id)
                     {
-                        A = GetAEndInfo(equipmentData, spanSegmentToTrace),
-                        Z = GetZEndInfo(equipmentData, spanSegmentToTrace)
+                        A = GetAEndInfo(equipmentData, spanEquipment, spanSegmentToTrace),
+                        Z = GetZEndInfo(equipmentData, spanEquipment, spanSegmentToTrace)
                     }
                 );
 
@@ -130,29 +130,29 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
         }
      
 
-        private SpanEquipmentAZConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, SpanSegment spanSegment)
+        private SpanEquipmentAZConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, SpanEquipment spanEquipment, SpanSegment spanSegment)
         {
             var traceInfo = relevantEquipmentData.TracedSegments[spanSegment.Id].A;
 
             return new SpanEquipmentAZConnectivityViewEndInfo()
             {
-                ConnectedTo = CreateConnectedToString(relevantEquipmentData, traceInfo),
+                ConnectedTo = CreateConnectedToString(relevantEquipmentData, spanEquipment, traceInfo),
                 End = CreateEndString(relevantEquipmentData, traceInfo)
             };
         }
 
-        private SpanEquipmentAZConnectivityViewEndInfo GetZEndInfo(RelevantEquipmentData relevantEquipmentData, SpanSegment spanSegment)
+        private SpanEquipmentAZConnectivityViewEndInfo GetZEndInfo(RelevantEquipmentData relevantEquipmentData, SpanEquipment spanEquipment, SpanSegment spanSegment)
         {
             var traceInfo = relevantEquipmentData.TracedSegments[spanSegment.Id].Z;
 
             return new SpanEquipmentAZConnectivityViewEndInfo()
             {
-                ConnectedTo = CreateConnectedToString(relevantEquipmentData, traceInfo),
+                ConnectedTo = CreateConnectedToString(relevantEquipmentData, spanEquipment, traceInfo),
                 End = CreateEndString(relevantEquipmentData, traceInfo)
             };
         }
 
-        private string? CreateConnectedToString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
+        private string? CreateConnectedToString(RelevantEquipmentData relevantEquipmentData, SpanEquipment spanEquipment, TraceEndInfo? traceInfo)
         {
             if (traceInfo == null)
                 return null;
@@ -162,18 +162,25 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             if (neighborTerminalRef.IsDummyEnd)
                 return null;
 
-            var terminalEquipment = neighborTerminalRef.TerminalEquipment(_utilityNetwork);
-
-            var terminalStructure = neighborTerminalRef.TerminalStructure(_utilityNetwork);
-
-            var terminal = neighborTerminalRef.Terminal(_utilityNetwork);
-
             var nodeName = relevantEquipmentData.GetNodeName(neighborTerminalRef.RouteNodeId);
 
             if (nodeName != null)
                 nodeName += " ";
 
-            return  $"{nodeName}{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+            if (spanEquipment.IsCable)
+            {
+                var terminalEquipment = neighborTerminalRef.TerminalEquipment(_utilityNetwork);
+
+                var terminalStructure = neighborTerminalRef.TerminalStructure(_utilityNetwork);
+
+                var terminal = neighborTerminalRef.Terminal(_utilityNetwork);
+
+                return $"{nodeName}{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+            }
+            else
+            {
+                return $"{nodeName}";
+            }
         }
 
         private string? CreateEndString(RelevantEquipmentData relevantEquipmentData, TraceEndInfo? traceInfo)
