@@ -125,10 +125,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
         private SpanSegment GetSpanSegmentToTrace(Guid routeNetworkElementId, SpanEquipment spanEquipment, SpanStructure spanStructure)
         {
-            // TODO: Fix so that it uses routeNetworkElementId to 
+            foreach (var spanSegment in spanStructure.SpanSegments)
+            {
+                if (spanEquipment.NodesOfInterestIds[spanSegment.FromNodeOfInterestIndex] == routeNetworkElementId || spanEquipment.NodesOfInterestIds[spanSegment.ToNodeOfInterestIndex] == routeNetworkElementId)
+                    return spanSegment;
+            }
+
+            // TODO: use walk of interest to locate correct span segment
             return spanStructure.SpanSegments.First();
+            
+            //throw new ApplicationException($"Error locating a span segment in span equipment: {spanEquipment.Id} structure position: {spanStructure.Position} that start or ends in route node id: {routeNetworkElementId}");
         }
-     
+
 
         private SpanEquipmentAZConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, SpanEquipment spanEquipment, SpanSegment spanSegment)
         {

@@ -194,8 +194,30 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private bool CheckIfTerminalIsSpliced(UtilityGraphTraceResult traceResult)
         {
-            if (CheckIfTerminalIsSplicedUpstream(traceResult) && CheckIfTerminalIsSplicedDownstream(traceResult))
-                return true;
+            // If patch splice, only one side has to be spliced for terminal to be fully spliced
+            if (CheckIfTerminalIsSplicePatch(traceResult.TerminalOrSpanSegmentId))
+            {
+                if (CheckIfTerminalIsSplicedUpstream(traceResult) || CheckIfTerminalIsSplicedDownstream(traceResult))
+                    return true;
+            }
+            // If splice pin, boths sides has to be spliced for terminal to be fully spliced
+            else
+            {
+                if (CheckIfTerminalIsSplicedUpstream(traceResult) && CheckIfTerminalIsSplicedDownstream(traceResult))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool CheckIfTerminalIsSplicePatch(Guid terminalId)
+        {
+            if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminalId, out var terminalRef))
+            {
+                var structureSpec = _terminalStructureSpecifications[terminalRef.TerminalStructure(_utilityNetwork).SpecificationId];
+                if (structureSpec.TerminalTemplates[terminalRef.TerminalIndex].ConnectorType != null)
+                    return true;
+            }
 
             return false;
         }

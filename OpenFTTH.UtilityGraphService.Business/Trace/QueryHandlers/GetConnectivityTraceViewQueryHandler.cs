@@ -86,12 +86,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
                     hops.Add(
                         new ConnectivityTraceViewHopInfo(
-                            1,
+                            hopSeqNo,
                             level: 0,
                             isSplitter: false,
                             isTraceSource: false,
                             node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: relatedData.GetEquipmentStringWithoutStructureInfo(terminalRef),
+                            equipment: relatedData.GetEquipmentWithoutStructureInfoString(terminalRef),
                             terminalStructure: "Kort 1",
                             terminal: "Port 1",
                             connectionInfo: connectionCableInfo,
@@ -143,7 +143,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             isSplitter: false,
                             isTraceSource: false,
                             node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: relatedData.GetEquipmentStringWithoutStructureInfo(terminalRef),
+                            equipment: relatedData.GetEquipmentWithoutStructureInfoString(terminalRef),
                             terminalStructure: "Kort 1",
                             terminal: "Port 1",
                             connectionInfo: connectionCableInfo,

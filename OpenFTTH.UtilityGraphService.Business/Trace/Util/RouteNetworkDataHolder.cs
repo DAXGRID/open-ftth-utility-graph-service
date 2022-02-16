@@ -19,6 +19,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly UtilityNetworkProjection _utilityNetwork;
         private LookupCollection<TerminalEquipmentSpecification> _terminalEquipmentSpecifications;
+        private LookupCollection<TerminalStructureSpecification> _terminalStructureSpecifications;
 
         public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
 
@@ -31,6 +32,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             _utilityNetwork = utilityNetwork;
 
             _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
+            _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
 
             if (nodeOfInterestIds.Count() == 0)
             {
@@ -105,7 +107,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             return null;
         }
 
-        public string? CreateEndString(UtilityGraphConnectedTerminal terminalRef)
+        public string? GetNodeAndEquipmentEndString(UtilityGraphConnectedTerminal terminalRef)
         {
             var nodeName = GetNodeName(terminalRef.RouteNodeId);
 
@@ -121,33 +123,37 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             if (nodeName != null)
                 nodeName += " ";
 
-            var equipmentName = GetEquipmentStringWithStructureInfo(terminalRef);
+            var equipmentName = GetEquipmentWithStructureInfoString(terminalRef);
 
             return $"{nodeName}{equipmentName}";
         }
 
-        public string GetEquipmentStringWithoutStructureInfo(IUtilityGraphTerminalRef terminalRef)
+        public string GetEquipmentWithoutStructureInfoString(IUtilityGraphTerminalRef terminalRef, bool includeNodeName = false)
         {
             if (terminalRef.IsDummyEnd)
                 return $"løs ende";
 
             var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
 
-            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
-
-            var terminal = terminalRef.Terminal(_utilityNetwork);
-
-            var terminalEquipmentSpec = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
-
             var rackName = GetRackName(terminalRef.RouteNodeId, terminalEquipment.Id);
 
+            string? nodeName = null;
+
+            if (includeNodeName)
+            {
+                nodeName = GetNodeName(terminalRef.RouteNodeId);
+
+                if (nodeName != null)
+                    nodeName += " ";
+            }
+
             if (rackName != null)
-                return $"{rackName} - {terminalEquipment.Name} ({terminalEquipmentSpec.ShortName})";
+                return $"{nodeName}{rackName} - {terminalEquipment.Name}";
             else
-                return $"{terminalEquipment.Name} ({terminalEquipmentSpec.ShortName})";
+                return $"{nodeName}{terminalEquipment.Name}";
         }
 
-        public string GetEquipmentStringWithStructureInfo(IUtilityGraphTerminalRef terminalRef)
+        public string GetEquipmentWithStructureInfoString(IUtilityGraphTerminalRef terminalRef)
         {
             if (terminalRef.IsDummyEnd)
                 return $"løs ende";
@@ -158,14 +164,44 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             var terminal = terminalRef.Terminal(_utilityNetwork);
 
-            var terminalEquipmentSpec = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
-
             var rackName = GetRackName(terminalRef.RouteNodeId, terminalEquipment.Id);
 
             if (rackName != null)
-                return $"{rackName}-{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name} ({terminalEquipmentSpec.ShortName})";
+                return $"{rackName}-{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
             else
-                return $"{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name} ({terminalEquipmentSpec.ShortName})";
+                return $"{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+        }
+
+        public string GetEquipmentStructureInfoString(IUtilityGraphTerminalRef terminalRef)
+        {
+            if (terminalRef.IsDummyEnd)
+                return $"løs ende";
+
+            var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
+
+            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
+
+            var terminalStructureSpec = _terminalStructureSpecifications[terminalStructure.SpecificationId];
+
+            string slotType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Bakke" : "Kort";
+
+            return $"{slotType} {terminalStructure.Position}";
+        }
+
+        public string GetEquipmentTerminalInfoString(IUtilityGraphTerminalRef terminalRef)
+        {
+            if (terminalRef.IsDummyEnd)
+                return $"løs ende";
+
+            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
+
+            var terminal = terminalRef.Terminal(_utilityNetwork);
+
+            var terminalStructureSpec = _terminalStructureSpecifications[terminalStructure.SpecificationId];
+
+            string pinType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Søm" : "Port";
+
+            return $"{pinType} {terminal.Name}";
         }
 
         public string GetSpanEquipmentFullFiberCableString(SpanEquipment spanEquipment, int fiberNo)

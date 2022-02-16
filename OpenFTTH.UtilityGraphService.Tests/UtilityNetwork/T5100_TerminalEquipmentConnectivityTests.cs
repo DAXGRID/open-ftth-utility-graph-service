@@ -82,7 +82,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 terminalEquipmentId: terminalEquipment.Id,
                 terminalIds: new Guid[] { 
                     terminalEquipment.TerminalStructures[0].Terminals[0].Id,  // Pin 1
-                    terminalEquipment.TerminalStructures[0].Terminals[5].Id   // Pin 4
+                    terminalEquipment.TerminalStructures[0].Terminals[5].Id   // Pin 6
                 }
             );
             var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);

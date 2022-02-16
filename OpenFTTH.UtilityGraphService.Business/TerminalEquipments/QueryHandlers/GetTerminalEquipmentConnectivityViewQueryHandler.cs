@@ -184,8 +184,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
             {
+                ConnectedToSpanSegmentId = traceInfo == null ? Guid.Empty : traceInfo.NeighborSegment.Id,
                 ConnectedTo = traceInfo == null ? null : CreateConnectedToString(relevantEquipmentData, traceInfo),
-                End = traceInfo == null ? null : relevantEquipmentData.CreateEndString(traceInfo.EndTerminal)
+                End = traceInfo == null ? null : relevantEquipmentData.GetNodeAndEquipmentEndString(traceInfo.EndTerminal)
             };
         }
 
@@ -199,8 +200,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
             {
+                ConnectedToSpanSegmentId = traceInfo == null ? Guid.Empty : traceInfo.NeighborSegment.Id,
                 ConnectedTo = traceInfo == null ? null : CreateConnectedToString(relevantEquipmentData, traceInfo),
-                End = traceInfo == null ? null : relevantEquipmentData.CreateEndString(traceInfo.EndTerminal)
+                End = traceInfo == null ? null : relevantEquipmentData.GetNodeAndEquipmentEndString(traceInfo.EndTerminal)
             };
         }
 
@@ -285,9 +287,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             return relevantEquipmentData.GetSpanEquipmentFullFiberCableString(spanEquipment, fiberNo);
         }
-
-       
-
 
         private RelevantEquipmentData GatherRelevantTerminalEquipmentData(TerminalEquipment terminalEquipment)
         {
