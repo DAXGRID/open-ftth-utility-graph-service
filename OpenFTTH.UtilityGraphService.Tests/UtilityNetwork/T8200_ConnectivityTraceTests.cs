@@ -57,6 +57,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             );
 
             var hops = connectivityTraceQueryResult.Value.Hops;
+
+            hops.Length.Should().Be(2);
+            hops[0].HopSeqNo.Should().Be(1);
+            hops[1].HopSeqNo.Should().Be(2);
         }
 
 
@@ -85,6 +89,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             );
 
             var hops = connectivityTraceQueryResult.Value.Hops;
+
+            hops.Length.Should().Be(2);
+            hops[0].HopSeqNo.Should().Be(1);
+            hops[1].HopSeqNo.Should().Be(2);
+
         }
 
 

@@ -138,7 +138,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
                     hops.Add(
                         new ConnectivityTraceViewHopInfo(
-                            1,
+                            hopSeqNo,
                             level: 0,
                             isSplitter: false,
                             isTraceSource: false,
