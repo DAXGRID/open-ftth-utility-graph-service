@@ -381,6 +381,60 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanSegmentsDisconnectedFromTerminals @event)
+        {
+            List<SpanStructure> newStructures = new List<SpanStructure>();
+
+            Dictionary<Guid, SpanSegmentToTerminalDisconnectInfo> disconnectInfoBySpanEquipmentId  = @event.Disconnects.ToDictionary(e => e.SegmentId);
+
+            // Loop though all span structures
+            for (UInt16 structureIndex = 0; structureIndex < existingSpanEquipment.SpanStructures.Length; structureIndex++)
+            {
+                var existingSpanStructure = existingSpanEquipment.SpanStructures[structureIndex];
+
+                List<SpanSegment> newSegments = new List<SpanSegment>();
+
+                // Loop through all span segments
+                foreach (var existingSegment in existingSpanStructure.SpanSegments)
+                {
+                    // If disconnect
+                    if (disconnectInfoBySpanEquipmentId.ContainsKey(existingSegment.Id))
+                    {
+                        var terminalId = disconnectInfoBySpanEquipmentId[existingSegment.Id].TerminalId;
+
+                        if (existingSegment.FromTerminalId == terminalId)
+                        {
+                            newSegments.Add(
+                                existingSegment with { FromTerminalId = Guid.Empty }
+                            );
+                        }
+                        else if (existingSegment.ToTerminalId == terminalId)
+                        {
+                            newSegments.Add(
+                                existingSegment with { ToTerminalId = Guid.Empty }
+                            );
+                        }
+                    }
+                    else
+                    {
+                        newSegments.Add(existingSegment);
+                    }
+                }
+
+                newStructures.Add(
+                    existingSpanStructure with
+                    {
+                        SpanSegments = newSegments.ToArray()
+                    }
+                );
+            }
+
+            return existingSpanEquipment with
+            {
+                SpanStructures = newStructures.ToArray()
+            };
+        }
+
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, AdditionalStructuresAddedToSpanEquipment @event)
         {
             List<SpanStructure> newStructures = new List<SpanStructure>();

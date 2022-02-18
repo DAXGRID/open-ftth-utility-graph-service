@@ -86,7 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                             return new UtilityGraphTraceResult(id, terminal, downstream, upstream);
                         }
-                        else
+                        else if (nTerminalNeigbours > 2)
                         {
                             throw new ApplicationException($"terminal with id: {terminal.Id} version: {version} have more than two segment connected to it. The system must prevent that to never happend!");
                         }

@@ -50,6 +50,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentCutReverted>(Project);
             ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
             ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
+            ProjectEvent<SpanSegmentsDisconnectedFromTerminals>(Project);
             ProjectEvent<AdditionalStructuresAddedToSpanEquipment>(Project);
             ProjectEvent<SpanStructureRemoved>(Project);
             ProjectEvent<SpanEquipmentRemoved>(Project);
@@ -175,6 +176,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanSegmentDisconnectedFromTerminal @event):
+                    ProcessSegmentDisconnects(@event);
+                    break;
+
+                case (SpanSegmentsDisconnectedFromTerminals @event):
                     ProcessSegmentDisconnects(@event);
                     break;
 
@@ -323,6 +328,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         }
 
         private void ProcessSegmentDisconnects(SpanSegmentDisconnectedFromTerminal @event)
+        {
+            var before = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+            var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
+            TryUpdate(after);
+
+            UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
+        }
+
+        private void ProcessSegmentDisconnects(SpanSegmentsDisconnectedFromTerminals @event)
         {
             var before = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);

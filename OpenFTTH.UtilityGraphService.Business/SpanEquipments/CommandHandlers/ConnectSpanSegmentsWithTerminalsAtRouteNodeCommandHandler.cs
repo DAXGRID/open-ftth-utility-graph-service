@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
-    public class ConnectSpanAndTerminalEquipmentCommandHandler : ICommandHandler<ConnectSpanEquipmentAndTerminalEquipment, Result>
+    public class ConnectSpanSegmentsWithTerminalsAtRouteNodeCommandHandler : ICommandHandler<ConnectSpanEquipmentAndTerminalEquipment, Result>
     {
         // TODO: move into config
         private readonly string _topicName = "notification.utility-network";
@@ -30,7 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly IExternalEventProducer _externalEventProducer;
         private readonly UtilityNetworkProjection _utilityNetwork;
 
-        public ConnectSpanAndTerminalEquipmentCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public ConnectSpanSegmentsWithTerminalsAtRouteNodeCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
@@ -41,20 +41,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(ConnectSpanEquipmentAndTerminalEquipment command)
         {
-            if (command.SpanSegmentsIds.Length == 0)
-                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.INVALID_SPAN_SEGMENT_LIST_CANNOT_BE_EMPTY, "A list of span segments to connect must be provided.")));
+            if (command.Connects.Length == 0)
+                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.INVALID_CONNECTS_LIST_CANNOT_BE_EMPTY, "The list of segment to terminal connections cannot be empty")));
 
-            if (command.TerminalIds.Length == 0)
-                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.INVALID_TERMINAL_LIST_CANNOT_BE_EMPTY, "A list of terminals to connect must be provided.")));
+            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.Connects[0].SpanSegmentId, out var firstSpanSegmentGraphElement))
+                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.Connects[0].SpanSegmentId}")));
 
-            if (command.TerminalIds.Length != command.SpanSegmentsIds.Length)
-                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.INVALID_SPAN_SEGMENT_LIST_AMOUNT_MUST_BE_EQUAL_TERMINAL_LIST_AMOUNT, "The number of span segment ids and terminal ids must be the same. Are connected one to one.")));
-
-            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentsIds[0], out var firstSpanSegmentGraphElement))
-                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentsIds[0]}")));
-
-            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(command.TerminalIds[0], out var firstTerminalGraphElement))
-                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_NOT_FOUND, $"Cannot find any terminal in the utility graph with id: {command.TerminalIds[0]}")));
+            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(command.Connects[0].TerminalId, out var firstTerminalGraphElement))
+                return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_NOT_FOUND, $"Cannot find any terminal in the utility graph with id: {command.Connects[0].TerminalId}")));
 
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
@@ -62,7 +56,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(firstSpanSegmentGraphElement.SpanEquipmentId);
 
-            var connects = BuildConnects(command.SpanSegmentsIds, command.TerminalIds);
+            var connects = BuildConnects(command.Connects);
 
             var spanEquipmentConnectResult = spanEquipmentAR.ConnectCableSpanSegmentsWithTerminals(
                 cmdContext: cmdContext,
@@ -82,13 +76,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return Task.FromResult(Result.Ok());
         }
 
-        private SpanSegmentToSimpleTerminalConnectInfo[] BuildConnects(Guid[] segmentIds, Guid[] terminalIds)
+        private SpanSegmentToSimpleTerminalConnectInfo[] BuildConnects(ConnectSpanSegmentToTerminalOperation[] connectsOps)
         {
             List<SpanSegmentToSimpleTerminalConnectInfo> connects = new();
 
-            for (int i = 0; i < segmentIds.Length; i++)
+            foreach (var connectOp in connectsOps)
             {
-                connects.Add(new SpanSegmentToSimpleTerminalConnectInfo(segmentIds[i], terminalIds[i]));
+                connects.Add(new SpanSegmentToSimpleTerminalConnectInfo(connectOp.SpanSegmentId, connectOp.TerminalId));
             }
 
             return connects.ToArray();
