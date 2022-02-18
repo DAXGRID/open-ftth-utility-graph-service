@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
-    public class ConnectSpanSegmentsWithTerminalsAtRouteNodeCommandHandler : ICommandHandler<ConnectSpanEquipmentAndTerminalEquipment, Result>
+    public class ConnectSpanSegmentsWithTerminalsAtRouteNodeCommandHandler : ICommandHandler<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>
     {
         // TODO: move into config
         private readonly string _topicName = "notification.utility-network";
@@ -39,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
-        public Task<Result> HandleAsync(ConnectSpanEquipmentAndTerminalEquipment command)
+        public Task<Result> HandleAsync(ConnectSpanSegmentsWithTerminalsAtRouteNode command)
         {
             if (command.Connects.Length == 0)
                 return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.INVALID_CONNECTS_LIST_CANNOT_BE_EMPTY, "The list of segment to terminal connections cannot be empty")));

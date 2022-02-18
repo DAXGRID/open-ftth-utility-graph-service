@@ -70,7 +70,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // ACT (do the connect between cable and equipment)
-            var connectCmd = new ConnectSpanEquipmentAndTerminalEquipment(
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: sutNodeId,
@@ -83,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                     new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[5].Id)
                 }
             );
-            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
 
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
@@ -205,7 +205,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // ACT (do the connect between cable and equipment)
-            var connectCmd = new ConnectSpanEquipmentAndTerminalEquipment(
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: sutNodeId,
@@ -218,7 +218,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                     new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[1].Id)
                 }
             );
-            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
 
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
@@ -307,7 +307,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // ACT (do the connect between cable and equipment)
-            var connectCmd = new ConnectSpanEquipmentAndTerminalEquipment(
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: sutNodeId,
@@ -317,7 +317,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                     new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[4].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[0].Id)
                 }
             );
-            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
 
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
@@ -424,7 +424,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // ACT (do the connect between cable and equipment)
-            var connectCmd = new ConnectSpanEquipmentAndTerminalEquipment(
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: sutNodeId,
@@ -437,7 +437,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                     new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[1].Id)
                 }
             );
-            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanEquipmentAndTerminalEquipment, Result>(connectCmd);
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
 
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
