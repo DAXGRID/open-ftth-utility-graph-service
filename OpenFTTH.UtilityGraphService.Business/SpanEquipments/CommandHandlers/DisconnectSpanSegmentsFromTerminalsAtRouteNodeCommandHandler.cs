@@ -81,7 +81,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
                     applicationInfo: null,
-                    category: "EquipmentConnectivityModification.Disconnect",
+                    category: "FiberConnectivityModification.Disconnect",
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );

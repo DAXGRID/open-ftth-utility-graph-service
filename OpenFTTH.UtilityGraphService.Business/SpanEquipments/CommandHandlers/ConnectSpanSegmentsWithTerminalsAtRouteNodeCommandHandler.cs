@@ -50,6 +50,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(command.Connects[0].TerminalId, out var firstTerminalGraphElement))
                 return Task.FromResult(Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_NOT_FOUND, $"Cannot find any terminal in the utility graph with id: {command.Connects[0].TerminalId}")));
 
+            // Validate terminal connections
+            var validateTerminalResult = ValidateTerminalConnections(command.Connects);
+
+            if (validateTerminalResult.IsFailed)
+                return Task.FromResult(validateTerminalResult);
+
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
 
             var cmdContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
@@ -74,6 +80,35 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
 
             return Task.FromResult(Result.Ok());
+        }
+
+        private Result ValidateTerminalConnections(ConnectSpanSegmentToTerminalOperation[] connects)
+        {
+            foreach (var connect in connects)
+            {
+                if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(connect.TerminalId, out var terminalRef))
+                    return Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_NOT_FOUND, $"Cannot find any terminal in the utility graph with id: {connect.TerminalId}"));
+
+                if (terminalRef.IsDummyEnd)
+                    return Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_NOT_FOUND, $"Cannot connect to dummy terminal"));
+
+                var version = _utilityNetwork.Graph.LatestCommitedVersion;
+
+                if (terminalRef is UtilityGraphConnectedTerminal connectedTerminal)
+                {
+                    var terminal = terminalRef.Terminal(_utilityNetwork);
+
+                    var terminalConnectionCount = connectedTerminal.InE(version).Count();
+
+                    if (terminal.Direction == TerminalDirectionEnum.BI && terminalConnectionCount == 2)
+                        return Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_ALREADY_CONNECTED, $"Bi directional terminal with id: {connect.TerminalId} is already connected to {terminalConnectionCount} segment(s)"));
+                    
+                    if (terminal.Direction != TerminalDirectionEnum.BI && terminalConnectionCount == 1)
+                        return Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_ALREADY_CONNECTED, $"Non-bi-directional terminal with id: {connect.TerminalId} is already connected to {terminalConnectionCount} segment(s)"));
+                }
+            }
+
+            return Result.Ok();
         }
 
         private SpanSegmentToSimpleTerminalConnectInfo[] BuildConnects(ConnectSpanSegmentToTerminalOperation[] connectsOps)

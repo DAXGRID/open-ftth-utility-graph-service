@@ -17,6 +17,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private InMemoryObjectManager _objectManager = new InMemoryObjectManager();
         
+        public long LatestCommitedVersion => _objectManager.GetLatestCommitedVersion();
 
         public UtilityGraph(UtilityNetworkProjection utilityNetworkProjection)
         {

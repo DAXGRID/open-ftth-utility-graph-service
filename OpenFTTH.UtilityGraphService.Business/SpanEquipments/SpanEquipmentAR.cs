@@ -849,6 +849,25 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
+            // Check that the same span segment is not connected multiple times
+            HashSet<Guid> uniqueSpanSegmentIds = new();
+
+            foreach (var connect in connects)
+            {
+                if (uniqueSpanSegmentIds.Contains(connect.SegmentId))
+                {
+                    return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
+                               ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_CONNECTED_MORE_THAN_ONCE,
+                               $"The segment with id: {connect.SegmentId} is connected several times. Must be unique.")
+                           );
+                }
+                else
+                {
+                    uniqueSpanSegmentIds.Add(connect.SegmentId);
+                }
+            }
+
+
             // Check that alle span segments connected are ending in the route node
             foreach (var structure in _spanEquipment.SpanStructures)
             {
