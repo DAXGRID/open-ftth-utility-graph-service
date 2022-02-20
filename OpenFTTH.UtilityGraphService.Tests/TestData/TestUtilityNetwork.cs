@@ -3,6 +3,7 @@ using OpenFTTH.CQRS;
 using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
+using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -205,7 +206,7 @@ namespace OpenFTTH.TestData
             return placeNodeContainerCommand.NodeContainerId;
         }
 
-        private void AffixSpanEquipmentToContainer(Guid spanEquipmentId, Guid nodeContainerId, NodeContainerSideEnum side)
+        public void AffixSpanEquipmentToContainer(Guid spanEquipmentId, Guid nodeContainerId, NodeContainerSideEnum side)
         {
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                spanEquipmentOrSegmentId: spanEquipmentId,
@@ -218,6 +219,7 @@ namespace OpenFTTH.TestData
             if (affixResult.IsFailed)
                 throw new ApplicationException(affixResult.Errors.First().Message);
         }
+
     }
 }
 

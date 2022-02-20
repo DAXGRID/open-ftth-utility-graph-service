@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 {
@@ -16,6 +17,11 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
 
             if (parentAffixes.Length == 0)
                 throw new ApplicationException("A utility hop must always have at least one parent affix");
+        }
+
+        public UtilityNetworkHop Reverse()
+        {
+            return new UtilityNetworkHop(ToNodeId, FromNodeId, ParentAffixes.Reverse().ToArray());
         }
     }
 }

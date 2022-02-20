@@ -6,6 +6,7 @@ using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
+using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.Trace;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
@@ -43,22 +44,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (command.RouteNodeId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_ROUTE_NODE_ID_CANNOT_BE_EMPTY, $"Round node id must be specified.")));
 
-            if (command.SpanSegmentId1 == Guid.Empty)
+            if (command.ChildSpanSegmentId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_CANNOT_BE_EMPTY, $"Span segment id 1 must be specified.")));
 
-            if (command.SpanSegmentId2 == Guid.Empty)
+            if (command.ParentSpanSegmentId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_CANNOT_BE_EMPTY, $"Span segment id 2 must be specified.")));
 
           
             // Find first span equipment
-            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentId1, out var spanSegment1GraphElement))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.SpanSegmentId1}")));
+            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.ChildSpanSegmentId, out var spanSegment1GraphElement))
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
 
             var spanEquipment1 = spanSegment1GraphElement.SpanEquipment(_utilityNetwork);
 
             // Find second span equipment
-            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentId2, out var spanSegment2GraphElement))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.SpanSegmentId2}")));
+            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.ParentSpanSegmentId, out var spanSegment2GraphElement))
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ParentSpanSegmentId}")));
 
             var spanEquipment2 = spanSegment2GraphElement.SpanEquipment(_utilityNetwork);
 
@@ -71,7 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.NO_CONDUIT_SPAN_SEGMENT_NOT_FOUND, $"One span segment must belong to a conduit.")));
 
             var cableSpanEquipment = spanEquipment1.IsCable ? spanEquipment1 : spanEquipment2;
-            var conduitSpanSegmentId = spanEquipment1.IsCable ? command.SpanSegmentId2 : command.SpanSegmentId1;
+            var conduitSpanSegmentId = spanEquipment1.IsCable ? command.ParentSpanSegmentId : command.ChildSpanSegmentId;
 
             var createAffixesResult = CreateHop(conduitSpanSegmentId);
 
@@ -82,23 +83,56 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
+            var existingWalkOfInterest = GetWalkOfInterest(cableSpanEquipment.WalkOfInterestId);
+
             var affixResult = spanEquipmentAR.AffixToParent(
                 cmdContext: commandContext,
-                utilityNetworkHop: createAffixesResult.Value
+                childWalkOfInterest: existingWalkOfInterest,
+                utilityNetworkHop: createAffixesResult.Value.Item1,
+                utilityNetworkHopWalkOfInterest: createAffixesResult.Value.Item2.ValidatedRouteNetworkWalk
             );
 
-            if (affixResult.IsSuccess)
-            {
-                _eventStore.Aggregates.Store(spanEquipmentAR);
+            if (affixResult.IsFailed)
+                return Task.FromResult(Result.Fail(affixResult.Errors.First()));
 
-                NotifyExternalServicesAboutChange(cableSpanEquipment.Id, new Guid[] { command.RouteNodeId });
+            // Check if walk of interest has changed
+            var newWalkOfInterest = affixResult.Value;
+
+            if (CheckIfWalkHasChanged(existingWalkOfInterest, newWalkOfInterest))
+            {
+                var updateWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, cableSpanEquipment.WalkOfInterestId, newWalkOfInterest.RouteNetworkElementRefs);
+
+                var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
+
+                if (updateWalkOfInterestCommandResult.IsFailed)
+                    return Task.FromResult(Result.Fail(updateWalkOfInterestCommandResult.Errors.First()));
             }
 
-            return Task.FromResult(affixResult);
+            _eventStore.Aggregates.Store(spanEquipmentAR);
+
+            NotifyExternalServicesAboutChange(cableSpanEquipment.Id, new Guid[] { command.RouteNodeId });
+
+            return Task.FromResult(Result.Ok());
         }
 
+        private bool CheckIfWalkHasChanged(ValidatedRouteNetworkWalk existingWalkOfInterest, ValidatedRouteNetworkWalk newWalkOfInterest)
+        {
+            if (existingWalkOfInterest.RouteNetworkElementRefs.Count != newWalkOfInterest.RouteNetworkElementRefs.Count)
+                return true;
 
-        private Result<UtilityNetworkHop> CreateHop(Guid conduitSpanSegmentToTrace)
+            for (int i = 0; i < existingWalkOfInterest.RouteNetworkElementRefs.Count; i++)
+            {
+                var existingRouteNetworkElement = existingWalkOfInterest.RouteNetworkElementRefs[i];
+                var newRouteNetworkElement = newWalkOfInterest.RouteNetworkElementRefs[i];
+
+                if (existingRouteNetworkElement != newRouteNetworkElement)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private Result<(UtilityNetworkHop, ProcessedHopResult)> CreateHop(Guid conduitSpanSegmentToTrace)
         {
             // Create span equipment parent affixes
             List<SpanEquipmentSpanEquipmentAffix> affixes = new();
@@ -120,7 +154,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 }
             }
 
-            return Result.Ok(new UtilityNetworkHop(segmentTrace.ValidatedRouteNetworkWalk.FromNodeId, segmentTrace.ValidatedRouteNetworkWalk.ToNodeId, affixes.ToArray()));
+            return Result.Ok((new UtilityNetworkHop(segmentTrace.ValidatedRouteNetworkWalk.FromNodeId, segmentTrace.ValidatedRouteNetworkWalk.ToNodeId, affixes.ToArray()), segmentTraceResult.Value));
         }
 
 
@@ -131,22 +165,23 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
 
-            var traceBuilder = new SwissArmyKnifeTracer(_queryDispatcher, _utilityNetwork);
+            var traceBuilder = new ConduitSpanSegmentTracer(_queryDispatcher, _utilityNetwork);
 
-            var traceInfo = traceBuilder.Trace(new List<SpanEquipment> { spanEquipment }, spanSegmentIdToTrace);
+            var traceInfo = traceBuilder.Trace(spanSegmentIdToTrace);
 
-            if (traceInfo == null || traceInfo.RouteNetworkTraces.Count != 1)
+            if (traceInfo == null || traceInfo.RouteNetworkWalk == null)
             {
-                return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected 1 route network trace result, got {traceInfo?.RouteNetworkTraces?.Count}"));
+                return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected route network trace result"));
             }
 
-            if (traceInfo == null || traceInfo.UtilityNetworkTraceBySpanSegmentId.Count != 1)
+            if (traceInfo == null || traceInfo.UtilityNetworkTrace == null)
             {
-                return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected 1 utility network trace result, got {traceInfo?.UtilityNetworkTraceBySpanSegmentId?.Count}"));
+                return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected utility network trace result"));
             }
+                       
 
             var walk = new RouteNetworkElementIdList();
-            walk.AddRange(traceInfo.RouteNetworkTraces[0].RouteSegmentIds);
+            walk.AddRange(traceInfo.RouteNetworkWalk);
 
             var validateInterestCommand = new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("PlaceSpanEquipmentInRouteNetwork", Guid.Empty), walk);
 
@@ -156,8 +191,23 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Result.Fail(validateInterestResult.Errors.First());
 
             return Result.Ok(
-                new ProcessedHopResult(spanSegmentIdToTrace, validateInterestResult.Value, traceInfo.UtilityNetworkTraceBySpanSegmentId.Values.First())
+                new ProcessedHopResult(spanSegmentIdToTrace, validateInterestResult.Value, traceInfo.UtilityNetworkTrace)
             );
+        }
+
+        public ValidatedRouteNetworkWalk GetWalkOfInterest(Guid interestId)
+        {
+            var routeNetworkQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+                 new GetRouteNetworkDetails(new InterestIdList() { interestId })
+                 {
+                     RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementAndInterestObjects
+                 }
+            ).Result;
+
+            if (routeNetworkQueryResult.IsFailed)
+                throw new ApplicationException(routeNetworkQueryResult.Errors.First().Message);
+
+            return new ValidatedRouteNetworkWalk(routeNetworkQueryResult.Value.Interests.First().RouteNetworkElementRefs);
         }
 
         private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid[] affectedRouteNetworkElementIds)

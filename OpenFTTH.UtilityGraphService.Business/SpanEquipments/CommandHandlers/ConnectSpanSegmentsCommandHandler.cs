@@ -93,7 +93,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     return Task.FromResult(Result.Fail(allignedResult.Errors.First()));
 
                 // Check if a merge should be done instead of connecting the individually spans using junctions/terminals
-                if (ShouldBeMerged(firstSpanEquipment, secondSpanEquipment))
+                if (ShouldBeMerged(command.RouteNodeId, firstSpanEquipment, secondSpanEquipment))
                 {
                     var mergeResult = MergeSpanEquipment(commandContext, command.RouteNodeId, firstSpanEquipment, secondSpanEquipment);
 
@@ -463,10 +463,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             return Result.Ok();
         }
 
-        private static bool ShouldBeMerged(SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
+        private bool ShouldBeMerged(Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
         {
             if (firstSpanEquipment.Connects.Count == 1 && firstSpanEquipment.SpanEquipment.TryGetSpanSegment(firstSpanEquipment.Connects[0].ConnectInfo.SegmentId, out var firstSpanSegmentWithIndexInfo))
             {
+                // Don't merge if span equipment is affixed to container
+                if (firstSpanEquipment.SpanEquipment.NodeContainerAffixes != null && firstSpanEquipment.SpanEquipment.NodeContainerAffixes.Any(affix => affix.RouteNodeId == routeNodeId))
+                    return false;
+
                 // If we're dealing with structure index 0, then the client is connecting the outer span
                 if (firstSpanSegmentWithIndexInfo.StructureIndex == 0)
                 {
