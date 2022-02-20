@@ -211,30 +211,149 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             var routeNetworkHops = FindRouteNetworkHops(childWalkOfInterest);
 
-            if (!CheckIfNewHopHasValidStartAndEndInsideInWalkOfInterest(childWalkOfInterest, routeNetworkHops, utilityNetworkHop))
+            if (CheckIfNewHopHasValidStartAndEndInsideInWalkOfInterest(childWalkOfInterest, routeNetworkHops, utilityNetworkHop))
+            {
+                var reversedUtilityNetworkHop = ReverseHopIfNeeded(childWalkOfInterest, utilityNetworkHop);
+                var reversedUtilityNetworkHopWalkOfInterest = ReverseWalkOfInterestNeeded(childWalkOfInterest, utilityNetworkHopWalkOfInterest, utilityNetworkHop);
+
+                var existingHopToUse = FindExistingRouteNetworkHopToContainerUtilityNetworkHop(routeNetworkHops, reversedUtilityNetworkHop);
+
+                var newUtilityNetworkHopList = CreateNewUtilityNetworkHopList(childWalkOfInterest, routeNetworkHops, reversedUtilityNetworkHop, existingHopToUse.SequenceNumber);
+
+                var newWalkOfInterest = CreateNewWalkOfInterest(childWalkOfInterest, reversedUtilityNetworkHopWalkOfInterest, existingHopToUse);
+
+
+                RaiseEvent(
+                    new SpanEquipmentAffixedToParent(this.Id, newUtilityNetworkHopList)
+                    {
+                        CorrelationId = cmdContext.CorrelationId,
+                        IncitingCmdId = cmdContext.CmdId,
+                        UserName = cmdContext.UserContext?.UserName,
+                        WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                    }
+                );
+
+                return Result.Ok(newWalkOfInterest);
+            }
+            else if (CheckIfNewHopIsExtendingExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                var reversedUtilityNetworkHop = ExtentReverseHopIfNeeded(childWalkOfInterest, utilityNetworkHopWalkOfInterest, utilityNetworkHop);
+
+                var reversedUtilityNetworkHopWalkOfInterest = ExtentReverseWalkOfInterestIfNeeded(childWalkOfInterest, utilityNetworkHopWalkOfInterest);
+
+                var newWalkOfInterest = ExtentCreateNewWalkOfInterestIfNeeded(childWalkOfInterest, reversedUtilityNetworkHopWalkOfInterest, reversedUtilityNetworkHop);
+
+                var newUtilityNetworkHopList = ExtentCreateNewUtilityNetworkHopList(childWalkOfInterest, reversedUtilityNetworkHopWalkOfInterest, reversedUtilityNetworkHop);
+
+
+                RaiseEvent(
+                    new SpanEquipmentAffixedToParent(this.Id, newUtilityNetworkHopList)
+                    {
+                        CorrelationId = cmdContext.CorrelationId,
+                        IncitingCmdId = cmdContext.CmdId,
+                        UserName = cmdContext.UserContext?.UserName,
+                        WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                    }
+                );
+
+                return Result.Ok(newWalkOfInterest);
+
+            }
+            else
+            {
                 return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.NEW_UTILITY_NETWORK_HOP_IS_NOT_VALID, $"The hop from node: {utilityNetworkHop.FromNodeId} to node: {utilityNetworkHop} is not valid in regard to span equipment with id: {this.Id} and walk of interest with id: {_spanEquipment.WalkOfInterestId}"));
+            }
+        }
 
-            var reversedUtilityNetworkHop = ReverseHopIfNeeded(childWalkOfInterest, utilityNetworkHop);
-            var reversedUtilityNetworkHopWalkOfInterest = ReverseWalkOfInterestNeeded(childWalkOfInterest, utilityNetworkHopWalkOfInterest, utilityNetworkHop);
+        private UtilityNetworkHop[] ExtentCreateNewUtilityNetworkHopList(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest, UtilityNetworkHop newUtilityNetworkHop)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
-            var existingHopToUse = FindExistingRouteNetworkHopToContainerUtilityNetworkHop(routeNetworkHops, reversedUtilityNetworkHop);
+            List<UtilityNetworkHop> result = new();
 
-            var newUtilityNetworkHopList = CreateNewUtilityNetworkHopList(childWalkOfInterest, routeNetworkHops, reversedUtilityNetworkHop, existingHopToUse.SequenceNumber);
+            if (CheckIfNewHopExtentsStartOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                result.Add(newUtilityNetworkHop);
 
-            var newWalkOfInterest = CreateNewWalkOfInterest(childWalkOfInterest, reversedUtilityNetworkHopWalkOfInterest, existingHopToUse);
+                if (_spanEquipment.UtilityNetworkHops != null)
+                    result.AddRange(_spanEquipment.UtilityNetworkHops);
+            }
+            else if (CheckIfNewHopExtentsEndOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                if (_spanEquipment.UtilityNetworkHops != null)
+                    result.AddRange(_spanEquipment.UtilityNetworkHops);
 
+                result.Add(newUtilityNetworkHop);
+            }
+            else
+            {
+                throw new ApplicationException($"Error creating new utility hop list while affixing {this.Id} to {newUtilityNetworkHop} Expected new hop to either start or end in existing walk of interest.");
+            }
 
-            RaiseEvent(
-                new SpanEquipmentAffixedToParent(this.Id, newUtilityNetworkHopList)
-                {
-                    CorrelationId = cmdContext.CorrelationId,
-                    IncitingCmdId = cmdContext.CmdId,
-                    UserName = cmdContext.UserContext?.UserName,
-                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
-                }
-            );
+            return result.ToArray();
+        }
 
-            return Result.Ok(newWalkOfInterest);
+        private ValidatedRouteNetworkWalk ExtentCreateNewWalkOfInterestIfNeeded(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest, UtilityNetworkHop newUtilityNetworkHop)
+        {
+            List<Guid> newWalkIds = new();
+
+            if (CheckIfNewHopExtentsStartOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                // Add hop walk ids
+                newWalkIds.AddRange(utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs);
+
+                for (int i = 1; i < childWalkOfInterest.RouteNetworkElementRefs.Count; i++)
+                    newWalkIds.Add(childWalkOfInterest.RouteNetworkElementRefs[i]);
+            }
+            else if (CheckIfNewHopExtentsEndOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                // Add child walk ids
+                newWalkIds.AddRange(childWalkOfInterest.RouteNetworkElementRefs);
+
+                for (int i = 1; i < utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs.Count; i++)
+                    newWalkIds.Add(utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs[i]);
+            }
+            else
+            {
+                throw new ApplicationException($"Error creating new walk while affixing {this.Id} to {newUtilityNetworkHop} Expected new hop to either start or end in existing walk of interest.");
+            }
+
+            RouteNetworkElementIdList idList = new RouteNetworkElementIdList();
+            idList.AddRange(newWalkIds);
+
+            return new ValidatedRouteNetworkWalk(idList);
+        }
+
+        private bool CheckIfNewHopIsExtendingExistingWalkOfInterest(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest)
+        {
+            if (CheckIfNewHopExtentsStartOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+                return true;
+
+            if (CheckIfNewHopExtentsEndOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+                return true;
+
+            return false;
+        }
+
+        private bool CheckIfNewHopExtentsStartOfExistingWalkOfInterest(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest)
+        {
+            if (childWalkOfInterest.FromNodeId == utilityNetworkHopWalkOfInterest.FromNodeId && childWalkOfInterest.ToNodeId != utilityNetworkHopWalkOfInterest.ToNodeId)
+                return true;
+            if (childWalkOfInterest.FromNodeId == utilityNetworkHopWalkOfInterest.ToNodeId && childWalkOfInterest.ToNodeId != utilityNetworkHopWalkOfInterest.FromNodeId)
+                return true;
+
+            return false;
+        }
+
+        private bool CheckIfNewHopExtentsEndOfExistingWalkOfInterest(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest)
+        {
+            if (childWalkOfInterest.ToNodeId == utilityNetworkHopWalkOfInterest.FromNodeId && childWalkOfInterest.FromNodeId != utilityNetworkHopWalkOfInterest.ToNodeId)
+                return true;
+            if (childWalkOfInterest.ToNodeId == utilityNetworkHopWalkOfInterest.ToNodeId && childWalkOfInterest.FromNodeId != utilityNetworkHopWalkOfInterest.FromNodeId)
+                return true;
+
+            return false;
         }
 
         private ValidatedRouteNetworkWalk ReverseWalkOfInterestNeeded(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest, UtilityNetworkHop utilityNetworkHop)
@@ -259,6 +378,30 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs.Reverse();
             }
             
+            return new ValidatedRouteNetworkWalk(utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs);
+        }
+
+        private ValidatedRouteNetworkWalk ExtentReverseWalkOfInterestIfNeeded(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest)
+        {
+            bool reverse = false;
+
+            if (CheckIfNewHopExtentsStartOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                if (utilityNetworkHopWalkOfInterest.ToNodeId != childWalkOfInterest.FromNodeId)
+                  reverse = true;
+            }
+
+            if (CheckIfNewHopExtentsEndOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                if (utilityNetworkHopWalkOfInterest.FromNodeId != childWalkOfInterest.ToNodeId)
+                    reverse = true;
+            }
+
+            if (reverse)
+            {
+                utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs.Reverse();
+            }
+
             return new ValidatedRouteNetworkWalk(utilityNetworkHopWalkOfInterest.RouteNetworkElementRefs);
         }
 
@@ -492,6 +635,28 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             }
 
             return utilityNetworkHop;
+        }
+
+        private UtilityNetworkHop ExtentReverseHopIfNeeded(ValidatedRouteNetworkWalk childWalkOfInterest, ValidatedRouteNetworkWalk utilityNetworkHopWalkOfInterest, UtilityNetworkHop utilityNetworkHop)
+        {
+            bool reverse = false;
+
+            if (CheckIfNewHopExtentsStartOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                if (utilityNetworkHopWalkOfInterest.ToNodeId != childWalkOfInterest.FromNodeId)
+                    reverse = true;
+            }
+
+            if (CheckIfNewHopExtentsEndOfExistingWalkOfInterest(childWalkOfInterest, utilityNetworkHopWalkOfInterest))
+            {
+                if (utilityNetworkHopWalkOfInterest.FromNodeId != childWalkOfInterest.ToNodeId)
+                    reverse = true;
+            }
+
+            if (reverse)
+                return utilityNetworkHop.Reverse();
+            else
+                return utilityNetworkHop;
         }
 
         private void Apply(SpanEquipmentAffixedToParent @event)

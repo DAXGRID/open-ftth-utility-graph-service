@@ -45,6 +45,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
                 return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
 
+            foreach (var spanStructure in spanEquipment.SpanStructures)
+            {
+                foreach (var spanSegment in spanStructure.SpanSegments)
+                {
+                    if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
+                        return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegment.Id} contain a cable. Cannot be connected.")));
+                }
+            }
+
+
             // Get interest information from existing span equipment
             var existingWalk = GetInterestInformation(spanEquipment);
 

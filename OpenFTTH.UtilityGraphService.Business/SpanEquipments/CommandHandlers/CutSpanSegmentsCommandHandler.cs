@@ -44,7 +44,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentsToCut[0], out var spanSegmentGraphElement))
                 return Task.FromResult(Result.Fail(new CutSpanSegmentsAtRouteNodeError(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentsToCut[0]}")));
 
-            var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
+
+            foreach (var spanSegmentToCut in command.SpanSegmentsToCut)
+            {
+                if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegmentToCut))
+                    return Task.FromResult(Result.Fail(new CutSpanSegmentsAtRouteNodeError(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegmentToCut} contain a cable. Cannot be cut.")));
+            }
+
+
+
+                var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
             var firstSpanSegment = spanSegmentGraphElement.SpanSegment(utilityNetwork);
 
             // Get walk of interest of the span equipment

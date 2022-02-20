@@ -205,5 +205,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 .Should().Throw<ApplicationException>();
         }
 
+        [Fact, Order(200)]
+        public async void AffixMultipleCableToSingleConduit_ShouldFail()
+        {
+           }
+
     }
 }

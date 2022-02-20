@@ -90,20 +90,20 @@ namespace OpenFTTH.TestData
 
                 // Place some conduits in the route network we can play with
 
-                Conduit_N1_N2_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_1");
-                Conduit_N1_N2_2 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_2");
-                Conduit_N1_N2_3 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_3");
-                Conduit_N2_N1_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S8, S4, S7 }, null, "D_N2_N1_1");
-                Conduit_N4_N1_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S10, S6, S5, S4, S7 }, null, "D_N4_N1_1");
+                Conduit_N1_N2_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_1");
+                Conduit_N1_N2_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_2");
+                Conduit_N1_N2_3 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_3");
+                Conduit_N2_N1_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S8, S4, S7 }, null, "D_N2_N1_1");
+                Conduit_N4_N1_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S10, S6, S5, S4, S7 }, null, "D_N4_N1_1");
 
-                Conduit_N2_N3_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S2 }, null, "D_N2_N3_1");
-                Conduit_N2_N3_2 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S2 }, null, "D_N2_N3_2");
-                Conduit_N2_N4_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S2, S3 }, null, "D_N2_N4_1");
-                Conduit_N4_N2_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S3, S2 }, null, "D_N4_N2_1");
-                Conduit_N2_N4_2 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S8, S5, S6, S10 }, null, "D_N2_N4_2");
+                Conduit_N2_N3_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S2 }, null, "D_N2_N3_1");
+                Conduit_N2_N3_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S2 }, null, "D_N2_N3_2");
+                Conduit_N2_N4_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S2, S3 }, null, "D_N2_N4_1");
+                Conduit_N4_N2_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S3, S2 }, null, "D_N4_N2_1");
+                Conduit_N2_N4_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S8, S5, S6, S10 }, null, "D_N2_N4_2");
 
-                Conduit_N3_N4_1 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S3 }, null, "D_N3_N4_1");
-                Conduit_N3_N4_2 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S3 }, null, "D_N3_N4_2");
+                Conduit_N3_N4_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S3 }, null, "D_N3_N4_1");
+                Conduit_N3_N4_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S3 }, null, "D_N3_N4_2");
 
 
                 // Place node containers

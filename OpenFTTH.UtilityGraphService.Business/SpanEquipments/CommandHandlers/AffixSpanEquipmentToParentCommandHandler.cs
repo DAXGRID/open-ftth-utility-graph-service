@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.Trace;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
+using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using OpenFTTH.UtilityGraphService.Business.Trace;
 using System;
 using System.Collections.Generic;
@@ -41,6 +42,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(AffixSpanEquipmentToParent command)
         {
+            var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
+
             if (command.RouteNodeId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_ROUTE_NODE_ID_CANNOT_BE_EMPTY, $"Round node id must be specified.")));
 
@@ -72,7 +75,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.NO_CONDUIT_SPAN_SEGMENT_NOT_FOUND, $"One span segment must belong to a conduit.")));
 
             var cableSpanEquipment = spanEquipment1.IsCable ? spanEquipment1 : spanEquipment2;
+            var conduitSpanEquipment = spanEquipment1.IsCable ? spanEquipment2 : spanEquipment1;
+
             var conduitSpanSegmentId = spanEquipment1.IsCable ? command.ParentSpanSegmentId : command.ChildSpanSegmentId;
+            var conduitSpanStructureIndex = spanEquipment1.IsCable ? spanSegment2GraphElement.StructureIndex : spanSegment1GraphElement.StructureIndex;
+
+            // Check that not already contain cable, if single conduit
+            var conduitSpec = spanEquipmentSpecifications[conduitSpanEquipment.SpecificationId];
+
+            if (!conduitSpec.IsMultiLevel && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId))
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.NON_MULTI_LEVEL_CONDUIT_CANNOT_CONTAIN_MORE_THAN_ONE_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit and conduit is not a multi level conduit")));
+              
+            if (conduitSpanStructureIndex > 0 && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId))
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.CONDUIT_SEGMENT_ALREADY_CONTAIN_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit segment: {conduitSpanSegmentId}")));
 
             var createAffixesResult = CreateHop(conduitSpanSegmentId);
 

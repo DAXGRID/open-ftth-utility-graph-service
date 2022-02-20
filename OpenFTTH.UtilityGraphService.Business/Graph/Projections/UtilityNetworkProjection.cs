@@ -21,6 +21,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByEquipmentId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new();
+        private readonly ConcurrentDictionary<Guid, List<Guid>> _relatedCablesByConduitSegmentId = new();
 
         private readonly UtilityGraph _utilityGraph;
 
@@ -35,6 +36,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public IReadOnlyDictionary<Guid, SpanEquipment> SpanEquipmentsByInterestId => _spanEquipmentByInterestId;
 
         public IReadOnlyDictionary<Guid, TerminalEquipment> TerminalEquipmentByEquipmentId => _terminalEquipmentByEquipmentId;
+
+        public IReadOnlyDictionary<Guid, List<Guid>> RelatedCablesByConduitSegmentId => _relatedCablesByConduitSegmentId;
 
 
         public UtilityNetworkProjection()
@@ -212,8 +215,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanEquipmentAffixedToParent @event):
-                    TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
-                    break;
+                   ProcessSpanEquipmentToParentAffix(@event);
+                   break;
 
 
                 // Terminal equipment events
@@ -257,6 +260,78 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
+        private void ProcessSpanEquipmentToParentAffix(SpanEquipmentAffixedToParent @event)
+        {
+            var existingSpanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+            var newSpanEquipment = SpanEquipmentProjectionFunctions.Apply(existingSpanEquipment, @event);
+            TryUpdate(newSpanEquipment);
+
+            // Update segment to cable index
+            HashSet<Guid> existingSegmentWhereToRemoveCableRel = new();
+            
+            if (existingSpanEquipment.UtilityNetworkHops != null && existingSpanEquipment.UtilityNetworkHops.Length > 0)
+            {
+                foreach (var utilityHop in existingSpanEquipment.UtilityNetworkHops)
+                {
+                    foreach (var affix in utilityHop.ParentAffixes)
+                    {
+                        existingSegmentWhereToRemoveCableRel.Add(affix.SpanSegmentId);
+                    }
+                }
+            }
+
+            HashSet<Guid> segmentIdsWhereToAddCableRel = new();
+     
+            foreach (var utilityHop in @event.NewUtilityHopList)
+            {
+                foreach (var affix in utilityHop.ParentAffixes)
+                {
+                    if (existingSegmentWhereToRemoveCableRel.Contains(affix.SpanSegmentId))
+                    {
+                        existingSegmentWhereToRemoveCableRel.Remove(affix.SpanSegmentId);
+                    }
+                    else
+                    {
+                        segmentIdsWhereToAddCableRel.Add(affix.SpanSegmentId);
+                    }
+                }
+            }
+
+            // Remove cable ids from index
+            foreach (var segmentIdWhereToRemoveCabelRel in existingSegmentWhereToRemoveCableRel)
+            {
+                if (_relatedCablesByConduitSegmentId.ContainsKey(segmentIdWhereToRemoveCabelRel))
+                {
+                    var existingValue = _relatedCablesByConduitSegmentId[segmentIdWhereToRemoveCabelRel];
+
+                    List<Guid> newValue = new();
+                    foreach (var cableId in existingValue)
+                    {
+                        if (cableId != existingSpanEquipment.Id)
+                            newValue.Add(cableId);
+                    }
+
+                    if (!_relatedCablesByConduitSegmentId.TryUpdate(segmentIdWhereToRemoveCabelRel, newValue, existingValue))
+                        throw new ApplicationException($"Concurrent exception trying to update conduit segment to cable index. Cable with id: {existingSpanEquipment.Id}");
+                }
+            }
+
+
+            // Add cable ids from index
+            foreach (var segmentIdWhereToAddCabelRel in segmentIdsWhereToAddCableRel)
+            {
+                _relatedCablesByConduitSegmentId.AddOrUpdate(
+                             segmentIdWhereToAddCabelRel,
+                             new List<Guid> { existingSpanEquipment.Id },
+                             (key, oldValue) => {
+                                 var newList = new List<Guid> { existingSpanEquipment.Id };
+                                 newList.AddRange(oldValue);
+                                 return newList;
+                             }
+                          );
+            }
+        }
+
         private void StoreAndIndexVirginSpanEquipment(SpanEquipment spanEquipment)
         {
             // Store the new span equipment in memory
@@ -268,6 +343,26 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             {
                 // We're dealing with a virgin span equipment and therefore only disconnected segments at index 0
                 _utilityGraph.AddDisconnectedSegment(spanEquipment, structureIndex, 0);
+            }
+
+            // Index conduit relations
+            if (spanEquipment.UtilityNetworkHops != null && spanEquipment.UtilityNetworkHops.Length > 0)
+            {
+                foreach (var utilityHop in spanEquipment.UtilityNetworkHops)
+                {
+                    foreach (var parentAffix in utilityHop.ParentAffixes)
+                    {
+                        _relatedCablesByConduitSegmentId.AddOrUpdate(
+                            parentAffix.SpanSegmentId, 
+                            new List<Guid> { spanEquipment.Id },
+                            (key, oldValue) => {
+                                var newList = new List<Guid> { spanEquipment.Id };
+                                newList.AddRange(oldValue);
+                                return newList; 
+                            }
+                         );
+                    }
+                }
             }
         }
 
