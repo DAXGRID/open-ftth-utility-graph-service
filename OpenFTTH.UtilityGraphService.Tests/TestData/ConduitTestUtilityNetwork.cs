@@ -262,11 +262,11 @@ namespace OpenFTTH.TestData
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var cableBeforeAffix);
+            ///utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var cableBeforeAffix);
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(conduitId, out var conduit);
 
-            var affixtCommand = new AffixSpanEquipmentToParent(Guid.NewGuid(), new UserContext("test", Guid.Empty), routeNodeId, cableBeforeAffix.SpanStructures[0].SpanSegments[0].Id, conduit.SpanStructures[0].SpanSegments[0].Id);
+            var affixtCommand = new AffixSpanEquipmentToParent(Guid.NewGuid(), new UserContext("test", Guid.Empty), routeNodeId, cableId, conduit.SpanStructures[0].SpanSegments[0].Id);
 
             var affixCommandResult = _commandDispatcher.HandleAsync<AffixSpanEquipmentToParent, Result>(affixtCommand).Result;
 

@@ -53,26 +53,43 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (command.ParentSpanSegmentId == Guid.Empty)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_CANNOT_BE_EMPTY, $"Span segment id 2 must be specified.")));
 
-          
+
             // Find first span equipment
             if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.ChildSpanSegmentId, out var spanSegment1GraphElement))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
+            {
+                if (_utilityNetwork.TryGetEquipment<SpanEquipment>(command.ChildSpanSegmentId, out var spanEquipment))
+                {
+                    if(!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipment.SpanStructures[0].SpanSegments[0].Id, out spanSegment1GraphElement))
+                         return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
+                }
+                else
+                    return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
+            }
+
 
             var spanEquipment1 = spanSegment1GraphElement.SpanEquipment(_utilityNetwork);
 
             // Find second span equipment
             if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.ParentSpanSegmentId, out var spanSegment2GraphElement))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ParentSpanSegmentId}")));
+            {
+                if (_utilityNetwork.TryGetEquipment<SpanEquipment>(command.ParentSpanSegmentId, out var spanEquipment))
+                {
+                    if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipment.SpanStructures[0].SpanSegments[0].Id, out spanSegment2GraphElement))
+                        return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ParentSpanSegmentId}")));
+                }
+                else
+                    return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ParentSpanSegmentId}")));
+            }
 
             var spanEquipment2 = spanSegment2GraphElement.SpanEquipment(_utilityNetwork);
 
             // Check that one of the equipments is a cable
             if (!spanEquipment1.IsCable && !spanEquipment2.IsCable)
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.NO_CABLE_SPAN_SEGMENT_NOT_FOUND, $"One span segment must belong to a cable.")));
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.NO_CABLE_SPAN_SEGMENT_NOT_FOUND, $"One span segment must belong to a cable.")));
 
             // Check that one of the equipments is a conduit
             if (spanEquipment1.IsCable && spanEquipment2.IsCable)
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.NO_CONDUIT_SPAN_SEGMENT_NOT_FOUND, $"One span segment must belong to a conduit.")));
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.NO_CONDUIT_SPAN_SEGMENT_NOT_FOUND, $"One span segment must belong to a conduit.")));
 
             var cableSpanEquipment = spanEquipment1.IsCable ? spanEquipment1 : spanEquipment2;
             var conduitSpanEquipment = spanEquipment1.IsCable ? spanEquipment2 : spanEquipment1;
@@ -84,10 +101,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var conduitSpec = spanEquipmentSpecifications[conduitSpanEquipment.SpecificationId];
 
             if (!conduitSpec.IsMultiLevel && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.NON_MULTI_LEVEL_CONDUIT_CANNOT_CONTAIN_MORE_THAN_ONE_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit and conduit is not a multi level conduit")));
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.NON_MULTI_LEVEL_CONDUIT_CANNOT_CONTAIN_MORE_THAN_ONE_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit and conduit is not a multi level conduit")));
               
             if (conduitSpanStructureIndex > 0 && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId))
-                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentError.CONDUIT_SEGMENT_ALREADY_CONTAIN_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit segment: {conduitSpanSegmentId}")));
+                return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.CONDUIT_SEGMENT_ALREADY_CONTAIN_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit segment: {conduitSpanSegmentId}")));
 
             var createAffixesResult = CreateHop(conduitSpanSegmentId);
 
