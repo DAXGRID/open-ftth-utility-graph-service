@@ -94,7 +94,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
                 lines.Add(
                     new DisconnectSpanEquipmentFromTerminalViewConnection(
-                        isConnected: IsConnected(oppositeTraceEnd),
+                        isConnected: IsConnected(terminalEquipmentTraceEnd),
                         terminalId: terminalEquipmentTraceEnd != null ? terminalEquipmentTraceEnd.NeighborTerminal.Id : Guid.Empty,
                         segmentId: spanSegmentToTrace.Id,
                         spanStructurePosition: spanStructureIndex,
@@ -102,7 +102,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                         terminalEquipmentName: equipmentName,
                         terminalStructureName: equipmentStrutureName,
                         terminalName: equipmentTerminalName,
-                        end: IsConnected(oppositeTraceEnd) ? equipmentData.GetNodeAndEquipmentEndString(oppositeTraceEnd.EndTerminal) : null
+                        end: IsConnected(terminalEquipmentTraceEnd) ? equipmentData.GetNodeAndEquipmentEndString(oppositeTraceEnd.EndTerminal) : null
                     )
                 );
 

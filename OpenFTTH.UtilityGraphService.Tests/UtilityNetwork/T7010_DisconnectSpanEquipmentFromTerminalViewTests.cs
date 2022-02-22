@@ -39,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1)]
-        public async void GetSpanEquipmentConnectivityViewOnCable_ShouldSucceed()
+        public async void GetSpanEquipmentConnectivityViewOnK69373563InCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -95,6 +95,61 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             lines[2].IsConnected.Should().BeTrue();
             lines[2].TerminalId.Should().Be(terminalEquipment.TerminalStructures[0].Terminals[5].Id);
 
+        }
+
+
+        [Fact, Order(2)]
+        public async void GetSpanEquipmentConnectivityViewOnK69373563InCO_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var sutCableName = "K69373563";
+            var sutCable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutNodeId, sutCableName);
+
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
+
+            var connectivityTrace = new GetTerminalEquipmentConnectivityView(sutNodeId, terminalEquipment.Id);
+
+            // Act
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityTrace
+            );
+
+            var firstConnectionToCentralOffice = connectivityQueryResult.Value.TerminalEquipments.First().TerminalStructures[0].Lines[0].Z;
+
+            var getDisconnectView = new GetDisconnectSpanEquipmentFromTerminalView(firstConnectionToCentralOffice.ConnectedToSpanSegmentId, firstConnectionToCentralOffice.Terminal.Id);
+
+            var getDisconnectViewQueryResult = await _queryDispatcher.HandleAsync<GetDisconnectSpanEquipmentFromTerminalView, Result<DisconnectSpanEquipmentFromTerminalView>>(
+                getDisconnectView
+            );
+
+            // Assert
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+            getDisconnectViewQueryResult.IsSuccess.Should().BeTrue();
+
+            getDisconnectViewQueryResult.Value.SpanEquipmentName.Should().Be(sutCableName);
+
+            var lines = getDisconnectViewQueryResult.Value.Lines;
+
+            lines.Should().HaveCount(72);
+
+            // fiber 1 must not be connected
+            lines[0].SegmentId.Should().Be(sutCable.SpanStructures[1].SpanSegments[0].Id);
+            lines[0].IsConnected.Should().BeFalse();
+            lines[1].IsConnected.Should().BeTrue();
+            lines[2].IsConnected.Should().BeTrue();
+            lines[3].IsConnected.Should().BeTrue();
+            lines[4].IsConnected.Should().BeTrue();
+            lines[5].IsConnected.Should().BeFalse();
+            lines[11].IsConnected.Should().BeTrue();
         }
 
 

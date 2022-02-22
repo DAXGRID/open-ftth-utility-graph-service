@@ -215,7 +215,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                     new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[0].Id),
 
                     // Fiber 3 -> Tray 2 Pin 2
-                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[1].Id)
+                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[1].Id),
+
+                    // Fiber 4 -> Tray 2 Pin 3
+                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[4].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[2].Id),
+
+                    // Fiber 5 -> Tray 2 Pin 4
+                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[5].SpanSegments[0].Id, terminalEquipment.TerminalStructures[1].Terminals[3].Id)
                 }
             );
             var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
@@ -270,7 +276,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentConnectionsInCO1[0].IsConnected.Should().BeFalse();
             spanEquipmentConnectionsInCO1[1].IsConnected.Should().BeTrue();
             spanEquipmentConnectionsInCO1[2].IsConnected.Should().BeTrue();
-            spanEquipmentConnectionsInCO1[3].IsConnected.Should().BeFalse();
+            spanEquipmentConnectionsInCO1[3].IsConnected.Should().BeTrue();
+            spanEquipmentConnectionsInCO1[4].IsConnected.Should().BeTrue();
+            spanEquipmentConnectionsInCO1[5].IsConnected.Should().BeFalse();
         }
 
 
@@ -313,8 +321,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 routeNodeId: sutNodeId,
                 connects: new ConnectSpanSegmentToTerminalOperation[]
                 {
-                    // Fiber 4 -> Tray 1 Pin 1
-                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[4].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[0].Id)
+                    // Fiber 12 -> Tray 1 Pin 1
+                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[12].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[0].Id)
                 }
             );
             var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
