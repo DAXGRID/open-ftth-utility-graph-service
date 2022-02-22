@@ -323,12 +323,32 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                     else
                         upstreamRank = 1000; // Simple node with no function specificed get the high value (equal low score for A)
                 }
+                else
+                {
+                    // Upstream is the source terminal
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.SourceTerminal.RouteNodeId];
+
+                    if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
+                        upstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                    else
+                        upstreamRank = 1000; // Simple node with no function specificed get the high value (equal low score for A)
+                }
 
 
                 if (tracedTerminal.Downstream != null)
                 {
                     var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Downstream.EndTerminal.RouteNodeId];
 
+                    if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
+                        downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
+                    else
+                        downstreamRank = 1000; // Simple node with no function node specified get the high value (equal low score for A)
+                }
+                else
+                {
+                    // Downstream is the source terminal
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.SourceTerminal.RouteNodeId];
+                    
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
                     else
@@ -354,6 +374,15 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                     TraceInfo traceInfo = new TraceInfo();
 
                     var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
+
+                    if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminal.Id, out var terminalRef))
+                    {
+                        traceInfo.SourceTerminal = terminalRef;
+                    }
+                    else
+                    {
+                        throw new ApplicationException($"Error looking up terminal: {terminal.Id} of terminal equipment: {terminalEquipment.Id} in graph. Graph must should container all terminal equipment terminals!");
+                    }
 
                     if (terminalTraceResult != null)
                     {
@@ -381,6 +410,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             foreach (var traceInfo in traceInfos)
             {
+                endNodeIds.Add(traceInfo.SourceTerminal.RouteNodeId);
                 AddEndNodeIdsToHash(traceInfo, endNodeIds);
             }
 
@@ -457,9 +487,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private record TraceInfo
         {
+            public IUtilityGraphTerminalRef SourceTerminal { get; set; }
             public TraceEndInfo? Upstream { get; set; }
             public TraceEndInfo? Downstream { get; set; }
-
             public bool UpstreamIsZ {get; set;}
             public TraceEndInfo? Z
             {

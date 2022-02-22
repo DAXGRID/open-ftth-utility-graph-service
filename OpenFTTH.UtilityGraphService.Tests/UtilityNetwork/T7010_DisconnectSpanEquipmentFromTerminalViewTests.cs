@@ -63,7 +63,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 connectivityTrace
             );
 
-            var firstConnectionToCentralOffice = connectivityQueryResult.Value.TerminalEquipments.First().TerminalStructures[0].Lines[0].Z;
+            var firstConnectionToCentralOffice = connectivityQueryResult.Value.TerminalEquipments.First().TerminalStructures[0].Lines[0].A;
 
             var getDisconnectView = new GetDisconnectSpanEquipmentFromTerminalView(firstConnectionToCentralOffice.ConnectedToSpanSegmentId, firstConnectionToCentralOffice.Terminal.Id);
 

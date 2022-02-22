@@ -21,13 +21,13 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(5100)]
-    public class T5100_TerminalEquipmentConnectivityTests
+    public class T5100_EquipmentConnectivityTests
     {
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
 
-        public T5100_TerminalEquipmentConnectivityTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public T5100_EquipmentConnectivityTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
@@ -79,8 +79,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                     // Fiber 2 -> Pin 1
                     new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[2].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[0].Id),
 
-                    // Fiber 3 -> Pin 5
-                    new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[5].Id)
+                    // Fiber 3 -> Pin 6
+                    new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[3].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[5].Id),
+   
+                    // Fiber 12 -> Pin 12
+                    new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[12].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[11].Id)
+
                 }
             );
             var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
@@ -124,9 +128,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var teInfoToAssert = connectivityTraceView.TerminalEquipments.First(t => t.Id == terminalEquipment.Id);
 
-            teInfoToAssert.TerminalStructures[0].Lines[0].Z.Should().NotBeNull();
-            teInfoToAssert.TerminalStructures[0].Lines[0].Z.ConnectedTo.Should().NotBeNull();
-            teInfoToAssert.TerminalStructures[0].Lines[0].Z.ConnectedTo.Should().Be($"{sutCableName} (72) Tube 1 Fiber 2");
+            teInfoToAssert.TerminalStructures[0].Lines[0].A.Should().NotBeNull();
+            teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().NotBeNull();
+            teInfoToAssert.TerminalStructures[0].Lines[0].A.ConnectedTo.Should().Be($"{sutCableName} (72) Tube 1 Fiber 2");
 
             // Check faces and face connections
             var connectivityFaceQuery = new GetConnectivityFaces(sutNodeId);
@@ -561,19 +565,32 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1003)]
-        public async void GetConnectivityTraceView_ShouldSucceed()
+        public async void CheckConnectivityViewOfConnectedLISAInC01_ShouldSucceed()
         {
-            var connectivityTrace = new GetConnectivityTraceView(Guid.NewGuid(), Guid.NewGuid());
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            // Act
-            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityTraceView, Result<ConnectivityTraceView>>(
-                connectivityTrace
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
+
+            // Check equipment connectivity view
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, terminalEquipment.Id);
+
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
             );
 
-            // Assert
-            connectivityQueryResult.IsSuccess.Should().BeTrue();
+            connectivityViewResult.IsSuccess.Should().BeTrue();
 
-            var viewModel = connectivityQueryResult.Value;
+            var connectivityTraceView = connectivityViewResult.Value.TerminalEquipments.First();
+
+
+
         }
 
 
