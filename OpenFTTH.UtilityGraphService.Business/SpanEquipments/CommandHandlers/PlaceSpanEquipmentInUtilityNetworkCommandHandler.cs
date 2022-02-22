@@ -275,7 +275,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     var walk = new RouteNetworkElementIdList();
                     walk.AddRange(routingHop.WalkOfinterest);
 
-                    processedHopsResult.Add(new ProcessedHopResult(null, new ValidatedRouteNetworkWalk(walk), null));
+                    var validateInterestCommand = new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("PlaceSpanEquipmentInUtilityNetwork", Guid.Empty), walk);
+
+                    var validateInterestResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(validateInterestCommand).Result;
+
+                    if (validateInterestResult.IsFailed)
+                        return Result.Fail(validateInterestResult.Errors.First());
+
+                    processedHopsResult.Add(new ProcessedHopResult(null, validateInterestResult.Value, null));
                 }
             }
 

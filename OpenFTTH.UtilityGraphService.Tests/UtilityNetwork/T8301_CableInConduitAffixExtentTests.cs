@@ -54,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Extent cable into Conduit N1_N2_1
             var cableAfterFirstAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable.Id, ConduitTestUtilityNetwork.Conduit_N1_N2_1);
             
-            // Cable woi should not extended to include s1
+            // Cable woi should now be extended to include s1
             var cableWoiAfterFirstAffix = _conduitTestUtilityNetwork.GetWalkOfInterest(sutCable.WalkOfInterestId);
             cableWoiAfterFirstAffix.Count().Should().Be(5);
             cableWoiAfterFirstAffix[0].Should().Be(ConduitTestUtilityNetwork.N1);
@@ -62,6 +62,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableWoiAfterFirstAffix[2].Should().Be(ConduitTestUtilityNetwork.N2);
             cableWoiAfterFirstAffix[3].Should().Be(ConduitTestUtilityNetwork.S2);
             cableWoiAfterFirstAffix[4].Should().Be(ConduitTestUtilityNetwork.N3);
+
+            // Cable node of interst id should now reflect new extent
+            cableAfterFirstAffix.NodesOfInterestIds[0].Should().Be(ConduitTestUtilityNetwork.N1);
+            cableAfterFirstAffix.NodesOfInterestIds[1].Should().Be(ConduitTestUtilityNetwork.N3);
 
             // Cable should contain one hop
             cableAfterFirstAffix.UtilityNetworkHops.Should().NotBeNull();
@@ -83,6 +87,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableWoiAfterThirdAffix[4].Should().Be(ConduitTestUtilityNetwork.N3);
             cableWoiAfterThirdAffix[5].Should().Be(ConduitTestUtilityNetwork.S3);
             cableWoiAfterThirdAffix[6].Should().Be(ConduitTestUtilityNetwork.N4);
+
+            // Cable node of interst id should now reflect new extent
+            cableAfterThirdAffix.NodesOfInterestIds[0].Should().Be(ConduitTestUtilityNetwork.N1);
+            cableAfterThirdAffix.NodesOfInterestIds[1].Should().Be(ConduitTestUtilityNetwork.N4);
 
             // Cable should contain one hop
             cableAfterThirdAffix.UtilityNetworkHops.Should().NotBeNull();
@@ -111,6 +119,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableWoiAfterForthAffix[9].Should().Be(ConduitTestUtilityNetwork.S2);
             cableWoiAfterForthAffix[10].Should().Be(ConduitTestUtilityNetwork.N2);
 
+            // Cable node of interst id should now reflect new extent
+            cableAfterForthAffix.NodesOfInterestIds[0].Should().Be(ConduitTestUtilityNetwork.N1);
+            cableAfterForthAffix.NodesOfInterestIds[1].Should().Be(ConduitTestUtilityNetwork.N2);
+
+
             // Cable should contain one hop
             cableAfterForthAffix.UtilityNetworkHops.Should().NotBeNull();
             cableAfterForthAffix.UtilityNetworkHops.Count().Should().Be(3);
@@ -121,8 +134,5 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableAfterForthAffix.UtilityNetworkHops[2].FromNodeId.Should().Be(ConduitTestUtilityNetwork.N4);
             cableAfterForthAffix.UtilityNetworkHops[2].ToNodeId.Should().Be(ConduitTestUtilityNetwork.N2);
         }
-
-
-
     }
 }

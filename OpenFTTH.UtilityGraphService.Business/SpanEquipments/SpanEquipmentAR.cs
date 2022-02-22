@@ -116,6 +116,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
         {
             this.Id = spanEquipmentId;
 
+            if (walk.Count() < 3)
+                return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_WALK_MUST_CONTAIN_AT_LEAST_THREE_ELEMENTS, "The provided walk must contain at least threee element"));
+
             if (spanEquipmentId == Guid.Empty)
                 return Result.Fail(new PlaceSpanEquipmentInRouteNetworkError(PlaceSpanEquipmentInRouteNetworkErrorCodes.INVALID_SPAN_EQUIPMENT_ID_CANNOT_BE_EMPTY, "Span equipment id cannot be empty. A unique id must be provided by client."));
 
@@ -245,7 +248,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
                 var newUtilityNetworkHopList = ExtentCreateNewUtilityNetworkHopList(childWalkOfInterest, reversedUtilityNetworkHopWalkOfInterest, reversedUtilityNetworkHop);
 
-
                 RaiseEvent(
                     new SpanEquipmentAffixedToParent(this.Id, newUtilityNetworkHopList)
                     {
@@ -255,6 +257,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                         WorkTaskId = cmdContext.UserContext?.WorkTaskId
                     }
                 );
+
 
                 return Result.Ok(newWalkOfInterest);
 
