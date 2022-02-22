@@ -128,29 +128,79 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             return $"{nodeName}{equipmentName}";
         }
 
-        public string GetEquipmentWithoutStructureInfoString(IUtilityGraphTerminalRef terminalRef, bool includeNodeName = false)
+        public string GetFullEquipmentString(Guid routeNodeId, TerminalEquipment terminalEquipment, bool includeNodeName = false)
         {
-            if (terminalRef.IsDummyEnd)
-                return $"løs ende";
-
-            var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
-
-            var rackName = GetRackName(terminalRef.RouteNodeId, terminalEquipment.Id);
+            var rackName = GetRackName(routeNodeId, terminalEquipment.Id);
 
             string? nodeName = null;
 
             if (includeNodeName)
             {
-                nodeName = GetNodeName(terminalRef.RouteNodeId);
+                nodeName = GetNodeName(routeNodeId);
 
                 if (nodeName != null)
-                    nodeName += " ";
+                    nodeName += " - ";
             }
 
             if (rackName != null)
-                return $"{nodeName}{rackName} - {terminalEquipment.Name}";
+                return $"{nodeName}{rackName} - {GetEquipmentName(terminalEquipment)}";
             else
-                return $"{nodeName}{terminalEquipment.Name}";
+                return $"{nodeName}{GetEquipmentName(terminalEquipment)}";
+        }
+
+        public string GetCompactEquipmentWithTypeInfoString(Guid routeNodeId, TerminalEquipment terminalEquipment, bool includeNodeName = false)
+        {
+            var rackName = GetRackName(routeNodeId, terminalEquipment.Id);
+
+            string? nodeName = null;
+
+            if (includeNodeName)
+            {
+                nodeName = GetNodeName(routeNodeId);
+
+                if (nodeName != null)
+                    nodeName += " - ";
+            }
+
+            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+
+
+            if (rackName != null)
+            {
+              
+                if (IsTerminalEquipmentRackTray(terminalEquipment, terminalEquipmentSpecification))
+                {
+                    return $"{nodeName}{rackName} ({terminalEquipmentSpecification.ShortName})";
+                }
+                {
+                    return $"{nodeName}{rackName} - {GetEquipmentName(terminalEquipment)} ({terminalEquipmentSpecification.ShortName})";
+                }
+            }
+            else
+            {
+                return $"{nodeName}{GetEquipmentName(terminalEquipment)} ({terminalEquipmentSpecification.ShortName})";
+            }
+        }
+
+        public string? GetEquipmentName(TerminalEquipment terminalEquipment)
+        {
+            // Single structure equipment
+            if (terminalEquipment.TerminalStructures.Length == 1)
+            {
+                var terminal = terminalEquipment.TerminalStructures[0].Terminals[0];
+                var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+
+                // If rack equipment where type is not put into name
+                if (IsTerminalEquipmentRackTray(terminalEquipment, terminalEquipmentSpecification))
+                {
+                    if (terminal.IsSplice)
+                        return "Bakke " + terminalEquipment.Name;
+                    else
+                        return "Kort " + terminalEquipment.Name;
+                }
+            }
+
+            return terminalEquipment.Name;
         }
 
         public string GetEquipmentWithStructureInfoString(IUtilityGraphTerminalRef terminalRef)
@@ -166,10 +216,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             var rackName = GetRackName(terminalRef.RouteNodeId, terminalEquipment.Id);
 
+            string? terminalStructurePosition = null;
+
+            if (terminalEquipment.TerminalStructures.Length > 1)
+            {
+                terminalStructurePosition = $"-{terminalStructure.Position}";
+            }
+
             if (rackName != null)
-                return $"{rackName}-{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+                return $"{rackName}-{terminalEquipment.Name}{terminalStructurePosition}-{terminal.Name}";
             else
-                return $"{terminalEquipment.Name}-{terminalStructure.Position}-{terminal.Name}";
+                return $"{terminalEquipment.Name}{terminalStructurePosition}-{terminal.Name}";
         }
 
         public string GetEquipmentStructureInfoString(IUtilityGraphTerminalRef terminalRef)
@@ -179,13 +236,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
 
+            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+
             var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
 
             var terminalStructureSpec = _terminalStructureSpecifications[terminalStructure.SpecificationId];
 
-            string slotType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Bakke" : "Kort";
+            // If rack equipment where type is not put into name
+            if (IsTerminalEquipmentRackTray(terminalEquipment, terminalEquipmentSpecification))
+            {
+                return GetEquipmentName(terminalEquipment);
+            }
+            else
+            {
+                string slotType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Bakke" : "Kort";
 
-            return $"{slotType} {terminalStructure.Position}";
+                return $"{slotType} {terminalStructure.Position}";
+            }
         }
 
         public string GetEquipmentTerminalInfoString(IUtilityGraphTerminalRef terminalRef)
@@ -218,6 +285,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             int tube = ((fiberNo - 1) / 12) + 1;
 
             return $"Tube {tube} Fiber {fiber}";
+        }
+
+
+        private bool IsTerminalEquipmentRackTray(TerminalEquipment terminalEquipment, TerminalEquipmentSpecification terminalEquipmentSpecification)
+        {
+            // If rack equipment where type is not put into name
+            if (terminalEquipmentSpecification.IsRackEquipment && int.TryParse(terminalEquipment.Name, out _))
+                return true;
+            else
+                return false;
         }
     }
 }

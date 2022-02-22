@@ -164,7 +164,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 new TerminalEquipmentAZConnectivityViewEquipmentInfo(
                        id: terminalEquipment.Id,
                        category: terminalEquipmentSpecification.Category,
-                       name: terminalEquipment.Name == null ? "NO NAME" : terminalEquipment.Name,
+                       name: equipmentData.GetFullEquipmentString(query.routeNodeId, terminalEquipment, true),
                        specName: terminalEquipmentSpecification.Name,
                        terminalStructures: terminalStructureInfos.ToArray()
                    )

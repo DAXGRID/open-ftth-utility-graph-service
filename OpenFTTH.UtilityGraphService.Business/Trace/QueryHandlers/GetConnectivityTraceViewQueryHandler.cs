@@ -49,9 +49,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return Task.FromResult(NotConnected());
         }
 
-        private Result<ConnectivityTraceView> BuildTraceViewFromTerminal(IUtilityGraphTerminalRef utilityGraphTerminalRef)
+        private Result<ConnectivityTraceView> BuildTraceViewFromTerminal(IUtilityGraphTerminalRef sourceTerminalRef)
         {
-            var traceResult = _utilityNetwork.Graph.Trace(utilityGraphTerminalRef.TerminalId);
+            var traceResult = _utilityNetwork.Graph.Trace(sourceTerminalRef.TerminalId);
 
             List<IGraphObject> traceElements = new();
 
@@ -64,6 +64,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
 
             var relatedData = new RouteNetworkDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
+
+            var terminalEquipment = sourceTerminalRef.TerminalEquipment(_utilityNetwork);
 
             ReverseIfNeeded(traceElements, relatedData.RouteNetworkElements);
 
@@ -91,9 +93,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             isSplitter: false,
                             isTraceSource: false,
                             node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: relatedData.GetEquipmentWithoutStructureInfoString(terminalRef),
-                            terminalStructure: "Kort 1",
-                            terminal: "Port 1",
+                            equipment: relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalEquipment),
+                            terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
+                            terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
                             connectionInfo: connectionCableInfo,
                             totalLength: 2,
                             routeSegmentGeometries: Array.Empty<string>(),
@@ -143,9 +145,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             isSplitter: false,
                             isTraceSource: false,
                             node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: relatedData.GetEquipmentWithoutStructureInfoString(terminalRef),
-                            terminalStructure: "Kort 1",
-                            terminal: "Port 1",
+                            equipment: relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
+                            terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
+                            terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
                             connectionInfo: connectionCableInfo,
                             totalLength: 2,
                             routeSegmentGeometries: Array.Empty<string>(),

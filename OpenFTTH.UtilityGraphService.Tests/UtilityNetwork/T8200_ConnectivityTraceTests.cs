@@ -49,8 +49,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNodeId, "K69373563");
 
-            // Get connectivity trace on fiber 2
-            var connectivityTraceQuery = new GetConnectivityTraceView(sutRouteNodeId, cable.SpanStructures[2].SpanSegments[0].Id);
+            // Get connectivity trace on fiber 12
+            var connectivityTraceQuery = new GetConnectivityTraceView(sutRouteNodeId, cable.SpanStructures[12].SpanSegments[0].Id);
 
             var connectivityTraceQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityTraceView, Result<ConnectivityTraceView>>(
                 connectivityTraceQuery

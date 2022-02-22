@@ -564,37 +564,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
-        [Fact, Order(1003)]
-        public async void CheckConnectivityViewOfConnectedLISAInC01_ShouldSucceed()
-        {
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-            var sutNodeId = TestRouteNetwork.CO_1;
-            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
-
-            // Get node container
-            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
-
-            // Get equipment
-            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
-
-            // Check equipment connectivity view
-            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, terminalEquipment.Id);
-
-            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
-                connectivityViewQuery
-            );
-
-            connectivityViewResult.IsSuccess.Should().BeTrue();
-
-            var connectivityTraceView = connectivityViewResult.Value.TerminalEquipments.First();
-
-
-
-        }
-
-
-
         private SpanEquipment? FindSpanEquipmentRelatedToRouteNetworkElementByName(Guid routeNetworkElementId, string spanEquipmentName)
         {
             var routeNetworkQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
@@ -625,8 +594,5 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             return null;
         }
-
-
-
     }
 }

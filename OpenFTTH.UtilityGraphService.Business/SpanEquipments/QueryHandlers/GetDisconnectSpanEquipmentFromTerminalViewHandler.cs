@@ -87,7 +87,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
                 if (terminalEquipmentTraceEnd != null)
                 {
-                    equipmentName = equipmentData.GetEquipmentWithoutStructureInfoString(terminalEquipmentTraceEnd.NeighborTerminal, true);
+                    equipmentName = GetEquipmentName(equipmentData, terminalEquipmentTraceEnd.NeighborTerminal);
                     equipmentStrutureName = equipmentData.GetEquipmentStructureInfoString(terminalEquipmentTraceEnd.NeighborTerminal);
                     equipmentTerminalName = equipmentData.GetEquipmentTerminalInfoString(terminalEquipmentTraceEnd.NeighborTerminal);
                 }
@@ -110,6 +110,25 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             }
 
             return new DisconnectSpanEquipmentFromTerminalView(spanEquipment.Name, lines.ToArray());
+        }
+
+        private string GetEquipmentName(RelevantEquipmentData equipmentData, UtilityGraphConnectedTerminal neighborTerminal)
+        {
+            if (neighborTerminal.IsDummyEnd)
+                return "løs ende";
+            else 
+            {
+                var terminalEquipment = neighborTerminal.TerminalEquipment(_utilityNetwork);
+
+                if (terminalEquipment != null)
+                {
+                    return equipmentData.GetFullEquipmentString(neighborTerminal.RouteNodeId, neighborTerminal.TerminalEquipment(_utilityNetwork), true);
+                }
+                else
+                {
+                    return "løs ende";
+                }
+            }
         }
 
         private bool IsConnected(TraceEndInfo? oppositeTraceEnd)
