@@ -45,15 +45,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (!utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
                 return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
 
+            // Check that span equipment does not have child span equipment (i.e is a conduit with cables inside it)
             foreach (var spanStructure in spanEquipment.SpanStructures)
             {
                 foreach (var spanSegment in spanStructure.SpanSegments)
                 {
                     if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
-                        return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegment.Id} contain a cable. Cannot be connected.")));
+                        return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegment.Id} contain a cable. Cannot be moved.")));
                 }
             }
 
+            // Check that if span equipment is not a child of other span equipment (i.e. is a cable within a conduit)
+            if (spanEquipment.UtilityNetworkHops != null && spanEquipment.UtilityNetworkHops.Count() > 0)
+                return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_IS_AFFIXED_TO_CONDUIT, $"The span equipment with id: {spanEquipment.Id} is related to one of more conduits. Cannot be moved.")));
 
             // Get interest information from existing span equipment
             var existingWalk = GetInterestInformation(spanEquipment);
