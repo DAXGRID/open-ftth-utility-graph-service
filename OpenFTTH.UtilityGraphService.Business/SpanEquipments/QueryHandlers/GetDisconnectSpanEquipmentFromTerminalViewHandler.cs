@@ -115,8 +115,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
         private string GetEquipmentName(RelevantEquipmentData equipmentData, UtilityGraphConnectedTerminal neighborTerminal)
         {
             if (neighborTerminal.IsDummyEnd)
+            {
                 return "løs ende";
-            else 
+            }
+            else
             {
                 var terminalEquipment = neighborTerminal.TerminalEquipment(_utilityNetwork);
 
@@ -275,7 +277,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             return new TraceEndInfo((UtilityGraphConnectedTerminal)neighborTerminal, (UtilityGraphConnectedTerminal)terminalEnd);
         }
        
-        private class RelevantEquipmentData : RouteNetworkDataHolder
+        private class RelevantEquipmentData : RelatedDataHolder
         {
             public Dictionary<Guid, TraceInfo> TracedSegments { get; set; }
 

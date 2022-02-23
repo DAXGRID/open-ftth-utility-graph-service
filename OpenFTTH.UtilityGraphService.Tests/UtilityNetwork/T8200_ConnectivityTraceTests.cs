@@ -58,13 +58,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var hops = connectivityTraceQueryResult.Value.Hops;
 
-            hops.Length.Should().Be(2);
+            hops.Length.Should().Be(3);
             hops[0].HopSeqNo.Should().Be(1);
             hops[1].HopSeqNo.Should().Be(2);
         }
 
 
-        [Fact, Order(2)]
+        [Fact, Order(0)]
         public async void TerminalEquipmentConnectivityTraceInCO1RackEquipment_ShouldSucceed()
         {
             // Setup
@@ -90,7 +90,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var hops = connectivityTraceQueryResult.Value.Hops;
 
-            hops.Length.Should().Be(2);
+            hops.Length.Should().Be(3);
             hops[0].HopSeqNo.Should().Be(1);
             hops[1].HopSeqNo.Should().Be(2);
 

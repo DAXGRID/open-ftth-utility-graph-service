@@ -139,7 +139,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 connectivityFaceQuery
             );
 
-            var spanEquipmentFace = connectivityFaceQueryResult.Value.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
+            var spanEquipmentFace = connectivityFaceQueryResult.Value.First(f => f.EquipmentName.StartsWith("K69373563"));
 
             // Get face connections for span equipment in CC_1 (where it is spliced)
             var spanEquipmentConnectionsQueryInCC1 = new GetConnectivityFaceConnections(sutNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
@@ -334,6 +334,104 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
 
+        }
+
+        [Fact, Order(4)]
+        public async void ConnectFirstTerminalEquipmentInCC1WithCustomerFiberCable_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+            var sutCableName = "K12345678";
+
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipment);
+
+            // Get cable
+            var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var spanEquipment);
+
+
+            // ACT (do the connect between cable and equipment)
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                connects: new ConnectSpanSegmentToTerminalOperation[]
+                {
+                    // Fiber 1 -> Tray 1 Pin 12
+                    new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[1].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[11].Id),
+                }
+            );
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(5)]
+        public async void ConnectFirstTerminalEquipmentInSDU1WithCustomerFiberCable_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.SDU_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_SDU_1;
+            var sutCableName = "K12345678";
+
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipment);
+
+            // Get cable
+            var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var spanEquipment);
+
+
+            // ACT (do the connect between cable and equipment)
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                connects: new ConnectSpanSegmentToTerminalOperation[]
+                {
+                    // Fiber 1 -> Tray 1 Pin 1
+                    new ConnectSpanSegmentToTerminalOperation(spanEquipment.SpanStructures[1].SpanSegments[0].Id, terminalEquipment.TerminalStructures[0].Terminals[0].Id),
+                }
+            );
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
         }
 
 

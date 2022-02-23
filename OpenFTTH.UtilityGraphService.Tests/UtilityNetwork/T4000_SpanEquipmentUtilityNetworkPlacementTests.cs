@@ -336,6 +336,35 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(6)]
+        public async void TestPlaceCustomerCableCC1_to_SDU1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+
+            // Setup command
+            var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
+
+            var routingHops = new RoutingHop[]
+            {
+                new RoutingHop(new Guid[] { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S7})
+            };
+
+            var placeSpanEquipmentCommand = new PlaceSpanEquipmentInUtilityNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty), Guid.NewGuid(), TestSpecifications.FiberCable_2Fiber, routingHops)
+            {
+                NamingInfo = new NamingInfo("K12345678", null),
+                MarkingInfo = new MarkingInfo() { MarkingColor = "Red", MarkingText = "ABCDE" },
+                ManufacturerId = Guid.NewGuid()
+            };
+
+            // Act
+            var placeSpanEquipmentResult = await _commandDispatcher.HandleAsync<PlaceSpanEquipmentInUtilityNetwork, Result>(placeSpanEquipmentCommand);
+
+            // Assert
+            placeSpanEquipmentResult.IsSuccess.Should().BeTrue();
+        }
+
+
 
         [Fact, Order(10)]
         public async void TestMovingCableFromRouteNetworkInto_ShouldSucceed()

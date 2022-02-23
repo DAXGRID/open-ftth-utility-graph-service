@@ -9,6 +9,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
+using OpenFTTH.UtilityGraphService.Business.Graph.Trace;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
 using OpenFTTH.UtilityGraphService.Business.Trace.Util;
 using System;
@@ -62,12 +63,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             if (traceResult.Downstream.Length > 0)
                 traceElements.AddRange(traceResult.Downstream);
 
+            var addressIds = GetAddressIdsFromTraceResult(traceResult);
 
-            var relatedData = new RouteNetworkDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
+            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds);
 
             var terminalEquipment = sourceTerminalRef.TerminalEquipment(_utilityNetwork);
 
-            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElements);
+            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElementById);
 
             List<ConnectivityTraceViewHopInfo> hops = new();
 
@@ -79,12 +81,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
                 if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
                 {
-                    string connectionCableInfo = "";
-
-                    if (graphElementIndex < (traceElements.Count - 1))
-                    {
-                        connectionCableInfo = GetConnectionInfo(relatedData, traceElements[graphElementIndex + 1] as IUtilityGraphSegmentRef);
-                    }
+                    string connectionInfo = GetConnectionInfo(relatedData, traceElements, graphElementIndex);
 
                     hops.Add(
                         new ConnectivityTraceViewHopInfo(
@@ -92,11 +89,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             level: 0,
                             isSplitter: false,
                             isTraceSource: false,
-                            node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalEquipment),
+                            node: terminalRef.IsDummyEnd ? relatedData.GetNodeName(terminalRef.RouteNodeId) : relatedData.GetNodeOrEquipmentName(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
+                            equipment: terminalRef.IsDummyEnd ? "løs ende" : relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
                             terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
                             terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
-                            connectionInfo: connectionCableInfo,
+                            connectionInfo: connectionInfo,
                             totalLength: 2,
                             routeSegmentGeometries: Array.Empty<string>(),
                             routeSegmentIds: Array.Empty<Guid>()
@@ -117,9 +114,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
             List<IGraphObject> traceElements = traceResult.All;
 
-            var relatedData = new RouteNetworkDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray());
+            var addressIds = GetAddressIdsFromTraceResult(traceResult);
 
-            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElements);
+            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds);
+
+            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElementById);
 
             List<ConnectivityTraceViewHopInfo> hops = new();
 
@@ -131,12 +130,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
                 if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
                 {
-                    string connectionCableInfo = "";
-
-                    if (graphElementIndex < (traceElements.Count - 1))
-                    {
-                        connectionCableInfo = GetConnectionInfo(relatedData, traceElements[graphElementIndex + 1] as IUtilityGraphSegmentRef);
-                    }
+                    string connectionInfo = GetConnectionInfo(relatedData, traceElements, graphElementIndex);
 
                     hops.Add(
                         new ConnectivityTraceViewHopInfo(
@@ -144,11 +138,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             level: 0,
                             isSplitter: false,
                             isTraceSource: false,
-                            node: relatedData.GetNodeName(terminalRef.RouteNodeId),
-                            equipment: relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
+                            node: terminalRef.IsDummyEnd ? relatedData.GetNodeName(terminalRef.RouteNodeId) : relatedData.GetNodeOrEquipmentName(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
+                            equipment: terminalRef.IsDummyEnd ? "løs ende" : relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
                             terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
                             terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
-                            connectionInfo: connectionCableInfo,
+                            connectionInfo: connectionInfo,
                             totalLength: 2,
                             routeSegmentGeometries: Array.Empty<string>(),
                             routeSegmentIds: Array.Empty<Guid>()
@@ -163,19 +157,83 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
         }
 
+        private string GetConnectionInfo(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
+        {
+            // If segment follow terminal, then write span segment information in connection info
+            if (graphElementIndex < (traceElements.Count - 1))
+            {
+                return GetSpanConnectionInfo(relatedData, traceElements[graphElementIndex + 1] as IUtilityGraphSegmentRef);
+            }
+            else
+            {
+                var terminalRef = traceElements[graphElementIndex] as IUtilityGraphTerminalRef;
 
-        private string GetConnectionInfo(RouteNetworkDataHolder relatedData, IUtilityGraphSegmentRef? utilityGraphSegmentRef)
+                if (terminalRef != null && !terminalRef.IsDummyEnd)
+                {
+                    var addressId = GetTerminalEquipmentMostAccurateAddressId(terminalRef.TerminalEquipment(_utilityNetwork));
+
+                    if (addressId != null)
+                    {
+                        var addressString = relatedData.GetAddressString(addressId);
+                        if (addressString != null)
+                            return addressString;
+                    }
+                }
+            }
+
+            return "";
+        }
+
+        private Guid? GetTerminalEquipmentMostAccurateAddressId(TerminalEquipment terminalEquipment)
+        {
+            if (terminalEquipment.AddressInfo != null && terminalEquipment.AddressInfo.UnitAddressId != null)
+                return terminalEquipment.AddressInfo.UnitAddressId.Value;
+            else if (terminalEquipment.AddressInfo != null && terminalEquipment.AddressInfo.AccessAddressId != null)
+                return terminalEquipment.AddressInfo.AccessAddressId.Value;
+
+            return null;
+        }
+
+        private string GetSpanConnectionInfo(RelatedDataHolder relatedData, IUtilityGraphSegmentRef? utilityGraphSegmentRef)
         {
             var spanEquipment = utilityGraphSegmentRef.SpanEquipment(_utilityNetwork);
 
-            var nFibers = spanEquipment.SpanStructures.Count() - 1;
-
-            return $"{spanEquipment.Name} ({nFibers}) Fiber {utilityGraphSegmentRef.StructureIndex}";
+            return relatedData.GetSpanEquipmentFullFiberCableString(spanEquipment, utilityGraphSegmentRef.StructureIndex);
         }
 
-      
+        private HashSet<Guid> GetAddressIdsFromTraceResult(UtilityGraphTraceResult trace)
+        {
+            HashSet<Guid> addressIds = new();
 
-        private List<IGraphObject> ReverseIfNeeded(List<IGraphObject> trace, LookupCollection<RouteNetworkElement> routeNetworkElements)
+            if (trace == null)
+                return addressIds;
+
+            foreach (var graphObject in trace.All)
+            {
+                if (graphObject is IUtilityGraphTerminalRef)
+                {
+                    var terminalRef = (IUtilityGraphTerminalRef)graphObject;
+
+                    if (!terminalRef.IsDummyEnd)
+                    {
+                        var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
+
+                        if (terminalEquipment.AddressInfo != null)
+                        {
+                            if (terminalEquipment.AddressInfo.UnitAddressId != null && terminalEquipment.AddressInfo.UnitAddressId != Guid.Empty)
+                                addressIds.Add(terminalEquipment.AddressInfo.UnitAddressId.Value);
+                            else if (terminalEquipment.AddressInfo.AccessAddressId != null && terminalEquipment.AddressInfo.AccessAddressId != Guid.Empty)
+                                addressIds.Add(terminalEquipment.AddressInfo.AccessAddressId.Value);
+                        }
+                    }
+
+                }
+            }
+
+            return addressIds;
+        }
+
+        private List<IGraphObject> ReverseIfNeeded(List<IGraphObject> trace, Dictionary<Guid, RouteNetworkElement> routeNetworkElements)
         {
             var terminals = trace.OfType<IUtilityGraphTerminalRef>();
 
@@ -184,285 +242,33 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                 var currentFromNode = routeNetworkElements[terminals.First().RouteNodeId];
                 var currentToNode = routeNetworkElements[terminals.Last().RouteNodeId];
 
+                // the lower the more A-ish
+                int upstreamRank;
                 if (currentFromNode != null && currentFromNode.RouteNodeInfo != null && currentFromNode.RouteNodeInfo.Function != null)
+                    upstreamRank = (int)currentFromNode.RouteNodeInfo.Function;
+                else
+                    upstreamRank = 1000; // Simple node with no function specificed get the high value (equal low score for A)
+
+                int downstreamRank;
+
+                if (currentToNode != null && currentToNode.RouteNodeInfo != null && currentToNode.RouteNodeInfo.Function != null)
+                    downstreamRank = (int)currentToNode.RouteNodeInfo.Function;
+                else
+                    downstreamRank = 1000; // Simple node with no function node specified get the high value (equal low score for A)
+
+                if (upstreamRank > downstreamRank)
                 {
-                    var currentFromNodeRank = (int)currentFromNode.RouteNodeInfo.Function;
-
-                    if (currentToNode != null && currentToNode.RouteNodeInfo != null && currentToNode.RouteNodeInfo.Function != null)
-                    {
-                        var currentToNodeRank = (int)currentToNode.RouteNodeInfo.Function;
-
-                        if (currentToNodeRank < currentFromNodeRank)
-                        {
-                            trace.Reverse();
-                            return trace;
-                        }
-                    }
+                    trace.Reverse();
+                    return trace;
                 }
             }
 
             return trace;
         }
 
-
         private Result<ConnectivityTraceView> NotConnected()
         {
             return Result.Ok(new ConnectivityTraceView("Not connected", new ConnectivityTraceViewHopInfo[] { }));
         }
-
-      
-
-
-        private ConnectivityTraceView BuildTestData()
-        {
-            List<ConnectivityTraceViewHopInfo> hops = new();
-
-            hops.Add(
-                new ConnectivityTraceViewHopInfo(
-                    1,
-                    level: 0,
-                    isSplitter: false,
-                    isTraceSource: false,
-                    node: "GALARH",
-                    equipment: "RACK 3 - OLT 1",
-                    terminalStructure: "Kort 1",
-                    terminal: "Port 1",
-                    connectionInfo: "Intern forb",
-                    totalLength: 2,
-                    routeSegmentGeometries: Array.Empty<string>(),
-                    routeSegmentIds: Array.Empty<Guid>()
-                )
-            );
-
-            hops.Add(
-               new ConnectivityTraceViewHopInfo(
-                   2,
-                   level: 0,
-                   isSplitter: false,
-                   isTraceSource: false,
-                   node: "GALARH",
-                   equipment: "RACK 2 - WDM Type 2",
-                   terminalStructure: "Slot 1",
-                   terminal: "IP AB / COM A",
-                   connectionInfo: "Intern forb",
-                   totalLength: 4,
-                   routeSegmentGeometries: Array.Empty<string>(),
-                   routeSegmentIds: Array.Empty<Guid>()
-               )
-           );
-
-           hops.Add(
-              new ConnectivityTraceViewHopInfo(
-                  3,
-                  level: 0,
-                  isSplitter: false,
-                  isTraceSource: true,
-                  node: "GALARH",
-                  equipment: "RACK 1 - GPS 1",
-                  terminalStructure: "Bakke 1",
-                  terminal: "Søm 1",
-                  connectionInfo: "K12345678 (72) Fiber 1",
-                  totalLength: 480,
-                  routeSegmentGeometries: Array.Empty<string>(),
-                  routeSegmentIds: Array.Empty<Guid>()
-              )
-            );
-
-            hops.Add(
-              new ConnectivityTraceViewHopInfo(
-                  4,
-                  level: 0,
-                  isSplitter: false,
-                  isTraceSource: false,
-                  node: "F1200",
-                  equipment: "RACK 1 - GPS 1",
-                  terminalStructure: "Bakke 2",
-                  terminal: "Søm 1",
-                  connectionInfo: "Intern forb",
-                  totalLength: 482,
-                  routeSegmentGeometries: Array.Empty<string>(),
-                  routeSegmentIds: Array.Empty<Guid>()
-              )
-            );
-
-
-            // splitter ud 1
-
-            hops.Add(
-              new ConnectivityTraceViewHopInfo(
-                  5,
-                  level: 0,
-                  isSplitter: true,
-                  isTraceSource: false,
-                  node: "F1200",
-                  equipment: "RACK 1 - 1:32 Splitter",
-                  terminalStructure: "Splitter 1",
-                  terminal: "IND 1 / UD 1",
-                  connectionInfo: "Intern forb",
-                  totalLength: 484,
-                  routeSegmentGeometries: Array.Empty<string>(),
-                  routeSegmentIds: Array.Empty<Guid>()
-              )
-            );
-
-            hops.Add(
-             new ConnectivityTraceViewHopInfo(
-                 6,
-                 level: 1,
-                 isSplitter: false,
-                 isTraceSource: false,
-                 node: "F1200",
-                 equipment: "RACK 1 - GPS 2",
-                 terminalStructure: "Bakke 1",
-                 terminal: "Søm 11",
-                 connectionInfo: "K12434434 (48) Fiber 10",
-                 totalLength: 1250,
-                 routeSegmentGeometries: Array.Empty<string>(),
-                 routeSegmentIds: Array.Empty<Guid>()
-             )
-           );
-
-           hops.Add(
-             new ConnectivityTraceViewHopInfo(
-                 7,
-                 level: 1,
-                 isSplitter: false,
-                 isTraceSource: false,
-                 node: "F1230",
-                 equipment: "BUDI 2s",
-                 terminalStructure: "Bakke 1",
-                 terminal: "Søm 11",
-                 connectionInfo: "K12353434 (2) Fiber 1",
-                 totalLength: 1434,
-                 routeSegmentGeometries: Array.Empty<string>(),
-                 routeSegmentIds: Array.Empty<Guid>()
-             )
-           );
-
-            hops.Add(
-             new ConnectivityTraceViewHopInfo(
-                 8,
-                 level: 1,
-                 isSplitter: false,
-                 isTraceSource: false,
-                 node: "SP343344",
-                 equipment: "FTTU",
-                 terminalStructure: "Bakke 1",
-                 terminal: "Søm 1",
-                 connectionInfo: "Intern forb",
-                 totalLength: 1434,
-                 routeSegmentGeometries: Array.Empty<string>(),
-                 routeSegmentIds: Array.Empty<Guid>()
-             )
-           );
-
-            hops.Add(
-            new ConnectivityTraceViewHopInfo(
-                9,
-                level: 1,
-                isSplitter: false,
-                isTraceSource: false,
-                node: "IA12345678",
-                equipment: "",
-                terminalStructure: "",
-                terminal: "",
-                connectionInfo: "Engum Møllevej 3, Vejle (3442334)",
-                totalLength: 1434,
-                routeSegmentGeometries: Array.Empty<string>(),
-                routeSegmentIds: Array.Empty<Guid>()
-            )
-          );
-
-            // splitter ud 2
-
-            hops.Add(
-              new ConnectivityTraceViewHopInfo(
-                  10,
-                  level: 0,
-                  isSplitter: true,
-                  isTraceSource: false,
-                  node: "F1200",
-                  equipment: "RACK 1 - 1:32 Splitter",
-                  terminalStructure: "Splitter 1",
-                  terminal: "IND 1 / UD 2",
-                  connectionInfo: "Intern forb",
-                  totalLength: 484,
-                  routeSegmentGeometries: Array.Empty<string>(),
-                  routeSegmentIds: Array.Empty<Guid>()
-              )
-            );
-
-            hops.Add(
-             new ConnectivityTraceViewHopInfo(
-                 11,
-                 level: 1,
-                 isSplitter: false,
-                 isTraceSource: false,
-                 node: "F1200",
-                 equipment: "RACK 1 - GPS 2",
-                 terminalStructure: "Bakke 1",
-                 terminal: "Søm 12",
-                 connectionInfo: "K12387546 (48) Fiber 11",
-                 totalLength: 640,
-                 routeSegmentGeometries: Array.Empty<string>(),
-                 routeSegmentIds: Array.Empty<Guid>()
-             )
-           );
-
-            hops.Add(
-              new ConnectivityTraceViewHopInfo(
-                  12,
-                  level: 1,
-                  isSplitter: false,
-                  isTraceSource: false,
-                  node: "F1230",
-                  equipment: "BUDI 2s",
-                  terminalStructure: "Bakke 1",
-                  terminal: "Søm 12",
-                  connectionInfo: "K12353434 (2) Fiber 1",
-                  totalLength: 831,
-                  routeSegmentGeometries: Array.Empty<string>(),
-                  routeSegmentIds: Array.Empty<Guid>()
-              )
-            );
-
-            hops.Add(
-             new ConnectivityTraceViewHopInfo(
-                 13,
-                 level: 1,
-                 isSplitter: false,
-                 isTraceSource: false,
-                 node: "SP343345",
-                 equipment: "FTTU",
-                 terminalStructure: "Bakke 1",
-                 terminal: "Søm 1",
-                 connectionInfo: "Intern forb",
-                 totalLength: 831,
-                 routeSegmentGeometries: Array.Empty<string>(),
-                 routeSegmentIds: Array.Empty<Guid>()
-             )
-           );
-
-            hops.Add(
-            new ConnectivityTraceViewHopInfo(
-                14,
-                level: 1,
-                isSplitter: false,
-                isTraceSource: false,
-                node: "IA300602",
-                equipment: "",
-                terminalStructure: "",
-                terminal: "",
-                connectionInfo: "Engum Møllevej 4, Vejle ",
-                totalLength: 831,
-                routeSegmentGeometries: Array.Empty<string>(),
-                routeSegmentIds: Array.Empty<Guid>()
-            )
-          );
-
-
-            return new ConnectivityTraceView("K12345678",hops.ToArray());
-        }
-     
     }
 }

@@ -1,4 +1,6 @@
 ﻿using FluentResults;
+using OpenFTTH.Address.API.Model;
+using OpenFTTH.Address.API.Queries;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
@@ -13,7 +15,7 @@ using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 {
-    public class RouteNetworkDataHolder
+    public class RelatedDataHolder
     {
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -21,11 +23,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
         private LookupCollection<TerminalEquipmentSpecification> _terminalEquipmentSpecifications;
         private LookupCollection<TerminalStructureSpecification> _terminalStructureSpecifications;
 
-        public LookupCollection<RouteNetworkElement> RouteNetworkElements { get; set; }
+        public Dictionary<Guid, RouteNetworkElement> RouteNetworkElementById { get; }
+        public Dictionary<Guid, NodeContainer> NodeContainerById  { get; }
+        public Dictionary<Guid, string> AddressStringById { get; }
 
-        public Dictionary<Guid, NodeContainer> NodeContainerByNodeId = new();
-
-        public RouteNetworkDataHolder(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds)
+        public RelatedDataHolder(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds, HashSet<Guid>? addressIds = null)
         {
             _eventStore = eventStore;
             _queryDispatcher = queryDispatcher;
@@ -34,17 +36,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
             _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
 
+            RouteNetworkElementById = GatherRouteNetworkElementInformation(nodeOfInterestIds);
+
+            NodeContainerById = GatcherNodeContainerInformation(RouteNetworkElementById.Values.ToList());
+
+            AddressStringById = GatherAddressInformation(addressIds);
+        }
+
+        private Dictionary<Guid, RouteNetworkElement> GatherRouteNetworkElementInformation(IEnumerable<Guid> nodeOfInterestIds)
+        {
             if (nodeOfInterestIds.Count() == 0)
             {
-                RouteNetworkElements = new LookupCollection<RouteNetworkElement>();
-                return;
+                return new Dictionary<Guid, RouteNetworkElement>();
             }
-
 
             RouteNetworkElementIdList idList = new();
             idList.AddRange(nodeOfInterestIds);
 
-            var routeNetworkQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+            var routeNetworkQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
                 new GetRouteNetworkDetails(idList)
                 {
                     RelatedInterestFilter = RelatedInterestFilterOptions.ReferencesFromRouteElementOnly,
@@ -59,40 +68,119 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             if (routeNetworkQueryResult.IsFailed)
                 throw new ApplicationException("Failed to query route network information. Got error: " + routeNetworkQueryResult.Errors.First().Message);
 
-            RouteNetworkElements = routeNetworkQueryResult.Value.RouteNetworkElements;
+            return routeNetworkQueryResult.Value.RouteNetworkElements.ToDictionary(x => x.Id);
+        }
+
+        private Dictionary<Guid, NodeContainer> GatcherNodeContainerInformation(List<RouteNetworkElement> routeNetworkElements)
+        {
+            Dictionary<Guid, NodeContainer> result = new();
 
             // Get node containers
-            foreach (var routeNetworkElement in RouteNetworkElements)
+            foreach (var routeNetworkElement in RouteNetworkElementById.Values)
             {
                 if (routeNetworkElement.InterestRelations != null)
                 {
                     foreach (var interestRel in routeNetworkElement.InterestRelations)
                     {
-                        if (utilityNetwork.TryGetEquipment<NodeContainer>(interestRel.RefId, out var nodeContainer))
+                        if (_utilityNetwork.TryGetEquipment<NodeContainer>(interestRel.RefId, out var nodeContainer))
                         {
-                            NodeContainerByNodeId.Add(routeNetworkElement.Id, nodeContainer);
+                            result.Add(routeNetworkElement.Id, nodeContainer);
                         }
                     }
                 }
             }
+
+            return result;
+        }
+
+        private Dictionary<Guid, string> GatherAddressInformation(HashSet<Guid>? addressIdsToQuery)
+        {
+            if (addressIdsToQuery == null)
+                return new Dictionary<Guid, string>();
+
+            var getAddressInfoQuery = new GetAddressInfo(addressIdsToQuery.ToArray());
+
+            var addressResult = _queryDispatcher.HandleAsync<GetAddressInfo, Result<GetAddressInfoResult>>(getAddressInfoQuery).Result;
+
+            Dictionary<Guid, string> result = new();
+
+            if (addressResult.IsSuccess)
+            {
+                foreach (var addressHit in addressResult.Value.AddressHits)
+                {
+                    if (addressHit.RefClass == AddressEntityClass.UnitAddress)
+                    {
+                        var unitAddress = addressResult.Value.UnitAddresses[addressHit.RefId];
+                        var accessAddress = addressResult.Value.AccessAddresses[unitAddress.AccessAddressId];
+
+                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseNumber;
+
+                        if (unitAddress.FloorName != null)
+                            addressStr += (", " + unitAddress.FloorName);
+
+                        if (unitAddress.SuitName != null)
+                            addressStr += (" " + unitAddress.SuitName);
+
+                        result.Add(addressHit.Key, addressStr);
+                    }
+                    else
+                    {
+                        var accessAddress = addressResult.Value.AccessAddresses[addressHit.RefId];
+
+                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseNumber;
+
+                        result.Add(addressHit.Key, addressStr);
+                    }
+                }
+            }
+            else
+            {
+                throw new ApplicationException($"Error calling address service from trace. Error: " + addressResult.Errors.First().Message);
+            }
+
+            return result;
+        }
+
+        public string? GetAddressString(Guid? addressId)
+        {
+            if (addressId == null || addressId.Value == Guid.Empty)
+                return null;
+
+            if (AddressStringById.ContainsKey(addressId.Value))
+                return AddressStringById[addressId.Value];
+            else
+                return null;
         }
 
         public string? GetNodeName(Guid routeNodeId)
         {
-            if (RouteNetworkElements != null && RouteNetworkElements.ContainsKey(routeNodeId))
+            if (RouteNetworkElementById != null && RouteNetworkElementById.ContainsKey(routeNodeId))
             {
-                var node = RouteNetworkElements[routeNodeId];
+                var node = RouteNetworkElementById[routeNodeId];
                 return node.Name;
             }
 
             return null;
         }
 
+        public string? GetNodeOrEquipmentName(Guid routeNodeId, TerminalEquipment terminalEquipment)
+        {
+            if (RouteNetworkElementById != null && RouteNetworkElementById.ContainsKey(routeNodeId))
+            {
+                var nodeName = RouteNetworkElementById[routeNodeId].Name;
+
+                if (!String.IsNullOrEmpty(nodeName))
+                    return nodeName;
+            }
+
+            return terminalEquipment.Name;
+        }
+
         public string? GetRackName(Guid routeNodeId, Guid terminalEquipmentId)
         {
-            if (NodeContainerByNodeId.ContainsKey(routeNodeId))
+            if (NodeContainerById.ContainsKey(routeNodeId))
             {
-                var container = NodeContainerByNodeId[routeNodeId];
+                var container = NodeContainerById[routeNodeId];
 
                 if (container.Racks != null)
                 {
@@ -116,19 +204,27 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
 
-            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
-
-            var terminal = terminalRef.Terminal(_utilityNetwork);
-
+            // Prepare node name if available
             if (nodeName != null)
                 nodeName += " ";
 
+            // Prepare address info if available
+            string? addressInfo = null;
+
+            if (terminalEquipment.AddressInfo != null)
+            {
+                addressInfo = GetAddressString(GetTerminalEquipmentMostAccurateAddressId(terminalEquipment));
+
+                if (addressInfo != null)
+                    addressInfo = " (" + addressInfo + ")";
+            }
+
             var equipmentName = GetEquipmentWithStructureInfoString(terminalRef);
 
-            return $"{nodeName}{equipmentName}";
+            return $"{nodeName}{equipmentName}{addressInfo}";
         }
 
-        public string GetFullEquipmentString(Guid routeNodeId, TerminalEquipment terminalEquipment, bool includeNodeName = false)
+        public string GetFullEquipmentString(Guid routeNodeId, TerminalEquipment terminalEquipment, bool includeNodeName = false, bool includeAddressInfo = false)
         {
             var rackName = GetRackName(routeNodeId, terminalEquipment.Id);
 
@@ -142,10 +238,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
                     nodeName += " - ";
             }
 
+            string? addressInfo = null;
+
+            if (includeAddressInfo && terminalEquipment.AddressInfo != null && terminalEquipment.AddressInfo.AccessAddressId != null)
+            {
+                addressInfo = GetAddressString(GetTerminalEquipmentMostAccurateAddressId(terminalEquipment));
+
+                if (addressInfo != null)
+                    addressInfo = " (" + addressInfo + ")";
+            }
+
             if (rackName != null)
-                return $"{nodeName}{rackName} - {GetEquipmentName(terminalEquipment)}";
+                return $"{nodeName}{rackName} - {GetEquipmentName(terminalEquipment)}{addressInfo}";
             else
-                return $"{nodeName}{GetEquipmentName(terminalEquipment)}";
+                return $"{nodeName}{GetEquipmentName(terminalEquipment)}{addressInfo}";
         }
 
         public string GetCompactEquipmentWithTypeInfoString(Guid routeNodeId, TerminalEquipment terminalEquipment, bool includeNodeName = false)
@@ -167,18 +273,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             if (rackName != null)
             {
-              
                 if (IsTerminalEquipmentRackTray(terminalEquipment, terminalEquipmentSpecification))
                 {
                     return $"{nodeName}{rackName} ({terminalEquipmentSpecification.ShortName})";
                 }
+                else
                 {
                     return $"{nodeName}{rackName} - {GetEquipmentName(terminalEquipment)} ({terminalEquipmentSpecification.ShortName})";
                 }
             }
             else
             {
-                return $"{nodeName}{GetEquipmentName(terminalEquipment)} ({terminalEquipmentSpecification.ShortName})";
+                if (IsCustomerTermination(terminalEquipment, terminalEquipmentSpecification))
+                {
+                    return $"{terminalEquipmentSpecification.ShortName}";
+                }
+                else
+                {
+                    return $"{nodeName}{GetEquipmentName(terminalEquipment)} ({terminalEquipmentSpecification.ShortName})";
+                }
             }
         }
 
@@ -287,6 +400,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             return $"Tube {tube} Fiber {fiber}";
         }
 
+        private Guid? GetTerminalEquipmentMostAccurateAddressId(TerminalEquipment terminalEquipment)
+        {
+            if (terminalEquipment.AddressInfo != null && terminalEquipment.AddressInfo.UnitAddressId != null)
+                return terminalEquipment.AddressInfo.UnitAddressId.Value;
+            else if (terminalEquipment.AddressInfo != null && terminalEquipment.AddressInfo.AccessAddressId != null)
+                return terminalEquipment.AddressInfo.AccessAddressId.Value;
+
+            return null;
+        }
 
         private bool IsTerminalEquipmentRackTray(TerminalEquipment terminalEquipment, TerminalEquipmentSpecification terminalEquipmentSpecification)
         {
@@ -295,6 +417,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
                 return true;
             else
                 return false;
+        }
+
+        private bool IsCustomerTermination(TerminalEquipment terminalEquipment, TerminalEquipmentSpecification terminalEquipmentSpecification)
+        {
+            // TODO: Remove this after conversion fix
+            if (terminalEquipmentSpecification.Category != null && (terminalEquipmentSpecification.Category == "Kundeterminering"))
+                return true;
+
+            if (terminalEquipmentSpecification.IsCustomerTermination)
+                return true;
+            else
+                return false;
+
+
         }
     }
 }

@@ -61,7 +61,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
 
-            var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment);
+            var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentName.StartsWith("K69373563"));
 
             // Get face connections for terminal equipment
             var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.FaceKind);

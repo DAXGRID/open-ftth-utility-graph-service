@@ -164,7 +164,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 new TerminalEquipmentAZConnectivityViewEquipmentInfo(
                        id: terminalEquipment.Id,
                        category: terminalEquipmentSpecification.Category,
-                       name: equipmentData.GetFullEquipmentString(query.routeNodeId, terminalEquipment, true),
+                       name: equipmentData.GetFullEquipmentString(query.routeNodeId, terminalEquipment, true, true),
                        specName: terminalEquipmentSpecification.Name,
                        terminalStructures: terminalStructureInfos.ToArray()
                    )
@@ -294,12 +294,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             var endNodesIds = GetEndNodeIdsFromTraceResult(tracedTerminals.Values);
 
-            RelevantEquipmentData relevantEquipmentData = new RelevantEquipmentData(_eventStore, _utilityNetwork, _queryDispatcher, endNodesIds);
+            var addressIds = GetAddressIdsFromTraceResult(tracedTerminals.Values);
+
+            RelevantEquipmentData relevantEquipmentData = new RelevantEquipmentData(_eventStore, _utilityNetwork, _queryDispatcher, endNodesIds, addressIds);
 
             relevantEquipmentData.TracedTerminals = tracedTerminals;
-            
-
-            //relevantEquipmentData.RouteNetworkElements = GatherRelevantRouteNodeInformation(_queryDispatcher, endNodesIds);
 
             TryFindAandZ(relevantEquipmentData);
 
@@ -311,12 +310,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             foreach (var tracedTerminal in relevantEquipmentData.TracedTerminals.Values)
             {
                 // the lower the more A-ish
-                int upstreamRank = 0;
-                int downstreamRank = 0;
-
+                int upstreamRank;
                 if (tracedTerminal.Upstream != null)
                 {
-                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Upstream.EndTerminal.RouteNodeId];
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElementById[tracedTerminal.Upstream.EndTerminal.RouteNodeId];
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         upstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
@@ -326,7 +323,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 else
                 {
                     // Upstream is the source terminal
-                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.SourceTerminal.RouteNodeId];
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElementById[tracedTerminal.SourceTerminal.RouteNodeId];
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         upstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
@@ -335,9 +332,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 }
 
 
+                int downstreamRank;
                 if (tracedTerminal.Downstream != null)
                 {
-                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.Downstream.EndTerminal.RouteNodeId];
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElementById[tracedTerminal.Downstream.EndTerminal.RouteNodeId];
 
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
@@ -347,8 +345,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 else
                 {
                     // Downstream is the source terminal
-                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElements[tracedTerminal.SourceTerminal.RouteNodeId];
-                    
+                    var endTerminalRouteNode = relevantEquipmentData.RouteNetworkElementById[tracedTerminal.SourceTerminal.RouteNodeId];
+
                     if (endTerminalRouteNode != null && endTerminalRouteNode.RouteNodeInfo != null && endTerminalRouteNode.RouteNodeInfo.Function != null)
                         downstreamRank = (int)endTerminalRouteNode.RouteNodeInfo.Function;
                     else
@@ -417,6 +415,50 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             return endNodeIds;
         }
 
+        private HashSet<Guid> GetAddressIdsFromTraceResult(IEnumerable<TraceInfo> traceInfos)
+        {
+            HashSet<Guid> addressIds = new();
+
+            foreach (var traceInfo in traceInfos)
+            {
+                foreach (var equipment in GetEndTerminalEquipments(traceInfo))
+                {
+                    if (equipment.AddressInfo != null)
+                    {
+                        if (equipment.AddressInfo.UnitAddressId != null && equipment.AddressInfo.UnitAddressId != Guid.Empty)
+                            addressIds.Add(equipment.AddressInfo.UnitAddressId.Value);
+                        else if (equipment.AddressInfo.AccessAddressId != null && equipment.AddressInfo.AccessAddressId != Guid.Empty)
+                            addressIds.Add(equipment.AddressInfo.AccessAddressId.Value);
+                    }
+                }
+            }
+
+            return addressIds;
+        }
+
+        private IEnumerable<TerminalEquipment> GetEndTerminalEquipments(TraceInfo traceInfo)
+        {
+            var result = new HashSet<TerminalEquipment>();
+
+            if (traceInfo.Upstream != null)
+            {
+                if (!traceInfo.Upstream.EndTerminal.IsDummyEnd)
+                {
+                    result.Add(traceInfo.Upstream.EndTerminal.TerminalEquipment(_utilityNetwork));
+                }
+            }
+
+            if (traceInfo.Downstream != null)
+            {
+                if (!traceInfo.Downstream.EndTerminal.IsDummyEnd)
+                {
+                    result.Add(traceInfo.Downstream.EndTerminal.TerminalEquipment(_utilityNetwork));
+                }
+            }
+
+            return result;
+        }
+
         private static void AddEndNodeIdsToHash(TraceInfo traceInfo, HashSet<Guid> endNodeIds)
         {
             if (traceInfo.Upstream != null)
@@ -475,12 +517,12 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             return symbolName;
         }
 
-        private class RelevantEquipmentData : RouteNetworkDataHolder
+        private class RelevantEquipmentData : RelatedDataHolder
         {
             public Dictionary<Guid, TraceInfo> TracedTerminals { get; set; }
 
-            public RelevantEquipmentData(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds) 
-                : base(eventStore, utilityNetwork, queryDispatcher, nodeOfInterestIds)
+            public RelevantEquipmentData(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds, HashSet<Guid> addressIds) 
+                : base(eventStore, utilityNetwork, queryDispatcher, nodeOfInterestIds, addressIds)
             {
             }
         }

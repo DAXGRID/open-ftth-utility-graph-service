@@ -326,6 +326,39 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(12)]
+        public async void PlaceCustomerTerminalEquipmentInSDU1_ShouldSucceed()
+        {
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                nodeContainerId: TestUtilityNetwork.NodeContainer_SDU_1,
+                Guid.NewGuid(),
+                terminalEquipmentSpecificationId: TestSpecifications.CustomerTermination,
+                numberOfEquipments: 1,
+                startSequenceNumber: 1,
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
+                namingInfo: new NamingInfo("C12345678", null)
+            )
+            {
+                AddressInfo = new AddressInfo()
+                {
+                    UnitAddressId = Guid.Parse("0a3f50bc-aa89-32b8-e044-0003ba298018")
+                }
+            };
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+
+            var nodeContainerQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { placeEquipmentCmd.NodeContainerId })
+            );
+
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+
 
         [Fact, Order(100)]
         public async void QueryConnectivityInfoOneFirstTerminalEquipmentInCC1Rack1_ShouldSucceed()

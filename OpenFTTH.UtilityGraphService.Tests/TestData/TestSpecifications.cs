@@ -161,6 +161,7 @@ namespace OpenFTTH.TestData
 
 
         // Termianl Equipment Structure
+        public static Guid SpliceTray_Uknown4Pin = Guid.Parse("19b70c93-fcfa-4266-b5f8-d736e7a1c36f");
         public static Guid SpliceTray_Uknown12Pin = Guid.Parse("42e126cf-9654-4f0e-b3c2-15bce380fd4e");
         public static Guid SpliceTray_Uknown24Pin = Guid.Parse("629e7a6c-7326-4cfb-bf8b-df1f78b7473e");
         public static Guid SpliceTray_SE12Pin = Guid.Parse("fdd67d8c-de49-46d6-ac88-af392f539019");
@@ -185,9 +186,12 @@ namespace OpenFTTH.TestData
         public static Guid SpliceClosure_FIST = Guid.Parse("7a038a46-297d-490c-8796-42b44d1218e0");
         public static Guid SpliceClosure_FOSC400 = Guid.Parse("5d95fe82-c563-47ff-8356-81d63bb512ee");
 
+        public static Guid CustomerTermination = Guid.Parse("b0a3e179-ef1a-405c-8b4e-0082d8fc8c3d");
+
         public static Guid Subrack_LISA_APC_UPC = Guid.Parse("778b9d6f-7add-40eb-ae9d-da9660dc1799");
         public static Guid Subrack_GPS_72_SC = Guid.Parse("aa8027fc-25d6-498e-98e6-4eb7d634070c");
         public static Guid Subrack_GPS_144_LC = Guid.Parse("d1748de5-de10-45d9-a2a9-1b5b344bf159");
+
 
 
         public FluentResults.Result<TestSpecifications> Run()
@@ -975,6 +979,18 @@ namespace OpenFTTH.TestData
 
         private void AddTerminalStructureSpecifications()
         {
+            // 4 Pin Tray Uknown Type
+            AddSpecification(new TerminalStructureSpecification(SpliceTray_Uknown4Pin, "SpliceTray", "Splidsebakke 4 Søm", "Bakke 4 Søm",
+                new TerminalTemplate[]
+                {
+                    new TerminalTemplate("1", TerminalDirectionEnum.BI, false, true),
+                    new TerminalTemplate("2", TerminalDirectionEnum.BI, false, true),
+                    new TerminalTemplate("3", TerminalDirectionEnum.BI, false, true),
+                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true),
+                }
+            ));
+
+
             // 12 Pin Tray Uknown Type
             AddSpecification(new TerminalStructureSpecification(SpliceTray_Uknown12Pin, "SpliceTray", "Splidsebakke 12 Søm", "Bakke 12 Søm",
                 new TerminalTemplate[]
@@ -1313,6 +1329,17 @@ namespace OpenFTTH.TestData
                }
             )
             { ManufacturerRefs = new Guid[] { Manu_CommScope } });
+
+            // Customer termination
+            AddSpecification(new TerminalEquipmentSpecification(CustomerTermination, "Kundeterminering", "Kundeterminering", "Kundeterminering med 4 søm", false, 0,
+                new TerminalStructureTemplate[]
+                {
+                    new TerminalStructureTemplate(SpliceTray_Uknown4Pin, 1)
+               }
+            )
+            {
+                IsCustomerTermination = true
+            });
 
 
 
