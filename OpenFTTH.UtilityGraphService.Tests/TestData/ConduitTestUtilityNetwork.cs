@@ -125,7 +125,7 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(Conduit_N2_N4_2, NodeContainer_N2, NodeContainerSideEnum.South);
 
                 // Affix conduits in N3
-                AffixSpanEquipmentToContainer(Conduit_N2_N3_1, NodeContainer_N3, NodeContainerSideEnum.West);
+                //AffixSpanEquipmentToContainer(Conduit_N2_N3_1, NodeContainer_N3, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(Conduit_N2_N3_2, NodeContainer_N3, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(Conduit_N3_N4_1, NodeContainer_N3, NodeContainerSideEnum.East);
                 AffixSpanEquipmentToContainer(Conduit_N3_N4_2, NodeContainer_N3, NodeContainerSideEnum.East);

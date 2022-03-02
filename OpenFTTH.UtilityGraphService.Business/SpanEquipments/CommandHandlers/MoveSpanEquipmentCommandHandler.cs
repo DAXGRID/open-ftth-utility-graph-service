@@ -28,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
+        private readonly UtilityNetworkProjection _utilityNetwork;
 
         public MoveSpanEquipmentCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
@@ -35,28 +36,26 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
+            _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
         }
 
         public Task<Result> HandleAsync(MoveSpanEquipment command)
         {
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+            
 
             // Because the client is allowed to provide either a span equipment or segment id, we need look it up via the utility network graph
-            if (!utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
+            if (!_utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
                 return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
 
+
+            /*
             // Check that span equipment does not have child span equipment (i.e is a conduit with cables inside it)
-            foreach (var spanStructure in spanEquipment.SpanStructures)
-            {
-                foreach (var spanSegment in spanStructure.SpanSegments)
-                {
-                    if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
-                        return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegment.Id} contain a cable. Cannot be moved.")));
-                }
-            }
+            if (HasAnyChildSpanEquipments(spanEquipment))
+                return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span equipment: {spanEquipment.Id} contain a cable. Cannot be moved.")));
+            */
 
             // Check that if span equipment is not a child of other span equipment (i.e. is a cable within a conduit)
-            if (spanEquipment.UtilityNetworkHops != null && spanEquipment.UtilityNetworkHops.Count() > 0)
+            if (IsChildOfSpanEquipments(spanEquipment))
                 return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_IS_AFFIXED_TO_CONDUIT, $"The span equipment with id: {spanEquipment.Id} is related to one of more conduits. Cannot be moved.")));
 
             // Get interest information from existing span equipment
@@ -89,6 +88,45 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (moveSpanEquipmentResult.IsFailed)
                 return Task.FromResult(Result.Fail(moveSpanEquipmentResult.Errors.First()));
 
+
+            // If span equipment contains cable, move these as well
+            Dictionary<Guid, ValidatedRouteNetworkWalk> ChildWalkOfInterestsToUpdate = new();
+
+            if (HasAnyChildSpanEquipments(spanEquipment))
+            {
+                // Check if end points are moved, which is not allowed when cables are running through conduit
+                if (existingWalk.FromNodeId != newWalk.FromNodeId || existingWalk.ToNodeId != newWalk.ToNodeId)
+                    return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.ENDS_CANNOT_BE_MOVED_BECAUSE_OF_CHILD_SPAN_EQUIPMENTS, $"The ends of the walk of span equipment with id: { spanEquipment.Id } cannot be modified because of child equipments related to the span equipment")));
+
+                var children = GetChildSpanEquipments(spanEquipment);
+
+                foreach (var child in children)
+                {
+                    var childSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(child.Id);
+
+                    var existingChildWalk = GetInterestInformation(child);
+
+                    var newChildWalkResult = childSpanEquipmentAR.TryCalculateNewWalkFromConduitMove(existingChildWalk, spanEquipment, newWalk);
+
+                    if (newChildWalkResult.IsFailed)
+                        return Task.FromResult(Result.Fail(newChildWalkResult.Errors.First()));
+
+                    var newChildWalk = newChildWalkResult.Value;
+
+                    if (!existingChildWalk.Equals(newChildWalk))
+                    {
+                        // Validate the new child walk
+                        var newChildWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), newChildWalkResult.Value.RouteNetworkElementRefs)).Result;
+
+                        // If the new walk fails to validate, return the error to the client
+                        if (newChildWalkValidationResult.IsFailed)
+                            return Task.FromResult(Result.Fail(newChildWalkValidationResult.Errors.First()));
+
+                        ChildWalkOfInterestsToUpdate.Add(child.WalkOfInterestId, newChildWalk);
+                    }
+                }
+            }
+
             // If we got to here, then the span equipment move was validated fine, so we can update the walk of interest
             var newSegmentIds = new RouteNetworkElementIdList();
             newSegmentIds.AddRange(newWalk.SegmentIds);
@@ -100,11 +138,72 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (updateWalkOfInterestCommandResult.IsFailed)
                 throw new ApplicationException($"Got unexpected error result: {updateWalkOfInterestCommandResult.Errors.First().Message} trying to update walk of interest belonging to span equipment with id: {spanEquipment.Id} while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
 
+            // Update eventually child walk of interests
+            foreach (var childWalkOfInterestToUpdate in ChildWalkOfInterestsToUpdate)
+            {
+                var updateChildWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, childWalkOfInterestToUpdate.Key, childWalkOfInterestToUpdate.Value.RouteNetworkElementRefs);
+
+                var updateChildWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateChildWalkOfInterestCommand).Result;
+
+                if (updateChildWalkOfInterestCommandResult.IsFailed)
+                    throw new ApplicationException($"Got unexpected error result: {updateWalkOfInterestCommandResult.Errors.First().Message} trying to update child walk of interest: {childWalkOfInterestToUpdate.Key} while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
+            }
+
+
+            // Store the aggregate
             _eventStore.Aggregates.Store(spanEquipmentAR);
 
             NotifyExternalServicesAboutSpanEquipmentChange(spanEquipment.Id, existingWalk, newWalk);
 
             return Task.FromResult(moveSpanEquipmentResult);
+        }
+
+        private bool HasAnyChildSpanEquipments(SpanEquipment spanEquipment)
+        {
+            foreach (var spanStructure in spanEquipment.SpanStructures)
+            {
+                foreach (var spanSegment in spanStructure.SpanSegments)
+                {
+                    if (_utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private List<SpanEquipment> GetChildSpanEquipments(SpanEquipment spanEquipment)
+        {
+            List<SpanEquipment> result = new();
+
+            foreach (var spanStructure in spanEquipment.SpanStructures)
+            {
+                foreach (var spanSegment in spanStructure.SpanSegments)
+                {
+                    if (_utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
+                    {
+                        var childIds = _utilityNetwork.RelatedCablesByConduitSegmentId[spanSegment.Id];
+
+                        foreach (var childId in childIds)
+                        {
+                            if (_utilityNetwork.TryGetEquipment<SpanEquipment>(childId, out var child))
+                            {
+                                result.Add(child);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private bool IsChildOfSpanEquipments(SpanEquipment spanEquipment)
+        {
+            if (spanEquipment.UtilityNetworkHops != null && spanEquipment.UtilityNetworkHops.Count() > 0)
+                return true;
+            else
+                return false;
         }
 
         private ValidatedRouteNetworkWalk GetInterestInformation(SpanEquipment spanEquipment)
