@@ -299,6 +299,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
                         if (traceThisSpanSegmentIdOnly != null && traceThisSpanSegmentIdOnly != spanSegment.Id)
                             continue;
 
+                        // On cables only trace outer jacket only always
+                        if (traceThisSpanSegmentIdOnly == null && spanEquipment.IsCable && (spanStructure.Position != 1 || spanStructure.Level != 1))
+                            continue;
+
                         var spanTraceResult = _utilityNetwork.Graph.Trace(spanSegment.Id);
 
                         // We're dealing with a connected segment if non-empty trace result is returned
