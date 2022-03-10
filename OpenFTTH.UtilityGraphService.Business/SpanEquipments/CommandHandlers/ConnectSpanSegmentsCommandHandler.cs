@@ -1,9 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
@@ -268,7 +268,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             if (spanEquipmentToConnect.Connects.Count != 2)
             {
-                return 
+                return
                   Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
                       ConnectSpanSegmentsAtRouteNodeErrorCodes.SAME_SPAN_EQUIPMENT_CONNECTIONS_MUST_BE_DONE_TWO_SPAN_SEGMENTS_AT_THE_TIME,
                       $"Cannot connect the span segments specified because {spanEquipmentToConnect.Connects.Count} segments are selected. Two span segments were expected.")
@@ -297,7 +297,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
             else
             {
-                return 
+                return
                     Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(
                         ConnectSpanSegmentsAtRouteNodeErrorCodes.SAME_SPAN_EQUIPMENT_U_TURN_CONNECTIONS_NOT_ALLOWED,
                         $"Cannot connect the span segments specified because the two span segments selected will create an u-turn.")
@@ -504,7 +504,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
         }
-        
+
         private async void NotifyExternalServicesAboutConnectivityChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId, string category)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
@@ -597,5 +597,3 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         }
     }
 }
-
-  

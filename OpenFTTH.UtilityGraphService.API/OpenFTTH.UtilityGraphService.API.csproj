@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentResults" Version="2.3.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="OpenFTTH.Address.API" Version="1.1.0" />
-    <PackageReference Include="OpenFTTH.Address.Business" Version="1.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="OpenFTTH.Address.API" Version="1.1.1" />
+    <PackageReference Include="OpenFTTH.Address.Business" Version="1.1.1" />
     <PackageReference Include="OpenFTTH.Core" Version="1.0.1" />
     <PackageReference Include="OpenFTTH.CQRS" Version="1.5.2" />
     <PackageReference Include="OpenFTTH.Events" Version="2.8.0" />
