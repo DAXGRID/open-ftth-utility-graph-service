@@ -1,9 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -54,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Lookup the second span equipment
             if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentsToDisconnect[1], out var secondSpanSegmentGraphElement))
                 return Task.FromResult(Result.Fail(new DisconnectSpanSegmentsAtRouteNodeError(DisconnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentsToDisconnect[1]}")));
-            
+
             var secondSpanEquipment = secondSpanSegmentGraphElement.SpanEquipment(utilityNetwork);
             var secondSpanSegment = secondSpanSegmentGraphElement.SpanSegment(utilityNetwork);
 
@@ -142,7 +142,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 if (!firstConnectResult.IsSuccess)
                     return Task.FromResult(firstConnectResult);
-           
+
                 var secondConnectResult = spanEquipmentAR.DisconnectSegmentFromTerminal(
                     cmdContext: commandContext,
                     spanSegmentId: secondSpanSegment.Id,
@@ -184,5 +184,3 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         }
     }
 }
-
-  
