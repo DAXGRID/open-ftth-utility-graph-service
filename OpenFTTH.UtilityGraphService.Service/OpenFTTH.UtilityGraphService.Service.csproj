@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
-    <PackageReference Include="OpenFTTH.Core" Version="1.0.1" />
-    <PackageReference Include="OpenFTTH.Events" Version="2.8.0" />
+    <PackageReference Include="OpenFTTH.Core" Version="2.0.0" />
+    <PackageReference Include="OpenFTTH.Events" Version="3.1.0" />
   </ItemGroup>
 
 </Project>
