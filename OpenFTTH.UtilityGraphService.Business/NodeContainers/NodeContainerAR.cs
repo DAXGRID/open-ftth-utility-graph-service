@@ -31,6 +31,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerRackAdded>(Apply);
             Register<NodeContainerTerminalEquipmentAdded>(Apply);
             Register<NodeContainerTerminalEquipmentsAddedToRack>(Apply);
+            Register<NodeContainerTerminalEquipmentMovedToRack>(Apply);
         }
 
         #region Place in network
@@ -122,6 +123,23 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
         private bool IsAnySpanEquipmentIsAffixedToContainer(List<SpanEquipment> relatedSpanEquipments)
+        {
+            foreach (var spanEquipment in relatedSpanEquipments)
+            {
+                if (spanEquipment.NodeContainerAffixes != null)
+                {
+                    foreach (var affix in spanEquipment.NodeContainerAffixes)
+                    {
+                        if (affix.NodeContainerId == this.Id)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsAnyTerminalEquipmentsContainedInContainer(List<SpanEquipment> relatedSpanEquipments)
         {
             foreach (var spanEquipment in relatedSpanEquipments)
             {
@@ -424,6 +442,113 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
 
             _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        #endregion
+
+        #region Change subrack Mount
+
+        public Result ChangeSubrackMount(CommandContext cmdContext, Guid terminalEquipmentId, int terminalEquipmentHeightInUnits, Guid rackId, int startUnitPosition)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {rackId} in node container with id: {this.Id}"));
+
+            if (!TerminalEquipmentExistInRack(terminalEquipmentId))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_NOT_FOUND_IN_ANY_RACK, $"Cannot find terminal equipment with id {terminalEquipmentId} in any rack within node container with id: {this.Id}"));
+
+            if (CheckIfMovedToNewRack(terminalEquipmentId, rackId))
+            {
+                var newRack = _container.Racks.First(r => r.Id == rackId);
+
+                var oldRack = GetCurrentRack(terminalEquipmentId);
+
+                var revisedStartPoistion = ReviseStartPosition(newRack, startUnitPosition);
+
+
+                var e = new NodeContainerTerminalEquipmentMovedToRack(
+                    nodeContainerId: this.Id,
+                    oldRackId: oldRack.Id,
+                    newRackId: newRack.Id,
+                    startUnitPosition: revisedStartPoistion,
+                    terminalEquipmentId: terminalEquipmentId,
+                    terminalEquipmentHeightInUnits: terminalEquipmentHeightInUnits
+                )
+                {
+                    CorrelationId = cmdContext.CorrelationId,
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                };
+
+                RaiseEvent(e);
+
+                return Result.Ok();
+            }
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerTerminalEquipmentMovedToRack @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+        }
+
+        private bool CheckIfMovedToNewRack(Guid equipmentId, Guid possibleNewRackId)
+        {
+            var currentRackId = GetCurrentRack(equipmentId).Id;
+
+            if (currentRackId != possibleNewRackId)
+                return true;
+            else
+                return false;
+        }
+
+        private bool TerminalEquipmentExistInRack(Guid terminalEquipmentId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null)
+                return false;
+
+            foreach (var rack in _container.Racks)
+            {
+                foreach (var subrackMount in rack.SubrackMounts)
+                {
+                    if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private Rack GetCurrentRack(Guid terminalEquipmentId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null)
+                throw new ApplicationException($"No racks in node equipment with id: {_container.Id}");
+
+            foreach (var rack in _container.Racks)
+            {
+                foreach (var subrackMount in rack.SubrackMounts)
+                {
+                    if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
+                    {
+                        return rack;
+                    }
+                }
+            }
+
+            throw new ApplicationException($"Can't find terminal equipment with id: {terminalEquipmentId} in any racks.");
         }
 
         #endregion

@@ -2167,8 +2167,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             if ((_spanEquipment.MarkingInfo == null && markingInfo == null) || (_spanEquipment.MarkingInfo != null && _spanEquipment.MarkingInfo.Equals(markingInfo)))
             {
-                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_MARKING_INFO,
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_MARKING_INFO,
                        $"Will not update marking info, because the provided value is equal the existing value.")
                    );
             }
@@ -2207,8 +2207,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             if ((_spanEquipment.AddressInfo == null && addressInfo == null) || (_spanEquipment.AddressInfo != null && _spanEquipment.AddressInfo.Equals(addressInfo)))
             {
-                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_ADDRESS_INFO,
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_ADDRESS_INFO,
                        $"Will not update address info, because the provided value is equal the existing value.")
                    );
             }
@@ -2237,8 +2237,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
         }
 
-
-
         #endregion
 
         #region Change Manufacturer
@@ -2249,8 +2247,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             if (_spanEquipment.ManufacturerId == manufacturerId)
             {
-                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_MANUFACTURER,
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_MANUFACTURER,
                        $"Will not change manufacturer, because the provided value is equal the existing value.")
                    );
             }
@@ -2289,8 +2287,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             if (_spanEquipment.SpecificationId == newSpecification.Id)
             {
-                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                       UpdateSpanEquipmentPropertiesErrorCodes.NO_CHANGE_TO_SPECIFICATION,
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_SPECIFICATION,
                        $"Will not change specification, because the provided specification id is the same as the existing one.")
                    );
             }
@@ -2298,8 +2296,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             // Changed specification from non-fixed to fixed is not allowedd
             if (!currentSpecification.IsFixed && newSpecification.IsFixed)
             {
-                return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                       UpdateSpanEquipmentPropertiesErrorCodes.CANNOT_CHANGE_FROM_NON_FIXED_TO_FIXED,
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.CANNOT_CHANGE_FROM_NON_FIXED_TO_FIXED,
                        $"No rules defined that can handle a change from a non-fixed multi span equipment to a fixed one.")
                    );
             }
@@ -2320,8 +2318,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
                     if (IsAnySpanSegmentsInStructureConnected((ushort)existingStructureIndex))
                     {
-                        return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                            UpdateSpanEquipmentPropertiesErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
+                        return Result.Fail(new UpdateEquipmentPropertiesError(
+                            UpdateEquipmentPropertiesErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
                             $"The new specification contains less span structure that the old one. But cannot remove span structure at index: {existingStructureIndex} because some of its segments are connected.")
                         );
                     }
@@ -2383,8 +2381,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     {
                         if (IsAnySpanSegmentsInStructureConnected((ushort)existingStructureIndex))
                         {
-                            return Result.Fail(new UpdateSpanEquipmentPropertiesError(
-                                UpdateSpanEquipmentPropertiesErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
+                            return Result.Fail(new UpdateEquipmentPropertiesError(
+                                UpdateEquipmentPropertiesErrorCodes.CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
                                 $"The new specification contains less span structure that the old one. But cannot remove span structure at index: {existingStructureIndex} because some of its segments are connected.")
                             );
                         }

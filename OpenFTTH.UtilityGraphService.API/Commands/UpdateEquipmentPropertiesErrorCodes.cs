@@ -1,6 +1,6 @@
 ﻿namespace OpenFTTH.UtilityGraphService.API.Commands
 {
-    public enum UpdateSpanEquipmentPropertiesErrorCodes
+    public enum UpdateEquipmentPropertiesErrorCodes
     {
         NO_CHANGE_TO_MARKING_INFO,
         NO_CHANGE,
@@ -10,6 +10,9 @@
         CANNOT_REMOVE_SPAN_STRUCTURE_WITH_CONNECTED_SEGMENTS_FROM_SPAN_EQUIPMENT,
         SPAN_EQUIPMENT_NOT_FOUND,
         SPAN_SPECIFICATION_NOT_FOUND,
-        NO_CHANGE_TO_ADDRESS_INFO
+        NO_CHANGE_TO_ADDRESS_INFO,
+        TERMINAL_EQUIPMENT_NOT_FOUND,
+        NODE_CONTAINER_NOT_FOUND,
+        NO_CHANGE_TO_NAMING_INFO
     }
 }

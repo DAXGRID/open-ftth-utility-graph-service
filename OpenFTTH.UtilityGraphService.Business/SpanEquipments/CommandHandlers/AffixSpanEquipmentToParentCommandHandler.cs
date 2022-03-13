@@ -132,18 +132,17 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             if (CheckIfWalkHasChanged(existingWalkOfInterest, newWalkOfInterest))
             {
+                var moveSpanEquipmentResult = spanEquipmentAR.Move(commandContext, newWalkOfInterest, existingWalkOfInterest);
+
+                if (moveSpanEquipmentResult.IsFailed)
+                    return Task.FromResult(Result.Fail(moveSpanEquipmentResult.Errors.First()));
+
                 var updateWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, cableSpanEquipment.WalkOfInterestId, newWalkOfInterest.RouteNetworkElementRefs);
 
                 var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
 
                 if (updateWalkOfInterestCommandResult.IsFailed)
                     return Task.FromResult(Result.Fail(updateWalkOfInterestCommandResult.Errors.First()));
-
-                var moveSpanEquipmentResult = spanEquipmentAR.Move(commandContext, newWalkOfInterest, existingWalkOfInterest);
-
-                if (moveSpanEquipmentResult.IsFailed)
-                    return Task.FromResult(Result.Fail(moveSpanEquipmentResult.Errors.First()));
-
             }
 
             _eventStore.Aggregates.Store(spanEquipmentAR);

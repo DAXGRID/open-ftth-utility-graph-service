@@ -4,6 +4,7 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
         public TerminalEquipmentAR()
         {
             Register<TerminalEquipmentPlacedInNodeContainer>(Apply);
+            Register<TerminalEquipmentNamingInfoChanged>(Apply);
+            Register<TerminalEquipmentAddressInfoChanged>(Apply);
+            Register<TerminalEquipmentManufacturerChanged>(Apply);
+            Register<TerminalEquipmentSpecificationChanged>(Apply);
         }
 
         #region Place
@@ -136,6 +141,167 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
         {
             Id = obj.Equipment.Id;
             _terminalEquipment = obj.Equipment;
+        }
+
+        #endregion
+
+
+        #region Change Naming Info
+        public Result ChangeNamingInfo(CommandContext cmdContext, NamingInfo? namingInfo)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if ((_terminalEquipment.NamingInfo == null && namingInfo == null) || (_terminalEquipment.NamingInfo != null && _terminalEquipment.NamingInfo.Equals(namingInfo)))
+            {
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_NAMING_INFO,
+                       $"Will not update naming info, because the provided value is equal the existing value.")
+                   );
+            }
+
+            var @event = new TerminalEquipmentNamingInfoChanged(
+              terminalEquipmentId: this.Id,
+              namingInfo: namingInfo
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalEquipmentNamingInfoChanged @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
+        }
+
+        #endregion
+
+        #region Change Address Info
+        public Result ChangeAddressInfo(CommandContext cmdContext, AddressInfo? addressInfo)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if ((_terminalEquipment.AddressInfo == null && addressInfo == null) || (_terminalEquipment.AddressInfo != null && _terminalEquipment.AddressInfo.Equals(addressInfo)))
+            {
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_ADDRESS_INFO,
+                       $"Will not update address info, because the provided value is equal the existing value.")
+                   );
+            }
+
+            var @event = new TerminalEquipmentAddressInfoChanged(
+              terminalEquipmentId: this.Id,
+              addressInfo: addressInfo
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalEquipmentAddressInfoChanged @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
+        }
+
+        #endregion
+
+        #region Change Manufacturer
+        public Result ChangeManufacturer(CommandContext cmdContext, Guid manufacturerId)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (_terminalEquipment.ManufacturerId == manufacturerId)
+            {
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_MANUFACTURER,
+                       $"Will not change manufacturer, because the provided value is equal the existing value.")
+                   );
+            }
+
+            var @event = new TerminalEquipmentManufacturerChanged(
+              terminalEquipmentId: this.Id,
+              manufacturerId: manufacturerId
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalEquipmentManufacturerChanged @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
+        }
+
+        #endregion
+
+        #region Change Specification
+        public Result ChangeSpecification(CommandContext cmdContext, TerminalEquipmentSpecification currentSpecification, TerminalEquipmentSpecification newSpecification)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that terminal equipment has never been placed. Please check command handler logic.");
+
+            if (_terminalEquipment.SpecificationId == newSpecification.Id)
+            {
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_SPECIFICATION,
+                       $"Will not change specification, because the provided specification id is the same as the existing one.")
+                   );
+            }
+
+            var @event = new TerminalEquipmentSpecificationChanged(
+              terminalEquipmentId: this.Id,
+              newSpecificationId: newSpecification.Id
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalEquipmentSpecificationChanged @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
         }
 
         #endregion

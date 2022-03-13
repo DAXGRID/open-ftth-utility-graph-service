@@ -67,6 +67,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             // Terminal equipment
             ProjectEvent<TerminalEquipmentPlacedInNodeContainer>(Project);
+            ProjectEvent<TerminalEquipmentNamingInfoChanged>(Project);
+            ProjectEvent<TerminalEquipmentAddressInfoChanged>(Project);
+            ProjectEvent<TerminalEquipmentManufacturerChanged>(Project);
+            ProjectEvent<TerminalEquipmentSpecificationChanged>(Project);
 
             // Node container
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
@@ -223,6 +227,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (TerminalEquipmentPlacedInNodeContainer @event):
                     StoreAndIndexVirginTerminalEquipment(@event.Equipment);
                     break;
+
+                case (TerminalEquipmentNamingInfoChanged @event):
+                    TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
+                    break;
+
+                case (TerminalEquipmentAddressInfoChanged @event):
+                    TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
+                    break;
+
+                case (TerminalEquipmentManufacturerChanged @event):
+                    TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
+                    break;
+
+                case (TerminalEquipmentSpecificationChanged @event):
+                    TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
+                    break;
+
 
 
                 // Node container events
@@ -509,6 +530,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             if (!_spanEquipmentByInterestId.TryUpdate(newSpanEquipmentState.WalkOfInterestId, newSpanEquipmentState, oldSpanEquipment))
                 throw new ApplicationException($"Concurrency issue updating span equipment interest index. Span equipment id: {newSpanEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
+        }
+
+        private void TryUpdate(TerminalEquipment newTerminalEquipmentState)
+        {
+            var oldTerminalEquipment = _terminalEquipmentByEquipmentId[newTerminalEquipmentState.Id];
+
+            if (!_terminalEquipmentByEquipmentId.TryUpdate(newTerminalEquipmentState.Id, newTerminalEquipmentState, oldTerminalEquipment))
+                throw new ApplicationException($"Concurrency issue updating terminal equipment index. Terminal equipment id: {newTerminalEquipmentState.Id} Please make sure that events are applied in sequence to the projection.");
         }
 
         private void TryUpdate(NodeContainer newNodeContainerState)
