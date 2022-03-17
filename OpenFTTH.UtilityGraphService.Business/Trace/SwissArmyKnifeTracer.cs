@@ -91,12 +91,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
 
 
                         // Find from node id and name/description
-                        Guid fromNodeId = segmentWalk.Hops.First().FromNodeId;
+                        var firstHop = segmentWalk.Hops.First();
+
+                        Guid fromNodeId = firstHop.FromNodeId;
+
                         string? fromNodeName = routeNetworkInformation.RouteNetworkElements[fromNodeId].NamingInfo?.Name;
 
+                        if (fromNodeName == null)
+                        {
+                            fromNodeName = GetAddressInfoForHop(addressInformation, firstHop);
+                        }
+
+
+                        // Find to node id and name
                         var lastHop = segmentWalk.Hops.Last();
 
                         Guid toNodeId = lastHop.ToNodeId;
+
                         string? toNodeName = routeNetworkInformation.RouteNetworkElements[toNodeId].NamingInfo?.Name;
 
                         if (toNodeName == null)
@@ -219,11 +230,21 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
         {
             HashSet<Guid> addressIdsToQuery = new();
 
-            // Find address id's to query for
+            // Find eventually address id's in from and to end to query for
             foreach (var segmentWalksBySpanEquipmentId in intermidiateTraceResult.SegmentWalksBySpanEquipmentId)
             {
                 foreach (var segmentWalk in segmentWalksBySpanEquipmentId.Value)
                 {
+                    var firstSegmentHop = segmentWalk.Hops.First();
+
+                    if (firstSegmentHop.AddressInfo != null)
+                    {
+                        if (firstSegmentHop.AddressInfo.UnitAddressId != null && !addressIdsToQuery.Contains(firstSegmentHop.AddressInfo.UnitAddressId.Value))
+                            addressIdsToQuery.Add(firstSegmentHop.AddressInfo.UnitAddressId.Value);
+                        else if (firstSegmentHop.AddressInfo.AccessAddressId != null && !addressIdsToQuery.Contains(firstSegmentHop.AddressInfo.AccessAddressId.Value))
+                            addressIdsToQuery.Add(firstSegmentHop.AddressInfo.AccessAddressId.Value);
+                    }
+
                     var lastSegmentHop = segmentWalk.Hops.Last();
 
                     if (lastSegmentHop.AddressInfo != null)
