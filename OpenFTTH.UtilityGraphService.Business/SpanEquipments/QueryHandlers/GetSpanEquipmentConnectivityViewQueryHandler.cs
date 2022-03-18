@@ -101,6 +101,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                        id: spanEquipment.Id,
                        category: spanEquipmentSpecification.Category,
                        name: spanEquipment.Name == null ? "NO NAME" : spanEquipment.Name,
+                       isCable: spanEquipment.IsCable,
                        specName: spanEquipmentSpecification.Name,
                        lines: lineInfos.ToArray()
                    )
