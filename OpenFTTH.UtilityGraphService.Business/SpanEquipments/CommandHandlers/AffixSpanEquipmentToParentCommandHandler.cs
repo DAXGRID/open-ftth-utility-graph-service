@@ -100,10 +100,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Check that not already contain cable, if single conduit
             var conduitSpec = spanEquipmentSpecifications[conduitSpanEquipment.SpecificationId];
 
-            if (!conduitSpec.IsMultiLevel && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId))
+            if (!conduitSpec.IsMultiLevel && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId) && _utilityNetwork.RelatedCablesByConduitSegmentId[conduitSpanSegmentId].Count > 0)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.NON_MULTI_LEVEL_CONDUIT_CANNOT_CONTAIN_MORE_THAN_ONE_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit and conduit is not a multi level conduit")));
               
-            if (conduitSpanStructureIndex > 0 && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId))
+            if (conduitSpanStructureIndex > 0 && _utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId) && _utilityNetwork.RelatedCablesByConduitSegmentId[conduitSpanSegmentId].Count > 0)
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.CONDUIT_SEGMENT_ALREADY_CONTAIN_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit segment: {conduitSpanSegmentId}")));
 
             var createAffixesResult = CreateHop(conduitSpanSegmentId);
