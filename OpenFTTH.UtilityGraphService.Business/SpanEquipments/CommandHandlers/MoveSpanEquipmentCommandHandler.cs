@@ -41,22 +41,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         public Task<Result> HandleAsync(MoveSpanEquipment command)
         {
-            
-
             // Because the client is allowed to provide either a span equipment or segment id, we need look it up via the utility network graph
             if (!_utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
                 return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_NOT_FOUND, $"Cannot find any span equipment or segment in the utility graph with id: {command.SpanEquipmentOrSegmentId}")));
-
-
-            /*
-            // Check that span equipment does not have child span equipment (i.e is a conduit with cables inside it)
-            if (HasAnyChildSpanEquipments(spanEquipment))
-                return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span equipment: {spanEquipment.Id} contain a cable. Cannot be moved.")));
-            */
-
-            // Check that if span equipment is not a child of other span equipment (i.e. is a cable within a conduit)
-            if (IsChildOfSpanEquipments(spanEquipment))
-                return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.SPAN_EQUIPMENT_IS_AFFIXED_TO_CONDUIT, $"The span equipment with id: {spanEquipment.Id} is related to one of more conduits. Cannot be moved.")));
 
             // Get interest information from existing span equipment
             var existingWalk = GetInterestInformation(spanEquipment);

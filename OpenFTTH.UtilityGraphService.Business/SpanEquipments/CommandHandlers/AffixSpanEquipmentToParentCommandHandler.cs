@@ -132,7 +132,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             if (CheckIfWalkHasChanged(existingWalkOfInterest, newWalkOfInterest))
             {
-                var moveSpanEquipmentResult = spanEquipmentAR.Move(commandContext, newWalkOfInterest, existingWalkOfInterest);
+                var moveSpanEquipmentResult = spanEquipmentAR.MoveAsPartOfAffix(commandContext, newWalkOfInterest, existingWalkOfInterest);
 
                 if (moveSpanEquipmentResult.IsFailed)
                     return Task.FromResult(Result.Fail(moveSpanEquipmentResult.Errors.First()));

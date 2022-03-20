@@ -64,6 +64,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
             ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
             ProjectEvent<SpanEquipmentAffixedToParent>(Project);
+            ProjectEvent<SpanEquipmentDetachedFromParent>(Project);
 
             // Terminal equipment
             ProjectEvent<TerminalEquipmentPlacedInNodeContainer>(Project);
@@ -219,8 +220,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (SpanEquipmentAffixedToParent @event):
-                   ProcessSpanEquipmentToParentAffix(@event);
+                   ProcessSpanEquipmentParentAffix(@event);
                    break;
+
+                case (SpanEquipmentDetachedFromParent @event):
+                    ProcessSpanEquipmentParentDetach(@event);
+                    break;
 
 
                 // Terminal equipment events
@@ -281,15 +286,29 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
-        private void ProcessSpanEquipmentToParentAffix(SpanEquipmentAffixedToParent @event)
+        private void ProcessSpanEquipmentParentDetach(SpanEquipmentDetachedFromParent @event)
         {
             var existingSpanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
             var newSpanEquipment = SpanEquipmentProjectionFunctions.Apply(existingSpanEquipment, @event);
             TryUpdate(newSpanEquipment);
 
+            UpdateRelatedCableIndex(@event.NewUtilityHopList, existingSpanEquipment);
+        }
+
+        private void ProcessSpanEquipmentParentAffix(SpanEquipmentAffixedToParent @event)
+        {
+            var existingSpanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+            var newSpanEquipment = SpanEquipmentProjectionFunctions.Apply(existingSpanEquipment, @event);
+            TryUpdate(newSpanEquipment);
+
+            UpdateRelatedCableIndex(@event.NewUtilityHopList, existingSpanEquipment);
+        }
+
+        private void UpdateRelatedCableIndex(UtilityNetworkHop[] newUtilityNetworkHopList, SpanEquipment existingSpanEquipment)
+        {
             // Update segment to cable index
             HashSet<Guid> existingSegmentWhereToRemoveCableRel = new();
-            
+
             if (existingSpanEquipment.UtilityNetworkHops != null && existingSpanEquipment.UtilityNetworkHops.Length > 0)
             {
                 foreach (var utilityHop in existingSpanEquipment.UtilityNetworkHops)
@@ -302,8 +321,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
 
             HashSet<Guid> segmentIdsWhereToAddCableRel = new();
-     
-            foreach (var utilityHop in @event.NewUtilityHopList)
+
+            foreach (var utilityHop in newUtilityNetworkHopList)
             {
                 foreach (var affix in utilityHop.ParentAffixes)
                 {
@@ -344,7 +363,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 _relatedCablesByConduitSegmentId.AddOrUpdate(
                              segmentIdWhereToAddCabelRel,
                              new List<Guid> { existingSpanEquipment.Id },
-                             (key, oldValue) => {
+                             (key, oldValue) =>
+                             {
                                  var newList = new List<Guid> { existingSpanEquipment.Id };
                                  newList.AddRange(oldValue);
                                  return newList;

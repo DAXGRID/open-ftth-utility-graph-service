@@ -51,40 +51,84 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_SPAN_EQUIPMENT_OR_SEGMENT_ID_NOT_FOUND, $"Cannot find any span equipment or span segment with id: {command.SpanEquipmentOrSegmentId}")));
             }
 
-            // TODO: Fix utility graph projection so this hack is not nessesary
-            //spanEquipment = _utilityNetwork.SpanEquipments[spanEquipment.Id];
-
-
-            // Find node container id in span equipment
-            if (spanEquipment.NodeContainerAffixes == null)
-                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER, $"Span equipment with id {spanEquipment.Id} is not affixed to any node container.")));
-
-            if (!spanEquipment.NodeContainerAffixes.Any(n => n.RouteNodeId == command.RouteNodeId))
-                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER, $"Span equipment with id {spanEquipment.Id} is not affixed in route node with id: {command.RouteNodeId}")));
-
-            var nodeContainerId = spanEquipment.NodeContainerAffixes.First(n => n.RouteNodeId == command.RouteNodeId).NodeContainerId;
-
-            // Find node container
-            if (!_utilityNetwork.TryGetEquipment<NodeContainer>(nodeContainerId, out var nodeContainer))
-                return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_NOT_FOUND, $"Cannot find any node container with id: {command.RouteNodeId}")));
-
-            var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
-
-            var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
-
-            var detachResult = spanEquipmentAR.DetachFromNodeContainer(
-                cmdContext: commandContext,
-                nodeContainer: nodeContainer
-            );
-
-            if (detachResult.IsSuccess)
+            // Cable
+            if (spanEquipment.IsCable)
             {
-                _eventStore.Aggregates.Store(spanEquipmentAR);
+                // Get interest information from existing span equipment
+                var existingWalk = GetInterestInformation(spanEquipment);
 
-                NotifyExternalServicesAboutChange(spanEquipment.Id, nodeContainerId, new Guid[] { nodeContainer.RouteNodeId });
+                var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
+
+                var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
+
+                var detachResult = spanEquipmentAR.DetachFromParentsInNode(
+                    cmdContext: commandContext,
+                    routeNodeId: command.RouteNodeId,
+                    existingWalk: existingWalk
+                );
+
+                if (detachResult.IsSuccess)
+                {
+                    _eventStore.Aggregates.Store(spanEquipmentAR);
+
+                    NotifyExternalServicesAboutChange(spanEquipment.Id, new Guid[] { command.RouteNodeId });
+                }
+
+                return Task.FromResult(detachResult);
+
             }
+            // Conduit
+            else
+            {
 
-            return Task.FromResult(detachResult);
+                // Find node container id in span equipment
+                if (spanEquipment.NodeContainerAffixes == null)
+                    return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER, $"Span equipment with id {spanEquipment.Id} is not affixed to any node container.")));
+
+                if (!spanEquipment.NodeContainerAffixes.Any(n => n.RouteNodeId == command.RouteNodeId))
+                    return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.SPAN_EQUIPMENT_IS_NOT_AFFIXED_TO_NODE_CONTAINER, $"Span equipment with id {spanEquipment.Id} is not affixed in route node with id: {command.RouteNodeId}")));
+
+                var nodeContainerId = spanEquipment.NodeContainerAffixes.First(n => n.RouteNodeId == command.RouteNodeId).NodeContainerId;
+
+                // Find node container
+                if (!_utilityNetwork.TryGetEquipment<NodeContainer>(nodeContainerId, out var nodeContainer))
+                    return Task.FromResult(Result.Fail(new DetachSpanEquipmentFromNodeContainerError(DetachSpanEquipmentFromNodeContainerErrorCodes.INVALID_NODE_CONTAINER_ID_NOT_FOUND, $"Cannot find any node container with id: {command.RouteNodeId}")));
+
+                var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
+
+                var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
+
+                var detachResult = spanEquipmentAR.DetachFromNodeContainer(
+                    cmdContext: commandContext,
+                    nodeContainer: nodeContainer
+                );
+
+                if (detachResult.IsSuccess)
+                {
+                    _eventStore.Aggregates.Store(spanEquipmentAR);
+
+                    NotifyExternalServicesAboutChange(spanEquipment.Id, nodeContainerId, new Guid[] { nodeContainer.RouteNodeId });
+                }
+
+                return Task.FromResult(detachResult);
+            }
+        }
+
+        private ValidatedRouteNetworkWalk GetInterestInformation(SpanEquipment spanEquipment)
+        {
+            // Get interest information from existing span equipment
+            var interestQueryResult = _queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(new GetRouteNetworkDetails(new InterestIdList() { spanEquipment.WalkOfInterestId })).Result;
+
+            if (interestQueryResult.IsFailed)
+                throw new ApplicationException($"Got unexpected error result: {interestQueryResult.Errors.First().Message} trying to query interest information for span equipment: {spanEquipment.Id} walk of interest id: {spanEquipment.WalkOfInterestId}");
+
+            if (interestQueryResult.Value.Interests == null)
+                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
+
+            if (!interestQueryResult.Value.Interests.TryGetValue(spanEquipment.WalkOfInterestId, out var routeNetworkInterest))
+                throw new ApplicationException($"Error querying interest information belonging to span equipment with id: {spanEquipment.Id}. No interest information returned from route network service.");
+
+            return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
         }
 
         private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid routeContainerId, Guid[] affectedRouteNetworkElementIds)
@@ -93,6 +137,29 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId }),
                 new IdChangeSet("NodeContainer", ChangeTypeEnum.Modification, new Guid[] { routeContainerId })
+            };
+
+            var updatedEvent =
+                new RouteNetworkElementContainedEquipmentUpdated(
+                    eventType: typeof(RouteNetworkElementContainedEquipmentUpdated).Name,
+                    eventId: Guid.NewGuid(),
+                    eventTimestamp: DateTime.UtcNow,
+                    applicationName: "UtilityNetworkService",
+                    applicationInfo: null,
+                    category: "EquipmentModification",
+                    idChangeSets: idChangeSets.ToArray(),
+                    affectedRouteNetworkElementIds: affectedRouteNetworkElementIds
+                );
+
+            await _externalEventProducer.Produce(_topicName, updatedEvent);
+
+        }
+
+        private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid[] affectedRouteNetworkElementIds)
+        {
+            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            {
+                new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId }),
             };
 
             var updatedEvent =

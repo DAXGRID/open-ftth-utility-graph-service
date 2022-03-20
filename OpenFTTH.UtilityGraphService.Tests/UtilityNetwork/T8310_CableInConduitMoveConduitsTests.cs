@@ -21,14 +21,14 @@ using Xunit.Extensions.Ordering;
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
     [Order(8301)]
-    public class T8310_CableInConduitMoveTests
+    public class T8310_CableInConduitMoveConduitsTests
     {
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
         private ConduitTestUtilityNetwork _conduitTestUtilityNetwork;
 
-        public T8310_CableInConduitMoveTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
+        public T8310_CableInConduitMoveConduitsTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
