@@ -40,8 +40,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-            // Because the client is not required to provide the span equipment id (that we need to lookup the 
-            // aggregate root), we look it up via the utility network graph.
             if (!utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(command.SpanSegmentId, out var spanSegmentGraphElement))
                 return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {command.SpanSegmentId}")));
 
@@ -64,6 +62,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // If outer conduit, that remove entire span equipment
             if (spanSegmentGraphElement.StructureIndex == 0)
             {
+                // Check that no childs span equipments are related to any span segments
+                foreach (var spanStructure in spanEquipment.SpanStructures)
+                {
+                    foreach (var spanSegment in spanStructure.SpanSegments)
+                    {
+                        if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id) && utilityNetwork.RelatedCablesByConduitSegmentId[spanSegment.Id].Count() > 0)
+                            return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentError.SPAN_SEGMENT_CONTAIN_CABLE, $"Span equipment with id: {spanEquipment.Id} cannot be deleted, because the span segment id: {spanSegment.Id} contain a cable.")));
+                    }
+                }
+
                 var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
                 var removeSpanEquipment = spanEquipmentAR.Remove(commandContext);
 
@@ -89,6 +97,13 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
                 var removeSpanStructure = spanEquipmentAR.RemoveSpanStructure(commandContext, specification, spanSegmentGraphElement.StructureIndex);
+
+                // Check that no childs span structure are related to any span segments in the structure
+                foreach (var spanSegment in spanEquipment.SpanStructures[spanSegmentGraphElement.StructureIndex].SpanSegments)
+                {
+                    if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id) && utilityNetwork.RelatedCablesByConduitSegmentId[spanSegment.Id].Count() > 0)
+                        return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentError.SPAN_SEGMENT_CONTAIN_CABLE, $"Span structure at index: {spanSegmentGraphElement.StructureIndex} in span equipment with id: {spanEquipment.Id} cannot be deleted, because the span segment id: {spanSegment.Id} contain a cable.")));
+                }
 
                 if (removeSpanStructure.IsSuccess)
                 {
