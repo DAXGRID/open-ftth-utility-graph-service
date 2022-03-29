@@ -141,13 +141,20 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact, Order(100)]
         public async void Move_Conduit_N2_N3_To_N2_N6_ShouldFail()
         {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
             var sutConduitId = ConduitTestUtilityNetwork.Conduit_N2_N3_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConduitId, out var sutConduit);
+            
 
             var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S8 });
 
             var moveCmdResult = await _commandDispatcher.HandleAsync<MoveSpanEquipment, Result>(moveCmd);
 
             moveCmdResult.IsFailed.Should().BeTrue();
+
+
         }
 
 

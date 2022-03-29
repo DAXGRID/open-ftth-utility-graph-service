@@ -158,73 +158,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return Result.Ok();
         }
 
-        public Result<ValidatedRouteNetworkWalk> TryCalculateNewWalkFromConduitMove(ValidatedRouteNetworkWalk existingWalkOfInterest, SpanEquipment conduitMoved, ValidatedRouteNetworkWalk newConduitWalk)
-        {
-            HashSet<Guid> walkIds = newConduitWalk.NodeIds.ToHashSet<Guid>();
-
-            var impactedUtilityNetworkHops = FindUtilityNetworkHopsReferencingSpanEquipment(conduitMoved);
-
-            var networkHops = FindRouteNetworkHops(existingWalkOfInterest);
-
-            foreach (var networkHop in networkHops.Where(n => n.IsUtilityHop))
-            {
-                if (impactedUtilityNetworkHops.Contains(networkHop.UtilityNetworkHop))
-                {
-                    List<Guid> newNetworkHopWalkIds = new();
-
-                    bool insideNewWalk = false;
-
-                    bool moved = false;
-
-                    foreach (var networkElementId in networkHop.Walk.RouteNetworkElementRefs)
-                    {
-                        if (!insideNewWalk && networkElementId == newConduitWalk.FromNodeId)
-                        {
-                            insideNewWalk = true;
-                        }
-                        else if (!insideNewWalk && networkElementId == newConduitWalk.ToNodeId)
-                        {
-                            insideNewWalk = true;
-                        }
-                        else if (insideNewWalk && networkElementId == newConduitWalk.ToNodeId)
-                        {
-                            // Add all walk ids to new walk
-                            newNetworkHopWalkIds.AddRange(newConduitWalk.RouteNetworkElementRefs);
-
-                            insideNewWalk = false;
-                            moved = true;
-                        }
-                        else if (insideNewWalk && networkElementId == newConduitWalk.FromNodeId)
-                        {
-                            // Add all walk ids to new walk
-                            newNetworkHopWalkIds.AddRange(GetReversedIds(newConduitWalk.RouteNetworkElementRefs));
-
-                            insideNewWalk = false;
-                            moved = true;
-                        }
-                        else
-                        {
-                            if (!insideNewWalk)
-                                newNetworkHopWalkIds.Add(networkElementId);
-                        }
-                    }
-
-                    if (!moved)
-                        return Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.ERROR_MOVING_CHILD_SPAN_EQUIPMENT, $"Error moving child span equipment with id: {this.Id} to walk of interest of new parent span equipment with id: {conduitMoved.Id}"));
-
-
-                    var idList = new RouteNetworkElementIdList();
-                    idList.AddRange(newNetworkHopWalkIds);
-
-                    networkHop.Walk = new ValidatedRouteNetworkWalk(idList);
-                }
-            }
-
-            var newWalkOfInterest = CreateNewWalkOfInterest(networkHops);
-
-            return Result.Ok(newWalkOfInterest);
-        }
-
+   
         private IEnumerable<Guid> GetReversedIds(RouteNetworkElementIdList routeNetworkElementRefs)
         {
             List<Guid> reversed = new();
@@ -2049,7 +1983,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     }
                 }
             }
-
+                        
             // Check that span equipment is not moved where affixed to parents conduits
             if (IsAnyParentSubwalksMoved(existingWalk, newWalk))
             {
@@ -2058,8 +1992,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                    $"Cannot move span equipment with id: {this.Id}. Sub walks affixed to parent span equipments are moved which is not a legal operation.")
                );
             }
-
-
+            
             var @event = new SpanEquipmentMoved(
               spanEquipmentId: this.Id,
               nodesOfInterestIds: CreateNewNodesOfInterestIdList(newWalk)
@@ -2075,6 +2008,228 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
             return Result.Ok();
 
+        }
+
+        public Result<ValidatedRouteNetworkWalk> MoveWithParent(CommandContext cmdContext, ValidatedRouteNetworkWalk existingWalk, SpanEquipment parentMoved, ValidatedRouteNetworkWalk newParentWalk, ValidatedRouteNetworkWalk previousParentWalk)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            var newWalkResult = CalculateNewWalkFollowingNewParentWalk(existingWalk, parentMoved, newParentWalk);
+
+            if (newWalkResult.IsFailed)
+                return Result.Fail(newWalkResult.Errors.First());
+
+            var newWalk = newWalkResult.Value.Item1;
+
+            // If both ends are moved, there cannot be any cuts/breakouts.
+            if (newWalk.FromNodeId != existingWalk.FromNodeId && newWalk.ToNodeId != existingWalk.ToNodeId && _spanEquipment.NodesOfInterestIds.Length > 2)
+            {
+                return Result.Fail(new MoveSpanEquipmentError(
+                   MoveSpanEquipmentErrorCodes.CANNOT_MOVE_BOTH_ENDS_AT_THE_SAME_TIME_IF_SPAN_SEGMENT_HAS_CUTS,
+                   $"Cannot move both ends of the walk at the same time, when the span equipment has cuts/breakouts. This because we then have no idea if the walk has been reversed, which might lead to inconsistency in the segment connectivity direction inside the span equipment. The user has to move one end at the time.")
+               );
+            }
+
+            bool endsMoved = false;
+
+            // If from end is moved
+            if (newWalk.FromNodeId != existingWalk.FromNodeId)
+            {
+                endsMoved = true;
+
+                // There cannot be any connection in the node moved away from
+                if (IsAnySpanSegmentsConnectedInNode(existingWalk.FromNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE,
+                       $"Cannot move from end from: {existingWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that has connections to other equipment in that node.")
+                   );
+                }
+
+                // There cannot be any cuts in the node moved to
+                if (IntermediateCutNodeIds.Contains(newWalk.FromNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_TO_NODE_WHERE_SEGMENTS_ARE_CUT,
+                       $"Cannot move from end from: {existingWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that are cut in that node.")
+                   );
+                }
+            }
+
+            // If to end is moved
+            if (newWalk.ToNodeId != existingWalk.ToNodeId)
+            {
+                endsMoved = true;
+
+                // There cannot be any connection in the node moved away from
+                if (IsAnySpanSegmentsConnectedInNode(existingWalk.ToNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_TO_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE,
+                       $"Cannot move to end from: {existingWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that has connections to other equipment in that node.")
+                   );
+                }
+
+                // There cannot be any cuts in the node moved to
+                if (IntermediateCutNodeIds.Contains(newWalk.ToNodeId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                       MoveSpanEquipmentErrorCodes.CANNOT_MOVE_TO_END_TO_NODE_WHERE_SEGMENTS_ARE_CUT,
+                       $"Cannot move to end from: {existingWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that are cut in that node.")
+                   );
+                }
+            }
+
+            // Check that span equipment is not moved away from nodes where it is cut
+            foreach (var nodeOfInterestId in IntermediateCutNodeIds)
+            {
+                if (!newWalk.RouteNetworkElementRefs.Contains(nodeOfInterestId))
+                {
+                    return Result.Fail(new MoveSpanEquipmentError(
+                        MoveSpanEquipmentErrorCodes.CANNOT_MOVE_NODE_BECAUSE_SEGMENTS_ARE_CUT_THERE,
+                        $"Cannot move span equipment away from node: {nodeOfInterestId} because segments are cut in this node.")
+                    );
+                }
+            }
+
+            // Check that span equipment is not moved away from nodes where it is affixed to a container
+            if (_spanEquipment.NodeContainerAffixes != null)
+            {
+                foreach (var nodeContainerAffix in _spanEquipment.NodeContainerAffixes)
+                {
+                    if (!newWalk.RouteNetworkElementRefs.Contains(nodeContainerAffix.RouteNodeId))
+                    {
+                        return Result.Fail(new MoveSpanEquipmentError(
+                            MoveSpanEquipmentErrorCodes.CANNOT_MOVE_NODE_BECAUSE_SPAN_EQUIPMENT_IS_AFFIXED_TO_CONTAINER,
+                            $"Cannot move span equipment away from node: {nodeContainerAffix.RouteNodeId} because span equipment is affixed to a container in this node.")
+                        );
+                    }
+                }
+            }
+
+            if (endsMoved)
+            {
+
+                var @event = new SpanEquipmentMoved(
+                  spanEquipmentId: this.Id,
+                  nodesOfInterestIds: CreateNewNodesOfInterestIdList(newWalk)
+                )
+                {
+                    CorrelationId = cmdContext.CorrelationId,
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                };
+
+                RaiseEvent(@event);
+            }
+
+            // Update utility network hops if ends has omoved
+            if (newWalkResult.Value.Item2.Count > 0)
+            {
+                var hopsToReplace = newWalkResult.Value.Item2;
+                List<UtilityNetworkHop> newUtilityNetworkHopList = new();
+
+                for (int i = 0; i < _spanEquipment.UtilityNetworkHops.Length; i++)
+                {
+                    if (hopsToReplace.ContainsKey(i))
+                        newUtilityNetworkHopList.Add(hopsToReplace[i]);
+                    else
+                        newUtilityNetworkHopList.Add(_spanEquipment.UtilityNetworkHops[i]);
+                }
+
+
+                RaiseEvent(
+                    new SpanEquipmentAffixedToParent(this.Id, newUtilityNetworkHopList.ToArray())
+                    {
+                        CorrelationId = cmdContext.CorrelationId,
+                        IncitingCmdId = cmdContext.CmdId,
+                        UserName = cmdContext.UserContext?.UserName,
+                        WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                    }
+                );
+
+
+            }
+
+
+            return Result.Ok(newWalk);
+
+        }
+
+        private Result<(ValidatedRouteNetworkWalk, Dictionary<int, UtilityNetworkHop>)> CalculateNewWalkFollowingNewParentWalk(ValidatedRouteNetworkWalk existingWalkOfInterest, SpanEquipment parentMoved, ValidatedRouteNetworkWalk newParentWalk)
+        {
+            HashSet<Guid> walkIds = newParentWalk.NodeIds.ToHashSet<Guid>();
+
+            var impactedUtilityNetworkHops = FindUtilityNetworkHopsReferencingSpanEquipment(parentMoved);
+
+            var networkHops = FindRouteNetworkHops(existingWalkOfInterest);
+
+            Dictionary<int, UtilityNetworkHop> utilityNetworkHopsToUpdateByIndex = new(); 
+
+            foreach (var networkHop in networkHops.Where(n => n.IsUtilityHop))
+            {
+                if (impactedUtilityNetworkHops.Contains(networkHop.UtilityNetworkHop))
+                {
+                    List<Guid> newNetworkHopWalkIds = new();
+
+                    bool moved = false;
+             
+                    // Check if walk start and end is not changed
+                    if (networkHop.Walk.FromNodeId == newParentWalk.FromNodeId && networkHop.Walk.ToNodeId == newParentWalk.ToNodeId)
+                    {
+                        moved = true;
+                        newNetworkHopWalkIds.AddRange(newParentWalk.RouteNetworkElementRefs);
+                    }
+                    // Check if walk start and end is not changed
+                    else if (networkHop.Walk.ToNodeId == newParentWalk.FromNodeId && networkHop.Walk.FromNodeId == newParentWalk.ToNodeId)
+                    {
+                        moved = true;
+                        newNetworkHopWalkIds.AddRange(GetReversedIds(newParentWalk.RouteNetworkElementRefs));
+                    }
+                    // Hop is last and new parent is exteded right
+                    else if (networkHop.IsLast && networkHop.Walk.FromNodeId == newParentWalk.FromNodeId)
+                    {
+                        moved = true;
+                        newNetworkHopWalkIds.AddRange(newParentWalk.RouteNetworkElementRefs);
+                        utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(newParentWalk.FromNodeId, newParentWalk.ToNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
+                    }
+                    // Hop is last and new parent is exteded right
+                    else if (networkHop.IsLast && networkHop.Walk.FromNodeId == newParentWalk.ToNodeId)
+                    {
+                        moved = true;
+                        newNetworkHopWalkIds.AddRange(GetReversedIds(newParentWalk.RouteNetworkElementRefs));
+                        utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(newParentWalk.ToNodeId, newParentWalk.FromNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
+                    }
+                    // Hop is first and new parent is exteded right
+                    else if (networkHop.IsFirst && networkHop.Walk.ToNodeId == newParentWalk.ToNodeId)
+                    {
+                        moved = true;
+                        newNetworkHopWalkIds.AddRange(newParentWalk.RouteNetworkElementRefs);
+                        utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(newParentWalk.FromNodeId, newParentWalk.ToNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
+                    }
+                    // Hop is first and new parent is exteded right
+                    else if (networkHop.IsFirst && networkHop.Walk.ToNodeId == newParentWalk.FromNodeId)
+                    {
+                        moved = true;
+                        newNetworkHopWalkIds.AddRange(GetReversedIds(newParentWalk.RouteNetworkElementRefs));
+                        utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(newParentWalk.ToNodeId, newParentWalk.FromNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
+                    }
+
+                    if (!moved)
+                        return Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.ERROR_MOVING_CHILD_SPAN_EQUIPMENT, $"Error moving child span equipment with id: {this.Id} to walk of interest of new parent span equipment with id: {parentMoved.Id}"));
+
+                    var idList = new RouteNetworkElementIdList();
+                    idList.AddRange(newNetworkHopWalkIds);
+
+                    networkHop.Walk = new ValidatedRouteNetworkWalk(idList);
+                }
+            }
+
+            var newWalkOfInterest = CreateNewWalkOfInterest(networkHops);
+
+            return Result.Ok((newWalkOfInterest, utilityNetworkHopsToUpdateByIndex));
         }
 
 
@@ -2694,10 +2849,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 routeNetworkHoleIds.Clear();
             }
 
+            result.First().IsFirst = true;
+            result.Last().IsLast = true;
+
             return result;
         }
-
-
 
         private class ExistingRouteHop
         {
@@ -2708,6 +2864,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             public bool IsUtilityHop { get; set; }
             public UtilityNetworkHop UtilityNetworkHop { get; set; }
             public ValidatedRouteNetworkWalk Walk { get; set; }
+
+            public bool IsFirst;
+            public bool IsLast;
         }
     }
 }

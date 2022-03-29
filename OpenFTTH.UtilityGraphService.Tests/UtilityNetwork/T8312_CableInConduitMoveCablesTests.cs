@@ -76,17 +76,17 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void MoveCableInConduit_N2_N2_and_N3_N4_To_To_S7_S4_S8_ShouldFail()
+        public async void MoveCableInConduit_N1_N2_and_N3_N4_To_S7_S4_S8_ShouldFail()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K8312_2", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
 
             var sutConduitId = ConduitTestUtilityNetwork.Conduit_N2_N3_1;
 
-            // Move cable into Conduit N1_N2_1
+            // Affix cable into Conduit N1_N2_1
             var cableAfterFirstAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable.Id, ConduitTestUtilityNetwork.Conduit_N1_N2_1);
 
-            // Move cable into Conduit N3_N4_1
+            // Affix cable into Conduit N3_N4_1
             var cableAfterSecondAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable.Id, ConduitTestUtilityNetwork.Conduit_N3_N4_1);
 
             var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutCable.Id, new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S7, ConduitTestUtilityNetwork.S4, ConduitTestUtilityNetwork.S8, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });

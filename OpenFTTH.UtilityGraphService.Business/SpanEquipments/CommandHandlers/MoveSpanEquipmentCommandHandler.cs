@@ -77,13 +77,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
 
             // If span equipment contains cable, move these as well
-            Dictionary<Guid, ValidatedRouteNetworkWalk> ChildWalkOfInterestsToUpdate = new();
+            Dictionary<Guid, ValidatedRouteNetworkWalk> childWalkOfInterestsToUpdate = new();
+            List<SpanEquipmentAR> childARsToStore = new();
 
             if (HasAnyChildSpanEquipments(spanEquipment))
             {
                 // Check if end points are moved, which is not allowed when cables are running through conduit
+                /*
                 if (existingWalk.FromNodeId != newWalk.FromNodeId || existingWalk.ToNodeId != newWalk.ToNodeId)
                     return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.ENDS_CANNOT_BE_MOVED_BECAUSE_OF_CHILD_SPAN_EQUIPMENTS, $"The ends of the walk of span equipment with id: { spanEquipment.Id } cannot be modified because of child equipments related to the span equipment")));
+                */
 
                 var children = GetChildSpanEquipments(spanEquipment);
 
@@ -93,24 +96,26 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                     var existingChildWalk = GetInterestInformation(child);
 
-                    var newChildWalkResult = childSpanEquipmentAR.TryCalculateNewWalkFromConduitMove(existingChildWalk, spanEquipment, newWalk);
+                    var childMoveResult = childSpanEquipmentAR.MoveWithParent(commandContext, existingChildWalk, spanEquipment, newWalk, existingWalk);
 
-                    if (newChildWalkResult.IsFailed)
-                        return Task.FromResult(Result.Fail(newChildWalkResult.Errors.First()));
+                    if (childMoveResult.IsFailed)
+                        return Task.FromResult(Result.Fail(childMoveResult.Errors.First()));
 
-                    var newChildWalk = newChildWalkResult.Value;
+                    var newChildWalk = childMoveResult.Value;
 
                     if (!existingChildWalk.Equals(newChildWalk))
                     {
                         // Validate the new child walk
-                        var newChildWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), newChildWalkResult.Value.RouteNetworkElementRefs)).Result;
+                        var newChildWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), childMoveResult.Value.RouteNetworkElementRefs)).Result;
 
                         // If the new walk fails to validate, return the error to the client
                         if (newChildWalkValidationResult.IsFailed)
                             return Task.FromResult(Result.Fail(newChildWalkValidationResult.Errors.First()));
 
-                        ChildWalkOfInterestsToUpdate.Add(child.WalkOfInterestId, newChildWalk);
+                        childWalkOfInterestsToUpdate.Add(child.WalkOfInterestId, newChildWalk);
                     }
+
+                    childARsToStore.Add(childSpanEquipmentAR);
                 }
             }
 
@@ -126,7 +131,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 throw new ApplicationException($"Got unexpected error result: {updateWalkOfInterestCommandResult.Errors.First().Message} trying to update walk of interest belonging to span equipment with id: {spanEquipment.Id} while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
 
             // Update eventually child walk of interests
-            foreach (var childWalkOfInterestToUpdate in ChildWalkOfInterestsToUpdate)
+            foreach (var childWalkOfInterestToUpdate in childWalkOfInterestsToUpdate)
             {
                 var updateChildWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, childWalkOfInterestToUpdate.Key, childWalkOfInterestToUpdate.Value.RouteNetworkElementRefs);
 
@@ -134,6 +139,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                 if (updateChildWalkOfInterestCommandResult.IsFailed)
                     throw new ApplicationException($"Got unexpected error result: {updateWalkOfInterestCommandResult.Errors.First().Message} trying to update child walk of interest: {childWalkOfInterestToUpdate.Key} while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
+            }
+
+            // Store child aggregates
+            foreach (var childAR in childARsToStore)
+            {
+                _eventStore.Aggregates.Store(childAR);
             }
 
 

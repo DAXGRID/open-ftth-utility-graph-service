@@ -54,6 +54,7 @@ namespace OpenFTTH.TestData
         public static Guid Conduit_N1_N2_1;
         public static Guid Conduit_N1_N2_2;
         public static Guid Conduit_N1_N2_3;
+        public static Guid Conduit_N1_N2_4;
         public static Guid Conduit_N2_N1_1;
         public static Guid Conduit_N4_N1_1;
 
@@ -93,6 +94,7 @@ namespace OpenFTTH.TestData
                 Conduit_N1_N2_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_1");
                 Conduit_N1_N2_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_2");
                 Conduit_N1_N2_3 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_3");
+                Conduit_N1_N2_4 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S1 }, null, "D_N1_N2_4");
                 Conduit_N2_N1_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S8, S4, S7 }, null, "D_N2_N1_1");
                 Conduit_N4_N1_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S10, S6, S5, S4, S7 }, null, "D_N4_N1_1");
 

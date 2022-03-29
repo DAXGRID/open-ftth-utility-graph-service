@@ -321,11 +321,19 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             var revisedStartPoistion = ReviseStartPosition(rack, startUnitPosition);
 
+            var orderedTerminalEquipmentIds = terminalEquipmentIds;
+
+            // change order depending placement method
+            bool reverse = false;
+
+            if (placmentMethod == SubrackPlacmentMethod.TopDown)
+                reverse = true;
+
             var e = new NodeContainerTerminalEquipmentsAddedToRack(
                 nodeContainerId: this.Id,
                 rackId: rackId,
                 startUnitPosition: revisedStartPoistion,
-                terminalEquipmentIds: terminalEquipmentIds,
+                terminalEquipmentIds: reverse ? terminalEquipmentIds.Reverse().ToArray() : terminalEquipmentIds,
                 terminalEquipmentHeightInUnits: terminalEquipmentSpecification.HeightInRackUnits
             )
             {
