@@ -67,6 +67,9 @@ namespace OpenFTTH.TestData
         public static Guid Conduit_N3_N4_1;
         public static Guid Conduit_N3_N4_2;
 
+        public static Guid Conduit_3x10_N1_N3;
+        public static Guid Conduit_Single_N3_N7;
+
 
         public ConduitTestUtilityNetwork(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
@@ -107,6 +110,9 @@ namespace OpenFTTH.TestData
                 Conduit_N3_N4_1 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S3 }, null, "D_N3_N4_1");
                 Conduit_N3_N4_2 = PlaceConduit(TestSpecifications.Flex_Ø40_Red, new RouteNetworkElementIdList() { S3 }, null, "D_N3_N4_2");
 
+                Conduit_3x10_N1_N3 = PlaceConduit(TestSpecifications.Multi_Ø32_3x10, new RouteNetworkElementIdList() { S1, S2 }, null, "3x10");
+                Conduit_Single_N3_N7 = PlaceConduit(TestSpecifications.CustomerConduit_Ø12_Orange, new RouteNetworkElementIdList() { S3, S10 }, null, "CustomerConduit");
+
 
                 // Place node containers
                 NodeContainer_N1 = PlaceNodeContainer(TestSpecifications.Well_Cubis_STAKKAbox_MODULA_900x450, TestSpecifications.Manu_Fiberpowertech, N1);
@@ -131,6 +137,9 @@ namespace OpenFTTH.TestData
                 AffixSpanEquipmentToContainer(Conduit_N2_N3_2, NodeContainer_N3, NodeContainerSideEnum.West);
                 AffixSpanEquipmentToContainer(Conduit_N3_N4_1, NodeContainer_N3, NodeContainerSideEnum.East);
                 AffixSpanEquipmentToContainer(Conduit_N3_N4_2, NodeContainer_N3, NodeContainerSideEnum.East);
+                AffixSpanEquipmentToContainer(Conduit_3x10_N1_N3, NodeContainer_N3, NodeContainerSideEnum.West);
+                AffixSpanEquipmentToContainer(Conduit_Single_N3_N7, NodeContainer_N3, NodeContainerSideEnum.East);
+
 
                 // Connect conduits
                 ConnectSingleConduitInNode(N2, Conduit_N1_N2_2, Conduit_N2_N3_2);

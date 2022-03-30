@@ -12,6 +12,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,7 +97,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                     var existingChildWalk = GetInterestInformation(child);
 
-                    var childMoveResult = childSpanEquipmentAR.MoveWithParent(commandContext, existingChildWalk, spanEquipment, newWalk, existingWalk);
+                    var hopQueryHelper = new UtilityNetworkHopQueryHelper(_queryDispatcher, _utilityNetwork);
+
+                    var childMoveResult = childSpanEquipmentAR.MoveWithParent(commandContext, existingChildWalk, spanEquipment, newWalk, existingWalk, hopQueryHelper);
 
                     if (childMoveResult.IsFailed)
                         return Task.FromResult(Result.Fail(childMoveResult.Errors.First()));

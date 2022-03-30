@@ -20,7 +20,7 @@ using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-    [Order(8301)]
+    [Order(8310)]
     public class T8310_CableInConduitMoveConduitsTests
     {
         private IEventStore _eventStore;
@@ -41,12 +41,14 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact, Order(1)]
         public async void Move_Conduit_N2_N3_To_N2_N6_N7_N3_ShouldSucceed()
         {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K8310_1", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
 
             var sutConduitId = ConduitTestUtilityNetwork.Conduit_N2_N3_1;
 
-            // Move cable into Conduit N2_N3_1
+            // Affix cable to conduit N2_N3_1
             var cableAfterFirstAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable.Id, sutConduitId);
 
             var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S8, ConduitTestUtilityNetwork.S5, ConduitTestUtilityNetwork.S9 });
@@ -70,11 +72,20 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             sutCableWalkOfInterestAfterConduitMove[8].Should().Be(ConduitTestUtilityNetwork.N3);
             sutCableWalkOfInterestAfterConduitMove[9].Should().Be(ConduitTestUtilityNetwork.S3);
             sutCableWalkOfInterestAfterConduitMove[10].Should().Be(ConduitTestUtilityNetwork.N4);
+
+            // check hop
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutCable.Id, out var sutCableAfterConduitMove);
+            sutCableAfterConduitMove.UtilityNetworkHops.Length.Should().Be(1);
+            sutCableAfterConduitMove.UtilityNetworkHops.First().FromNodeId.Should().Be(ConduitTestUtilityNetwork.N2);
+            sutCableAfterConduitMove.UtilityNetworkHops.First().ToNodeId.Should().Be(ConduitTestUtilityNetwork.N3);
+
         }
 
-        [Fact, Order(3)]
+        [Fact, Order(2)]
         public async void Affix_K8319_2_To_Conduit_N2_N6_N7_N3_And_Move_Back_To_N2_N3_ShouldSucceed()
         {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K8310_2", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S3, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S1 });
 
@@ -102,11 +113,20 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             sutCableWalkOfInterestAfterConduitMove[2].Should().Be(ConduitTestUtilityNetwork.N3);
             sutCableWalkOfInterestAfterConduitMove[1].Should().Be(ConduitTestUtilityNetwork.S3);
             sutCableWalkOfInterestAfterConduitMove[0].Should().Be(ConduitTestUtilityNetwork.N4);
+
+            // check hop
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutCable.Id, out var sutCableAfterConduitMove);
+            sutCableAfterConduitMove.UtilityNetworkHops.Length.Should().Be(1);
+            sutCableAfterConduitMove.UtilityNetworkHops.First().FromNodeId.Should().Be(ConduitTestUtilityNetwork.N3);
+            sutCableAfterConduitMove.UtilityNetworkHops.First().ToNodeId.Should().Be(ConduitTestUtilityNetwork.N2);
+
         }
 
-        [Fact, Order(4)]
+        [Fact, Order(3)]
         public async void Affix_K8319_3_To_Conduit_N2_N3_And_Move_To_N2_N6_N7_N3_ShouldSucceed()
         {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K8310_3", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S2 });
 
@@ -115,12 +135,15 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Affix cable into Conduit N2_N3_1
             var cableAfterFirstAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable.Id, sutConduitId);
 
-            // Move cable to 
+            // Move conduit
             var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S8, ConduitTestUtilityNetwork.S5, ConduitTestUtilityNetwork.S9 });
 
             var moveCmdResult = await _commandDispatcher.HandleAsync<MoveSpanEquipment, Result>(moveCmd);
 
             moveCmdResult.IsSuccess.Should().BeTrue();
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutCable.Id, out var sutCableAfterConduitMove);
+
 
             var sutCableWalkOfInterestAfterConduitMove = _conduitTestUtilityNetwork.GetWalkOfInterest(sutCable.WalkOfInterestId);
 
@@ -147,8 +170,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(sutConduitId, out var sutConduit);
             
-
-            var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S8 });
+            var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, 
+                new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S8 });
 
             var moveCmdResult = await _commandDispatcher.HandleAsync<MoveSpanEquipment, Result>(moveCmd);
 
@@ -161,11 +184,26 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         [Fact, Order(101)]
         public async void Move_Conduit_N2_N3_To_N2_N4_ShouldFail()
         {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
             var sutConduitId = ConduitTestUtilityNetwork.Conduit_N2_N3_1;
 
-            var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConduitId, out var sutConduit);
+
+
+            var moveCmd = new MoveSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutConduitId, 
+                new RouteNetworkElementIdList() { ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
 
             var moveCmdResult = await _commandDispatcher.HandleAsync<MoveSpanEquipment, Result>(moveCmd);
+
+
+            var adsd = utilityNetwork.RelatedCablesByConduitSegmentId[sutConduit.SpanStructures.First().SpanSegments.First().Id];
+
+            var sutCable1 = utilityNetwork.SpanEquipmentsByEquipmentId.First(s => s.Value.NamingInfo != null && s.Value.NamingInfo.Name == "K8310_1").Value;
+
+            var sutCable1WalkOfInterestAfterConduitMove = _conduitTestUtilityNetwork.GetWalkOfInterest(sutCable1.WalkOfInterestId);
+
+            sutCable1WalkOfInterestAfterConduitMove.Count.Should().Be(11);
 
             moveCmdResult.IsFailed.Should().BeTrue();
         }

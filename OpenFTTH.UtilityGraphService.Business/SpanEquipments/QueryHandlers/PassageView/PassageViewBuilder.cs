@@ -170,10 +170,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
                     CumulativeDistance = totalLength
                 };
 
-
                 linesToReturn.Add(lineInfo);
             }
-
 
             return linesToReturn;
         }
