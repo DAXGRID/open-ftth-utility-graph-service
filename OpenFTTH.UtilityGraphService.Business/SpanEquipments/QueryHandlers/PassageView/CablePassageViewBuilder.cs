@@ -18,7 +18,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
 {
     public class CablePassageViewBuilder : PassageViewBuilder
     {
-        Dictionary<Guid, UtilityNetworkHop> _networkHopByFromNodeId = new();
+        List<UtilityNetworkHop> _networkHops = new();
 
         HashSet<Guid> _woiContainsId = new();
        
@@ -43,7 +43,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
             if (_spanEquipment.UtilityNetworkHops != null)
             {
                 foreach (var hop in _spanEquipment.UtilityNetworkHops)
-                    _networkHopByFromNodeId.Add(hop.FromNodeId, hop);
+                    _networkHops.Add(hop);
             }
 
             return new SpanEquipmentPassageViewEquipmentInfo(
@@ -61,7 +61,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
 
             int hopNumber = 1;
 
-            foreach (var utilityHop in _networkHopByFromNodeId.Values)
+            foreach (var utilityHop in _networkHops)
             {
                 if (!_woiContainsId.Contains(utilityHop.FromNodeId))
                     throw new ApplicationException($"Cable span equipment with id: {_spanEquipment.Id} has an inconsistent utility network hop. From node id: {utilityHop.FromNodeId} of hop number: {hopNumber} do not exists in the walk of interest: {_spanEquipment.WalkOfInterestId} of the span equipment!");
@@ -75,7 +75,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
 
             var walkOfInterest = _routeNetworkInterests[_spanEquipment.WalkOfInterestId];
 
-            Stack<UtilityNetworkHop> utilityHopStack = new Stack<UtilityNetworkHop>(_networkHopByFromNodeId.Values.Reverse());
+            Stack<UtilityNetworkHop> utilityHopStack = new Stack<UtilityNetworkHop>(_networkHops.ToArray().Reverse());
 
             RouteNetworkElementIdList routeNetworkHopIds = new();
 
