@@ -147,12 +147,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Store child aggregates
             foreach (var childAR in childARsToStore)
             {
-                _eventStore.Aggregates.Store(childAR);
+                if (childAR.GetUncommittedEvents().Count() > 0)
+                    _eventStore.Aggregates.Store(childAR);
             }
 
 
-            // Store the aggregate
-            _eventStore.Aggregates.Store(spanEquipmentAR);
+            // Store the parent aggregate
+            if (spanEquipmentAR.GetUncommittedEvents().Count() > 0)
+                _eventStore.Aggregates.Store(spanEquipmentAR);
 
             NotifyExternalServicesAboutSpanEquipmentChange(spanEquipment.Id, existingWalk, newWalk);
 
