@@ -29,6 +29,9 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerManufacturerChanged>(Apply);
             Register<NodeContainerSpecificationChanged>(Apply);
             Register<NodeContainerRackAdded>(Apply);
+            Register<NodeContainerRackSpecificationChanged>(Apply);
+            Register<NodeContainerRackNameChanged>(Apply);
+            Register<NodeContainerRackHeightInUnitsChanged>(Apply);
             Register<NodeContainerTerminalEquipmentAdded>(Apply);
             Register<NodeContainerTerminalEquipmentsAddedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentMovedToRack>(Apply);
@@ -373,7 +376,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #endregion
 
-
         #region Change Manufacturer
         public Result ChangeManufacturer(CommandContext cmdContext, Guid manufacturerId)
         {
@@ -453,6 +455,152 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
         #endregion
+
+        #region Rack specification changed
+        public Result ChangeRackSpecification(CommandContext cmdContext, Guid rackId, RackSpecification oldRackSpecification, RackSpecification newRackSpecification)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
+                return Result.Fail(new UpdateNodeContainerPropertiesError(UpdateNodeContainerPropertiesErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {rackId} in node container with id: {_container.Id}"));
+
+            var rack = _container.Racks.First(r => r.Id == rackId);
+
+
+            if (rack.SpecificationId == newRackSpecification.Id)
+            {
+                return Result.Fail(new UpdateNodeContainerPropertiesError(
+                       UpdateNodeContainerPropertiesErrorCodes.NO_CHANGE_TO_SPECIFICATION,
+                       $"Will not change specification on rack with id: {rackId} because the provided rack specification id is the same as the existing one.")
+                   );
+            }
+
+
+            var @event = new NodeContainerRackSpecificationChanged(
+              nodeContainerId: this.Id,
+              rackId: rack.Id,
+              newSpecificationId: newRackSpecification.Id)
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerRackSpecificationChanged @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+
+        #endregion
+
+
+        #region Rack name changed
+        public Result ChangeRackName(CommandContext cmdContext, Guid rackId, string rackName)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
+                return Result.Fail(new UpdateNodeContainerPropertiesError(UpdateNodeContainerPropertiesErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {rackId} in node container with id: {_container.Id}"));
+
+            var rack = _container.Racks.First(r => r.Id == rackId);
+
+
+            if (rack.Name == rackName)
+            {
+                return Result.Fail(new UpdateNodeContainerPropertiesError(
+                       UpdateNodeContainerPropertiesErrorCodes.NO_CHANGE_TO_NAME,
+                       $"Will not change name on rack with id: {rackId} because the provided rack name is the same as the existing one.")
+                   );
+            }
+
+
+            var @event = new NodeContainerRackNameChanged(
+              nodeContainerId: this.Id,
+              rackId: rack.Id,
+              newName: rackName)
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerRackNameChanged @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        #endregion
+
+
+        #region Rack height in units changed
+        public Result ChangeRackHeightInUnits(CommandContext cmdContext, Guid rackId, int heightInUnits)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
+                return Result.Fail(new UpdateNodeContainerPropertiesError(UpdateNodeContainerPropertiesErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {rackId} in node container with id: {_container.Id}"));
+
+            var rack = _container.Racks.First(r => r.Id == rackId);
+
+
+            if (rack.HeightInUnits == heightInUnits)
+            {
+                return Result.Fail(new UpdateNodeContainerPropertiesError(
+                       UpdateNodeContainerPropertiesErrorCodes.NO_CHANGE_TO_HEIGHT,
+                       $"Will not change height of rack with id: {rackId} because the provided height is the same as the existing one.")
+                   );
+            }
+
+
+            var @event = new NodeContainerRackHeightInUnitsChanged(
+              nodeContainerId: this.Id,
+              rackId: rack.Id,
+              newHeightInUnits: heightInUnits)
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerRackHeightInUnitsChanged @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        #endregion
+
+
 
         #region Change subrack Mount
 

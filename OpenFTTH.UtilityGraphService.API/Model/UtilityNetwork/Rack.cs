@@ -5,12 +5,12 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
     public record Rack
     {
         public Guid Id { get; }
-        public string Name { get; }
-        public int Position { get; }
-        public Guid SpecificationId { get; }
-        public int HeightInUnits { get; }
+        public string Name { get; init; }
+        public int Position { get; init; }
+        public Guid SpecificationId { get; init; }
+        public int HeightInUnits { get; init; }
 
-        public SubrackMount[] SubrackMounts { get; }
+        public SubrackMount[] SubrackMounts { get; init; }
 
         public Rack(Guid id, string name, int position, Guid specificationId, int heightInUnits, SubrackMount[] subrackMounts)
         {

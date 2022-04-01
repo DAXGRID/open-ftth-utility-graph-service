@@ -128,6 +128,81 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerRackSpecificationChanged @event)
+        {
+            if (existingEquipment.Racks == null)
+                return existingEquipment;
+
+            List<Rack> newRackList = new List<Rack>();
+
+            foreach (var rack in existingEquipment.Racks)
+            {
+                if (rack.Id == @event.RackId)
+                {
+                    newRackList.Add(rack with { SpecificationId = @event.NewSpecificationId });
+                }
+                else
+                {
+                    newRackList.Add(rack);
+                }
+            }
+
+            return existingEquipment with
+            {
+                Racks = newRackList.ToArray()
+            };
+        }
+
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerRackNameChanged @event)
+        {
+            if (existingEquipment.Racks == null)
+                return existingEquipment;
+
+            List<Rack> newRackList = new List<Rack>();
+
+            foreach (var rack in existingEquipment.Racks)
+            {
+                if (rack.Id == @event.RackId)
+                {
+                    newRackList.Add(rack with { Name = @event.NewName });
+                }
+                else
+                {
+                    newRackList.Add(rack);
+                }
+            }
+
+            return existingEquipment with
+            {
+                Racks = newRackList.ToArray()
+            };
+        }
+
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerRackHeightInUnitsChanged @event)
+        {
+            if (existingEquipment.Racks == null)
+                return existingEquipment;
+
+            List<Rack> newRackList = new List<Rack>();
+
+            foreach (var rack in existingEquipment.Racks)
+            {
+                if (rack.Id == @event.RackId)
+                {
+                    newRackList.Add(rack with { HeightInUnits = @event.NewHeightInUnits });
+                }
+                else
+                {
+                    newRackList.Add(rack);
+                }
+            }
+
+            return existingEquipment with
+            {
+                Racks = newRackList.ToArray()
+            };
+        }
+
 
     }
 }

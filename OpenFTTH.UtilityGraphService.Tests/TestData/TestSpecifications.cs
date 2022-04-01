@@ -158,6 +158,7 @@ namespace OpenFTTH.TestData
 
         // Racks
         public static Guid Rack_ESTI = Guid.Parse("b72523d7-4a55-489e-8901-a9fdf9a7d471");
+        public static Guid Rack_Super = Guid.Parse("d79103eb-4714-4ede-975e-ebefd0297d69");
 
 
         // Termianl Equipment Structure
@@ -975,6 +976,7 @@ namespace OpenFTTH.TestData
         {
             // ESTI
             AddSpecification(new RackSpecification(Rack_ESTI, "CommScope ETSI Rack", "ETSI"));
+            AddSpecification(new RackSpecification(Rack_Super, "Super rack", "Super rack"));
         }
 
         private void AddTerminalStructureSpecifications()

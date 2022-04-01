@@ -80,6 +80,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerSpecificationChanged>(Project);
             ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
             ProjectEvent<NodeContainerRackAdded>(Project);
+            ProjectEvent<NodeContainerRackSpecificationChanged>(Project);
+            ProjectEvent<NodeContainerRackNameChanged>(Project);
+            ProjectEvent<NodeContainerRackHeightInUnitsChanged>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentAdded>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentsAddedToRack>(Project);
         }
@@ -273,6 +276,18 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (NodeContainerRackAdded @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerRackSpecificationChanged @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerRackNameChanged @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerRackHeightInUnitsChanged @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
 
