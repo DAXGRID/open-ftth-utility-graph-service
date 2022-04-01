@@ -110,6 +110,23 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 );
             }
 
+            if (IsAnyRacksWithinContainer())
+            {
+                return Result.Fail(new RemoveNodeContainerFromRouteNetworkError(
+                    RemoveNodeContainerFromRouteNetworkErrorCodes.CANNOT_REMOVE_NODE_CONTAINER_CONTAINING_RACKS,
+                    $"Cannot remove a node container that contains racks")
+                );
+            }
+
+            if (IsAnyTerminalEquipmentsWithinContainer())
+            {
+                return Result.Fail(new RemoveNodeContainerFromRouteNetworkError(
+                    RemoveNodeContainerFromRouteNetworkErrorCodes.CANNOT_REMOVE_NODE_CONTAINER_CONTAINING_TERMINAL_EQUIPMENT,
+                    $"Cannot remove a node container that contains terminal equipments")
+                );
+            }
+
+
             var @event = new NodeContainerRemovedFromRouteNetwork(
                nodeContainerId: this.Id
             )
@@ -138,6 +155,28 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                     }
                 }
             }
+
+            return false;
+        }
+
+        private bool IsAnyRacksWithinContainer()
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks != null && _container.Racks.Length > 0)
+                return true;
+
+            return false;
+        }
+
+        private bool IsAnyTerminalEquipmentsWithinContainer()
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.TerminalEquipmentReferences != null && _container.TerminalEquipmentReferences.Length > 0)
+                return true;
 
             return false;
         }
