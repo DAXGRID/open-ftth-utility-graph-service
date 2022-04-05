@@ -68,7 +68,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     foreach (var spanSegment in spanStructure.SpanSegments)
                     {
                         if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id) && utilityNetwork.RelatedCablesByConduitSegmentId[spanSegment.Id].Count() > 0)
-                            return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentError.SPAN_SEGMENT_CONTAIN_CABLE, $"Span equipment with id: {spanEquipment.Id} cannot be deleted, because the span segment id: {spanSegment.Id} contain a cable.")));
+                            return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"Span equipment with id: {spanEquipment.Id} cannot be deleted, because the span segment id: {spanSegment.Id} contain a cable.")));
                     }
                 }
 
@@ -102,7 +102,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 foreach (var spanSegment in spanEquipment.SpanStructures[spanSegmentGraphElement.StructureIndex].SpanSegments)
                 {
                     if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id) && utilityNetwork.RelatedCablesByConduitSegmentId[spanSegment.Id].Count() > 0)
-                        return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentError.SPAN_SEGMENT_CONTAIN_CABLE, $"Span structure at index: {spanSegmentGraphElement.StructureIndex} in span equipment with id: {spanEquipment.Id} cannot be deleted, because the span segment id: {spanSegment.Id} contain a cable.")));
+                        return Task.FromResult(Result.Fail(new RemoveSpanStructureFromSpanEquipmentError(RemoveSpanStructureFromSpanEquipmentErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"Span structure at index: {spanSegmentGraphElement.StructureIndex} in span equipment with id: {spanEquipment.Id} cannot be deleted, because the span segment id: {spanSegment.Id} contain a cable.")));
                 }
 
                 if (removeSpanStructure.IsSuccess)

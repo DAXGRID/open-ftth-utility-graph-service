@@ -1,4 +1,6 @@
 ﻿using FluentResults;
+using OpenFTTH.Address.API.Model;
+using OpenFTTH.Address.API.Queries;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
@@ -61,25 +63,25 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             // Add cable span equipments
             if (data.SpanEquipments != null)
             {
-                foreach (var spanEquipment in data.SpanEquipments.Where(s => s.IsCable))
+                foreach (var cableSpanEquipment in data.SpanEquipments.Where(s => s.IsCable))
                 {
-                    var spanEquipmentSpecification = _spanEquipmentSpecifications[spanEquipment.SpecificationId];
+                    var spanEquipmentSpecification = _spanEquipmentSpecifications[cableSpanEquipment.SpecificationId];
 
 
-                    var relType = data.InterestRelations[spanEquipment.WalkOfInterestId];
+                    var relType = data.InterestRelations[cableSpanEquipment.WalkOfInterestId];
 
                     if (relType.RelationKind != RouteNetworkInterestRelationKindEnum.PassThrough && relType.RelationKind != RouteNetworkInterestRelationKindEnum.InsideNode)
                     {
-                        var trace = data.RouteNetworkTraces[data.SpanEquipments[spanEquipment.Id].RouteNetworkTraceRefs.First().TraceId];
+                        var trace = data.RouteNetworkTraces[data.SpanEquipments[cableSpanEquipment.Id].RouteNetworkTraceRefs.First().TraceId];
 
                         connectivityFacesResult.Add(
                            new ConnectivityFace()
                            {
-                               EquipmentId = spanEquipment.Id,
+                               EquipmentId = cableSpanEquipment.Id,
                                EquipmentKind = ConnectivityEquipmentKindEnum.SpanEquipment,
                                FaceKind = FaceKindEnum.SpliceSide,
-                               FaceName = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? "Mod " + trace.ToRouteNodeName : "Mod " + trace.FromRouteNodeName,
-                               EquipmentName = spanEquipment.Name + " " + spanEquipmentSpecification.Name
+                               FaceName = GetFaceName(data, cableSpanEquipment, relType, trace),
+                               EquipmentName = cableSpanEquipment.Name + " " + spanEquipmentSpecification.Name
                            }
                        );
                     }
@@ -135,6 +137,24 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             return connectivityFacesResult;
         }
 
+        private string GetFaceName(RouteNetworkElementRelatedData data, SpanEquipment cable, RouteNetworkElementInterestRelation relType, RouteNetworkTraceResult trace)
+        {
+            var endRouteNodeName = relType.RelationKind == RouteNetworkInterestRelationKindEnum.Start ? trace.ToRouteNodeName : trace.FromRouteNodeName;
+
+            if (string.IsNullOrEmpty(endRouteNodeName))
+            {
+                // try find id any related conduit adresse
+                if (data.CableToRelatedConduitAddressRelations.ContainsKey(cable.Id))
+                {
+                    var addressId = data.CableToRelatedConduitAddressRelations[cable.Id];
+                    if (data.AddressStrings.ContainsKey(addressId))
+                        endRouteNodeName = data.AddressStrings[addressId];
+                }
+            }
+
+            return "Mod " + endRouteNodeName;
+        }
+
         private string? GetRackName(RouteNetworkElementRelatedData data, Guid equipmentId)
         {
             if (data.NodeContainer != null && data.NodeContainer.Racks != null)
@@ -181,7 +201,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         }
 
 
-        private static Result<RouteNetworkElementRelatedData> FetchRelatedEquipments(IQueryDispatcher queryDispatcher, Guid routeNetworkElementId)
+        private Result<RouteNetworkElementRelatedData> FetchRelatedEquipments(IQueryDispatcher queryDispatcher, Guid routeNetworkElementId)
         {
             RouteNetworkElementRelatedData result = new RouteNetworkElementRelatedData();
 
@@ -275,7 +295,99 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 result.TerminalEquipments = terminalEquipmentQueryResult.Value.TerminalEquipment;
             }
 
+
+            // Find related conduits addresses
+            result.CableToRelatedConduitAddressRelations = new();
+
+            HashSet<Guid> adresseIdsToQuery = new();
+                        
+            if (result.SpanEquipments != null)
+            {
+                foreach (var spanEquipment in result.SpanEquipments)
+                {
+                    if (spanEquipment.IsCable && spanEquipment.UtilityNetworkHops != null)
+                    {
+                        foreach (var utilityNetworkHop in spanEquipment.UtilityNetworkHops)
+                        {
+                            foreach (var parentAffix in utilityNetworkHop.ParentAffixes)
+                            {
+                                if (_utilityNetwork.TryGetEquipment<SpanEquipment>(parentAffix.SpanSegmentId, out var parentEquipment))
+                                {
+                                    if (parentEquipment.AddressInfo != null && parentEquipment.AddressInfo.UnitAddressId != null)
+                                    {
+                                        if (!result.CableToRelatedConduitAddressRelations.ContainsKey(spanEquipment.Id))
+                                        {
+                                            adresseIdsToQuery.Add(parentEquipment.AddressInfo.UnitAddressId.Value);
+                                            result.CableToRelatedConduitAddressRelations.Add(spanEquipment.Id, parentEquipment.AddressInfo.UnitAddressId.Value);
+                                        }
+                                    }
+                                    else if (parentEquipment.AddressInfo != null && parentEquipment.AddressInfo.AccessAddressId != null)
+                                    {
+                                        if (!result.CableToRelatedConduitAddressRelations.ContainsKey(spanEquipment.Id))
+                                        {
+                                            adresseIdsToQuery.Add(parentEquipment.AddressInfo.AccessAddressId.Value);
+                                            result.CableToRelatedConduitAddressRelations.Add(spanEquipment.Id, parentEquipment.AddressInfo.AccessAddressId.Value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            result.AddressStrings = GatherAddressInformation(adresseIdsToQuery);
+
+
             return Result.Ok(result);
+        }
+
+        private Dictionary<Guid, string> GatherAddressInformation(HashSet<Guid>? addressIdsToQuery)
+        {
+            if (addressIdsToQuery == null)
+                return new Dictionary<Guid, string>();
+
+            var getAddressInfoQuery = new GetAddressInfo(addressIdsToQuery.ToArray());
+
+            var addressResult = _queryDispatcher.HandleAsync<GetAddressInfo, Result<GetAddressInfoResult>>(getAddressInfoQuery).Result;
+
+            Dictionary<Guid, string> result = new();
+
+            if (addressResult.IsSuccess)
+            {
+                foreach (var addressHit in addressResult.Value.AddressHits)
+                {
+                    if (addressHit.RefClass == AddressEntityClass.UnitAddress)
+                    {
+                        var unitAddress = addressResult.Value.UnitAddresses[addressHit.RefId];
+                        var accessAddress = addressResult.Value.AccessAddresses[unitAddress.AccessAddressId];
+
+                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseNumber;
+
+                        if (unitAddress.FloorName != null)
+                            addressStr += (", " + unitAddress.FloorName);
+
+                        if (unitAddress.SuitName != null)
+                            addressStr += (" " + unitAddress.SuitName);
+
+                        result.Add(addressHit.Key, addressStr);
+                    }
+                    else
+                    {
+                        var accessAddress = addressResult.Value.AccessAddresses[addressHit.RefId];
+
+                        var addressStr = accessAddress.RoadName + " " + accessAddress.HouseNumber;
+
+                        result.Add(addressHit.Key, addressStr);
+                    }
+                }
+            }
+            else
+            {
+                throw new ApplicationException($"Error calling address service from trace. Error: " + addressResult.Errors.First().Message);
+            }
+
+            return result;
         }
 
         public class RouteNetworkElementRelatedData
@@ -287,6 +399,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             public LookupCollection<TerminalEquipment> TerminalEquipments { get; set; }
             public LookupCollection<API.Model.Trace.RouteNetworkTraceResult> RouteNetworkTraces { get; set; }
             public Dictionary<Guid, RouteNetworkElementInterestRelation> InterestRelations { get; set; }
+            public Dictionary<Guid, string> AddressStrings { get; set; }
+            public Dictionary<Guid, Guid> CableToRelatedConduitAddressRelations { get; set; }
             public NodeContainer NodeContainer { get; set; }
             public Guid NodeContainerRouteNetworkElementId { get; set; }
         }

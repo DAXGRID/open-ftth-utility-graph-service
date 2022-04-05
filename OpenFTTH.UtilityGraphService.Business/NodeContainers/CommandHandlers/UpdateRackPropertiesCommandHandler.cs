@@ -41,10 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
                 return Task.FromResult(Result.Fail(getNodeContainerResult.Errors.First()));
 
             var nodeContainer = getNodeContainerResult.Value;
-
-            if (nodeContainer == null)
-                throw new ApplicationException("There a bug in QueryHelper.GetNodeContainerFromRouteNodeId query. Cannot just return success and a null node container. Please check.");
-
+         
             if (nodeContainer.Racks == null || !nodeContainer.Racks.Any(r => r.Id == command.RackId))
                 return Task.FromResult(Result.Fail(new UpdateNodeContainerPropertiesError(UpdateNodeContainerPropertiesErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {command.RackId} in node container with id: {nodeContainer.Id}")));
 

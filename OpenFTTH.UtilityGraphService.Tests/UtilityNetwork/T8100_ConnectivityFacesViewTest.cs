@@ -24,6 +24,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         private IEventStore _eventStore;
         private ICommandDispatcher _commandDispatcher;
         private IQueryDispatcher _queryDispatcher;
+        private ConduitTestUtilityNetwork _conduitTestUtilityNetwork;
 
         public T8100_ConnectivityFacesViewTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
         {
@@ -33,17 +34,26 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
             new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
+
+            _conduitTestUtilityNetwork = new ConduitTestUtilityNetwork(_eventStore, _commandDispatcher, _queryDispatcher).Run();
         }
 
   
 
         [Fact, Order(1)]
-        public async void QueryConnectivityFacesInJ1_ShouldSucceed()
+        public async void QueryConnectivityFacesInCC1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CC_1;
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("customer cable", TestSpecifications.FiberCable_2Fiber,
+                new Guid[] { TestRouteNetwork.S5, TestRouteNetwork.S6, TestRouteNetwork.S8 });
+
+            var cableAfterFirstAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(sutRouteNodeId, sutCable.Id, TestUtilityNetwork.CustomerConduit_CC_1_to_SDU_2);
+
+
 
             // Get faces
             var connectivityFaceQuery = new GetConnectivityFaces(sutRouteNodeId);
@@ -62,6 +72,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
 
             var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentName.StartsWith("K69373563"));
+
+            // Check that address of customer cable is returned
+            connectivityFaces.Should().Contain(s => s.FaceName == "Mod Vesterbrogade 7A");
 
             // Get face connections for terminal equipment
             var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.FaceKind);
@@ -89,6 +102,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             spanEquipmentConnections.Count.Should().BeGreaterThan(4);
         }
+
+     
 
 
 
