@@ -4,6 +4,7 @@ using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
@@ -21,6 +22,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
         public TerminalEquipmentAR()
         {
             Register<TerminalEquipmentPlacedInNodeContainer>(Apply);
+            Register<TerminalEquipmentRemoved>(Apply);
             Register<TerminalEquipmentNamingInfoChanged>(Apply);
             Register<TerminalEquipmentAddressInfoChanged>(Apply);
             Register<TerminalEquipmentManufacturerChanged>(Apply);
@@ -145,6 +147,66 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 
         #endregion
 
+        #region Remove
+        public Result Remove(CommandContext cmdContext, UtilityGraph graph)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            if (IsAnyTerminalsConnected(graph))
+            {
+                return Result.Fail(new RemoveTerminalEquipmentError(
+                    RemoveTerminalEquipmentErrorCodes.CANNOT_REMOVE_TERMINAL_EQUIPMENT_WITH_CONNECTED_TERMINALS,
+                    $"Cannot remove a terminal equipment if some of its terminals are connected")
+                );
+            }
+
+            var @event = new TerminalEquipmentRemoved(
+               terminalEquipmentId: this.Id
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalEquipmentRemoved @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+        }
+
+        private bool IsAnyTerminalsConnected(UtilityGraph graph)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            var version = graph.LatestCommitedVersion;
+
+            foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    var terminalElement = graph.GetTerminal(terminal.Id, version);
+
+                    if (terminalElement != null && terminalElement is UtilityGraphConnectedTerminal connectedTerminal)
+                    {
+                        if (connectedTerminal.NeighborElements(version).Count > 0)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        #endregion
 
         #region Change Naming Info
         public Result ChangeNamingInfo(CommandContext cmdContext, NamingInfo? namingInfo)

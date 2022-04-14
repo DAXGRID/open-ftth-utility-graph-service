@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1)]
-        public async void GetSpanEquipmentConnectivityViewOnK69373563InCC_1_ShouldSucceed()
+        public async Task GetSpanEquipmentConnectivityViewOnK69373563InCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -99,7 +100,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(2)]
-        public async void GetSpanEquipmentConnectivityViewOnK69373563InCO_1_ShouldSucceed()
+        public async Task GetSpanEquipmentConnectivityViewOnK69373563InCO_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

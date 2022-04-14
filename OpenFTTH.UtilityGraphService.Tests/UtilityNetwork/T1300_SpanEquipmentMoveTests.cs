@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestMoveNonConnectedSpanEquipmentEnd_ShouldSucceed()
+        public async Task TestMoveNonConnectedSpanEquipmentEnd_ShouldSucceed()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -94,7 +95,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestMoveFromEndToNodeWithCuts_ShouldFail()
+        public async Task TestMoveFromEndToNodeWithCuts_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -114,7 +115,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void TestMoveToEndToNodeWithCuts_ShouldFail()
+        public async Task TestMoveToEndToNodeWithCuts_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -134,7 +135,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(12)]
-        public async void TestMoveBothEndOfSpanEquipmentWithCuts_ShouldFail()
+        public async Task TestMoveBothEndOfSpanEquipmentWithCuts_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -154,7 +155,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(13)]
-        public async void TestMoveEndAffixedToContainer_ShouldFail()
+        public async Task TestMoveEndAffixedToContainer_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -174,7 +175,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(14)]
-        public async void TestMoveSpanEquipmentToSameWalk_ShouldFail()
+        public async Task TestMoveSpanEquipmentToSameWalk_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -194,7 +195,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(15)]
-        public async void TestMoveSpanEndWithConnections_ShouldFail()
+        public async Task TestMoveSpanEndWithConnections_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();

@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void AffixCableToConduitNotAffectingWoi_ShouldSucceed()
+        public void AffixCableToConduitNotAffectingWoi_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K1", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
@@ -106,7 +107,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void AffixCableToConduit_N2_N4_2_AffectingWoi_ShouldSucceed()
+        public void AffixCableToConduit_N2_N4_2_AffectingWoi_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K2", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
@@ -150,7 +151,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(0)]
-        public async void AffixCableToConduit_N2_N1_1_AffectingWoi_ShouldSucceed()
+        public void AffixCableToConduit_N2_N1_1_AffectingWoi_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K3", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
@@ -195,7 +196,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async void AffixCableToConduitThatDoesNotAllignWithCableWoi_ShouldFail()
+        public void AffixCableToConduitThatDoesNotAllignWithCableWoi_ShouldFail()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K2", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2 });
@@ -204,11 +205,5 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             _conduitTestUtilityNetwork.Invoking(y => y.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable.Id, ConduitTestUtilityNetwork.Conduit_N2_N4_1))
                 .Should().Throw<ApplicationException>();
         }
-
-        [Fact, Order(200)]
-        public async void AffixMultipleCableToSingleConduit_ShouldFail()
-        {
-           }
-
     }
 }

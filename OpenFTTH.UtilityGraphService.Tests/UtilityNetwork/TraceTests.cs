@@ -10,6 +10,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -37,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void Trace5x10_HH_1_to_HH_10_ShouldSucceed()
+        public async Task Trace5x10_HH_1_to_HH_10_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -92,7 +93,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void CutInnerConduit10In10x10inCC1_ShouldSucceed()
+        public async Task CutInnerConduit10In10x10inCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -152,7 +153,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void Trace5x10_HH_1_to_HH_10_SingleSpanSegment_ShouldSucceed()
+        public async Task Trace5x10_HH_1_to_HH_10_SingleSpanSegment_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -188,7 +189,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void Trace_SDU1_SingleSpanSegment_ShouldSucceed()
+        public async Task Trace_SDU1_SingleSpanSegment_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact,Order(1)]
-        public async void TestCut5x10ConduitAtCC_1_ShouldSucceed()
+        public async Task TestCut5x10ConduitAtCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -92,7 +93,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(15)]
-        public async void TryCutWhenSpanEquipmentIsNotAffixedToNodeContainer_ShouldFail()
+        public async Task TryCutWhenSpanEquipmentIsNotAffixedToNodeContainer_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -110,7 +111,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(16)]
-        public async void TryCutAtSpanEquipmentEnd_ShouldFail()
+        public async Task TryCutAtSpanEquipmentEnd_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -128,7 +129,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(17)]
-        public async void TryCutAtSpanSegmentThatDontExist_ShouldFail()
+        public async Task TryCutAtSpanSegmentThatDontExist_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -148,7 +149,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(18)]
-        public async void TryCutSameSpanSegmentTwoTimes_ShouldFailSecondTime()
+        public async Task TryCutSameSpanSegmentTwoTimes_ShouldFailSecondTime()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -182,7 +183,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async void TestDetachConduitFromContainerInCC1_ShouldFalid()
+        public async Task TestDetachConduitFromContainerInCC1_ShouldFalid()
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 

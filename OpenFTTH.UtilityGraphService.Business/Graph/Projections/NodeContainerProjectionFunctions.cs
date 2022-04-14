@@ -203,6 +203,86 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalEquipmentReferenceRemoved @event)
+        {
+            bool terminalReferenceFound = false;
+
+            List<Guid> newTerminalEquipmentReferenceList = new();
+
+            if (existingEquipment.TerminalEquipmentReferences != null && existingEquipment.TerminalEquipmentReferences.Length > 0)
+            {
+                foreach (var terminalRef in existingEquipment.TerminalEquipmentReferences)
+                {
+                    if (terminalRef != @event.TerminalEquipmentId)
+                    {
+                        newTerminalEquipmentReferenceList.Add(terminalRef);
+                    }
+                    else
+                    {
+                        terminalReferenceFound = true;
+                    }
+                }
+            }
+
+            if (terminalReferenceFound)
+            {
+                return existingEquipment with
+                {
+                    TerminalEquipmentReferences = newTerminalEquipmentReferenceList.ToArray()
+                };
+
+            }
+
+            // Try find equipment id in racks
+            List<Rack> newRackList = new List<Rack>();
+
+            bool rackTerminalReferenceFound = false;
+
+            if (existingEquipment.Racks != null && existingEquipment.Racks.Length > 0)
+            {
+                foreach (var rack in existingEquipment.Racks)
+                {
+                    List<SubrackMount> newSubrackList = new();
+
+                    bool subrackMountFound = true;
+
+                    foreach (var subrackMount in rack.SubrackMounts)
+                    {
+                        if (subrackMount.TerminalEquipmentId != @event.TerminalEquipmentId)
+                        {
+                            newSubrackList.Add(subrackMount);
+                        }
+                        else
+                        {
+                            subrackMountFound = true;
+                        }
+                    }
+
+                    if (subrackMountFound)
+                    {
+                        newRackList.Add(rack with { SubrackMounts = newSubrackList.ToArray() });
+                        rackTerminalReferenceFound = true;
+                    }
+                    else
+                    {
+                        newRackList.Add(rack);
+                    }
+                }
+            }
+
+            if (rackTerminalReferenceFound)
+            {
+                return existingEquipment with
+                {
+                    Racks = newRackList.ToArray()
+                };
+            }
+            else
+            {
+                return existingEquipment;
+            }
+        }
+
 
     }
 }

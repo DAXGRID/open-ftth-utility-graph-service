@@ -9,6 +9,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         TerminalStructure TerminalStructure(UtilityNetworkProjection utilityNetwork);
         Terminal Terminal(UtilityNetworkProjection utilityNetwork);
         Guid RouteNodeId { get; }
+        Guid TerminalEquipmentId { get; }
         Guid TerminalId { get; }
         ushort StructureIndex { get; }
         ushort TerminalIndex { get; }

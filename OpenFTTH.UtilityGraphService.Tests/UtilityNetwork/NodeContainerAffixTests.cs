@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -37,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
         
         [Fact, Order(10)]
-        public async void TestAffixConduitToContainer_ShouldSucceed()
+        public async Task TestAffixConduitToContainer_ShouldSucceed()
         {
             var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_2);
 
@@ -71,7 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void TestDetachConduitToContainer_ShouldSucceed()
+        public async Task TestDetachConduitToContainer_ShouldSucceed()
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
 
@@ -106,7 +107,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(12)]
-        public async void AffixConduitToContainerInHH2_Again_ShouldSucceed()
+        public async Task AffixConduitToContainerInHH2_Again_ShouldSucceed()
         {
             var testNetwork = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
@@ -140,7 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1000)]
-        public async void TestAffixConduitToContainerTwoTimes_ShouldFaild()
+        public async Task TestAffixConduitToContainerTwoTimes_ShouldFaild()
         {
             var nodeContainerId = PlaceNodeContainer(TestRouteNetwork.HH_10);
 

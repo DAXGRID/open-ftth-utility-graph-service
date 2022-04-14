@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestDisconnect5x10From3x10ConduitAtCC_1_ShouldSucceed()
+        public async Task TestDisconnect5x10From3x10ConduitAtCC_1_ShouldSucceed()
         {
            MakeSureTestConduitIsCutAndConnectedAtCC_1();
 
@@ -100,7 +101,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void TestDisconnectSameSegmentsInSameSpanEquipment_ShouldFail()
+        public async Task TestDisconnectSameSegmentsInSameSpanEquipment_ShouldFail()
         {
             MakeSureTestConduitIsCutAndConnectedAtCC_1();
 
@@ -137,7 +138,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(3)]
-        public async void TestDisconnectDifferentSegmentsInSameSpanEquipment_ShouldFail()
+        public async Task TestDisconnectDifferentSegmentsInSameSpanEquipment_ShouldFail()
         {
             MakeSureTestConduitIsCutAndConnectedAtCC_1();
 

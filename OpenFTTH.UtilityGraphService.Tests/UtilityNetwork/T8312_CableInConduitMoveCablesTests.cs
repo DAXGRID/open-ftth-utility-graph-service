@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void MoveCableInConduit_N2_N2_and_N3_N4_To_To_S8_S5_S9_ShouldSucceed()
+        public async Task MoveCableInConduit_N2_N2_and_N3_N4_To_To_S8_S5_S9_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K8312_1", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });
@@ -76,7 +77,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void MoveCableInConduit_N1_N2_and_N3_N4_To_S7_S4_S8_ShouldFail()
+        public async Task MoveCableInConduit_N1_N2_and_N3_N4_To_S7_S4_S8_ShouldFail()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K8312_2", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S1, ConduitTestUtilityNetwork.S2, ConduitTestUtilityNetwork.S3 });

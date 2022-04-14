@@ -7,6 +7,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -27,7 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddValidNodeContainerSpecification_ShouldSucceed()
+        public async Task AddValidNodeContainerSpecification_ShouldSucceed()
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Node Container Manufacturer");
@@ -53,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddValidRackSpecification_ShouldSucceed()
+        public async Task AddValidRackSpecification_ShouldSucceed()
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Rack Manufacturer");
@@ -77,7 +78,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddTwoRackSpecificationsWithSameName_ShouldFail()
+        public async Task AddTwoRackSpecificationsWithSameName_ShouldFail()
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Rack Manufacturer");

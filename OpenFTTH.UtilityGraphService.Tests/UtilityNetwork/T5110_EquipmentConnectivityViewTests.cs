@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1)]
-        public async void CheckConnectivityViewOfConnectedLISAInC01_ShouldSucceed()
+        public async Task CheckConnectivityViewOfConnectedLISAInC01_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

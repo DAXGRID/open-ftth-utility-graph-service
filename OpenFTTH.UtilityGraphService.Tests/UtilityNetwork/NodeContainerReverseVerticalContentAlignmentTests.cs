@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void ReverseVerticalAlligmentInContainerInJ2_ShouldSucceed()
+        public async Task ReverseVerticalAlligmentInContainerInJ2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -69,7 +70,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(2)]
-        public async void ReverseBackVerticalAlligmentInContainerInJ2_ShouldSucceed()
+        public async Task ReverseBackVerticalAlligmentInContainerInJ2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

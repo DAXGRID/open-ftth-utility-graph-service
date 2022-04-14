@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -41,7 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
   
 
         [Fact, Order(1)]
-        public async void QueryConnectivityFacesInCC1_ShouldSucceed()
+        public async Task QueryConnectivityFacesInCC1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CC_1;

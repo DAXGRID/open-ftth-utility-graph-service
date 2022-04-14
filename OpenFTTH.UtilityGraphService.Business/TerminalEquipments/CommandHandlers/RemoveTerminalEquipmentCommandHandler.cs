@@ -51,32 +51,34 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                 throw new ApplicationException($"Error looking up node container by id: {terminalEquipment.NodeContainerId} referenced by terminal equipment with id: {terminalEquipment.Id}");
             }
 
-
             var terminalEquipmentAR = _eventStore.Aggregates.Load<TerminalEquipmentAR>(command.TerminalEquipmentId);
 
             var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
-            /*
-            var removeResult = terminalEquipmentAR.Remove(commandContext);
+            // Remove the equipment
+            var removeEquipmentResult = terminalEquipmentAR.Remove(commandContext, utilityNetwork.Graph);
 
-            if (removeResult.IsSuccess)
+            if (removeEquipmentResult.IsFailed)
             {
-                // Remember to remove the walk of interest as well
-                var unregisterInterestCmd = new UnregisterInterest(commandContext.CorrelationId, commandContext.UserContext, nodeContainer.InterestId);
-
-                var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
-
-                if (unregisterInterestCmdResult.IsFailed)
-                    throw new ApplicationException($"Failed to unregister interest: {nodeContainer.InterestId} of node container: {nodeContainer.Id} in RemoveNodeContainerFromRouteNetworkCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
-
-                _eventStore.Aggregates.Store(terminalEquipmentAR);
-                NotifyExternalServicesAboutChange(nodeContainer);
+                return Task.FromResult(removeEquipmentResult);
             }
 
-            return Task.FromResult(removeResult);
-            */
+            // Remove reference from container
+            var nodeContainerAR = _eventStore.Aggregates.Load<NodeContainerAR>(nodeContainer.Id);
 
-            return null;
+            var removeEquipmentReferenceResult = nodeContainerAR.RemoveTerminalEquipmentReference(commandContext, command.TerminalEquipmentId);
+
+
+            if (removeEquipmentReferenceResult.IsSuccess)
+            {
+                _eventStore.Aggregates.Store(terminalEquipmentAR);
+                _eventStore.Aggregates.Store(nodeContainerAR);
+
+                NotifyExternalServicesAboutChange(nodeContainer.RouteNodeId, terminalEquipment.Id);
+            }
+
+            return Task.FromResult(removeEquipmentReferenceResult);
+ 
         }
 
         private List<SpanEquipment> GetRelatedSpanEquipments(Guid routeNodeId)
@@ -115,11 +117,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
             return result;
         }
 
-        private async void NotifyExternalServicesAboutChange(NodeContainer nodeContainer)
+        private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid terminalEquipmentId)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
             {
-                new IdChangeSet("NodeContainer", ChangeTypeEnum.Addition, new Guid[] { nodeContainer.Id })
+                new IdChangeSet("TerminalEquipment", ChangeTypeEnum.Deletion, new Guid[] { terminalEquipmentId })
             };
 
             var updatedEvent =
@@ -131,7 +133,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                     applicationInfo: null,
                     category: "EquipmentDeletion",
                     idChangeSets: idChangeSets.ToArray(),
-                    affectedRouteNetworkElementIds: new Guid[] { nodeContainer.RouteNodeId }
+                    affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
             await _externalEventProducer.Produce(_topicName, updatedEvent);

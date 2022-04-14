@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1)]
-        public async void GetSpanEquipmentConnectivityViewOnCable_ShouldSucceed()
+        public async Task GetSpanEquipmentConnectivityViewOnCable_ShouldSucceed()
         {
             var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
 
@@ -64,7 +65,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void GetSpanEquipmentConnectivityViewOnConduit_ShouldSucceed()
+        public async Task GetSpanEquipmentConnectivityViewOnConduit_ShouldSucceed()
         {
             var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
 
@@ -85,7 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void GetSpanEquipmentConnectivityViewOnCableK69373563_ShouldSucceed()
+        public async Task GetSpanEquipmentConnectivityViewOnCableK69373563_ShouldSucceed()
         {
             var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
 
@@ -108,7 +109,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(4)]
-        public async void GetTerminalEquipmentConnectivityViewOnCO1_ShouldSucceed()
+        public async Task GetTerminalEquipmentConnectivityViewOnCO1_ShouldSucceed()
         {
 
             // Get faces
@@ -141,7 +142,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(4)]
-        public async void GetOneTrayRackTerminalEquipmentConnectivityViewInCO1_ShouldSucceed()
+        public async Task GetOneTrayRackTerminalEquipmentConnectivityViewInCO1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -174,7 +175,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         
         [Fact, Order(5)]
-        public async void GetTerminalEquipmentConnectivityViewOnCC1_ShouldSucceed()
+        public async Task GetTerminalEquipmentConnectivityViewOnCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -202,16 +203,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(6)]
-        public async void K69373563ConnectivityViewTest_ShouldSucceed()
+        public async Task K69373563ConnectivityViewTest_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CC_1;
-            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
             var sutCableName = "K69373563";
 
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNodeId, "K69373563");
+            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNodeId, sutCableName);
 
             var connectivityTrace = new GetSpanEquipmentConnectivityView(sutRouteNodeId, new Guid[] { cable.Id });
 
@@ -225,13 +223,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var viewModel = connectivityQueryResult.Value;
 
-            var lineThatConnectedToLisaInCO = viewModel.SpanEquipments.First().Lines[3];
-
         }
 
 
         [Fact, Order(7)]
-        public async void GetSpanEquipmentConnectivityViewOnConduit5x10_CO1_HH1_ShouldSucceed()
+        public async Task GetSpanEquipmentConnectivityViewOnConduit5x10_CO1_HH1_ShouldSucceed()
         {
             var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
 

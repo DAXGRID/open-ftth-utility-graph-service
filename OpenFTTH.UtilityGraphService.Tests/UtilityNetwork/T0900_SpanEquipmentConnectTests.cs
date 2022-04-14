@@ -12,6 +12,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestConnect6x10InnerConduit4To3x10AtCC_1_ShouldSucceed()
+        public async Task TestConnect6x10InnerConduit4To3x10AtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
@@ -85,7 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void TestConnect6x10InnerConduit3To5x10AtCC_1_ShouldSucceed()
+        public async Task TestConnect6x10InnerConduit3To5x10AtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
@@ -121,7 +122,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void TestConnectMultipleInnerducts5x10To3x10ConduitAtCC_1_ShouldSucceed()
+        public async Task TestConnectMultipleInnerducts5x10To3x10ConduitAtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
@@ -179,7 +180,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(12)]
-        public async void TestConnectAlreadyConnectedSegment_ShouldFail()
+        public async Task TestConnectAlreadyConnectedSegment_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -206,7 +207,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(13)]
-        public async void TestConnectInnerToOuterConduit_ShouldFail()
+        public async Task TestConnectInnerToOuterConduit_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -233,7 +234,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(14)]
-        public async void TestConnect5x10ToCustomerConduitAtCC_1_ShouldSucceed()
+        public async Task TestConnect5x10ToCustomerConduitAtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
@@ -279,7 +280,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(15)]
-        public async void TestDisconnect5x10ToCustomerConduitAtCC_1_ShouldSucceed()
+        public async Task TestDisconnect5x10ToCustomerConduitAtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
@@ -307,7 +308,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(100)]
-        public async void TestDetachConduitFromContainerInCC1_ShouldFalid()
+        public async Task TestDetachConduitFromContainerInCC1_ShouldFalid()
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_SP_1;
 

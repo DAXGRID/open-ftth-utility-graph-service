@@ -7,6 +7,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -27,7 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddManufacturerTest_ShouldSucceed()
+        public async Task AddManufacturerTest_ShouldSucceed()
         {
             // Setup
             var manu1 = new Manufacturer(Guid.NewGuid(), "Manu 1");
@@ -45,7 +46,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddManufacturerWithEmptyName_ShouldFail()
+        public async Task AddManufacturerWithEmptyName_ShouldFail()
         {
             // Setup
             var manu1 = new Manufacturer(Guid.NewGuid(),"");
@@ -58,7 +59,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddTwoManufacturerWithSameName_ShouldFail()
+        public async Task AddTwoManufacturerWithSameName_ShouldFail()
         {
             // Setup
             var manu1 = new Manufacturer(Guid.NewGuid(), "Hans");
@@ -74,7 +75,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddTwoManufacturerWithSameId_ShouldFail()
+        public async Task AddTwoManufacturerWithSameId_ShouldFail()
         {
             // Setup
             var manu1 = new Manufacturer(Guid.NewGuid(), "Bent");

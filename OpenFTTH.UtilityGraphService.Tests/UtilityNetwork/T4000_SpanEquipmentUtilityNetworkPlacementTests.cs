@@ -21,6 +21,7 @@ using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.Tests.Util;
 using OpenFTTH.Schematic.Business.IO;
 using OpenFTTH.Schematic.API.Queries;
+using System.Threading.Tasks;
 
 #nullable disable
 
@@ -49,7 +50,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestPlaceSpanEquipmentUsingOneHopFromCO1ToCC1_ShouldSucceed()
+        public async Task TestPlaceSpanEquipmentUsingOneHopFromCO1ToCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -138,7 +139,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void TestPlaceSpanEquipmentUsingThreeHopFromCO1ToHH1ToHH10ToCC1_ShouldSucceed()
+        public async Task TestPlaceSpanEquipmentUsingThreeHopFromCO1ToHH1ToHH10ToCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -216,7 +217,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(4)]
-        public async void TestPlaceSpanEquipmentUsingOneParentHopAndOneRouteHop_ShouldSucceed()
+        public async Task TestPlaceSpanEquipmentUsingOneParentHopAndOneRouteHop_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -274,7 +275,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(5)]
-        public async void TestPlaceSpanEquipmentUsingOneHopFromCO1ToSP1_ShouldSucceed()
+        public async Task TestPlaceSpanEquipmentUsingOneHopFromCO1ToSP1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -337,7 +338,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(6)]
-        public async void TestPlaceCustomerCableCC1_to_SDU1_ShouldSucceed()
+        public async Task TestPlaceCustomerCableCC1_to_SDU1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -367,7 +368,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(10)]
-        public async void TestMovingCableFromRouteNetworkInto_ShouldSucceed()
+        public async Task TestMovingCableFromRouteNetworkInto_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -428,7 +429,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async void TestPlaceSpanEquipmentRouteByIndexFromNodeWithNoConduitEnds_ShouldFail()
+        public async Task TestPlaceSpanEquipmentRouteByIndexFromNodeWithNoConduitEnds_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -461,7 +462,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(101)]
-        public async void TestPlaceSpanEquipmentWithInvalidRouteNetworkWalk_ShouldFail()
+        public async Task TestPlaceSpanEquipmentWithInvalidRouteNetworkWalk_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -498,7 +499,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(102)]
-        public async void TestPlaceSpanEquipmenWithHoleBetweenHops_ShouldSucceed()
+        public async Task TestPlaceSpanEquipmenWithHoleBetweenHops_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -538,7 +539,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(102)]
-        public async void TestPlaceSpanEquipmentRouteBySpanEquipmentFromNodeWithNoConduitEnds_ShouldFail()
+        public async Task TestPlaceSpanEquipmentRouteBySpanEquipmentFromNodeWithNoConduitEnds_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -575,7 +576,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(104)]
-        public async void TestPlaceSpanEquipmenInHopThatRunsForthAndBackInTheSameRouteSegment_ShouldSucceed()
+        public async Task TestPlaceSpanEquipmenInHopThatRunsForthAndBackInTheSameRouteSegment_ShouldSucceed()
         {
             // Connect sub conduit 1 and 2 of the same multi conduit in CC_1
             _utilityNetworkBuilder.ConnectTwoSpanSegments(

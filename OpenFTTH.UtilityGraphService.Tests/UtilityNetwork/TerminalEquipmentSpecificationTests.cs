@@ -7,6 +7,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -27,7 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddSimpleTerminalEquipmentSpecification_ShouldSucceed()
+        public async Task AddSimpleTerminalEquipmentSpecification_ShouldSucceed()
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Super Manufacturer");
@@ -53,7 +54,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddSimpleTerminalStructureSpecification_ShouldSucceed()
+        public async Task AddSimpleTerminalStructureSpecification_ShouldSucceed()
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Tray Manufacturer");

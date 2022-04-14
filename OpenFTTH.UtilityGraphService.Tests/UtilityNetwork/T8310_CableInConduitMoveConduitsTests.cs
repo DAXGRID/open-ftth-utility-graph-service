@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void Move_Conduit_N2_N3_To_N2_N6_N7_N3_ShouldSucceed()
+        public async Task Move_Conduit_N2_N3_To_N2_N6_N7_N3_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -82,7 +83,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void Affix_K8319_2_To_Conduit_N2_N6_N7_N3_And_Move_Back_To_N2_N3_ShouldSucceed()
+        public async Task Affix_K8319_2_To_Conduit_N2_N6_N7_N3_And_Move_Back_To_N2_N3_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -123,7 +124,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(3)]
-        public async void Affix_K8319_3_To_Conduit_N2_N3_And_Move_To_N2_N6_N7_N3_ShouldSucceed()
+        public async Task Affix_K8319_3_To_Conduit_N2_N3_And_Move_To_N2_N6_N7_N3_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -162,7 +163,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async void Move_Conduit_N2_N3_To_N2_N6_ShouldFail()
+        public async Task Move_Conduit_N2_N3_To_N2_N6_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -182,7 +183,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(101)]
-        public async void Move_Conduit_N2_N3_To_N2_N4_ShouldFail()
+        public async Task Move_Conduit_N2_N3_To_N2_N4_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

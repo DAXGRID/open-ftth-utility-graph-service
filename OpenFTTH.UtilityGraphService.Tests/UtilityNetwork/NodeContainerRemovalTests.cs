@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         
         [Fact, Order(1)]
-        public async void TestPlaceNodeContainer_ShouldSucceed()
+        public async Task TestPlaceNodeContainer_ShouldSucceed()
         {
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
@@ -66,7 +67,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void TestAffixConduitToContainer_ShouldSucceed()
+        public async Task TestAffixConduitToContainer_ShouldSucceed()
         {
             var testNetwork = new TestUtilityNetwork(_commandDispatcher, _queryDispatcher).Run();
 
@@ -87,7 +88,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void TryRemoveContainer_ShouldFail()
+        public async Task TryRemoveContainer_ShouldFail()
         {
             var removeContainerCommand = new RemoveNodeContainerFromRouteNetwork(Guid.NewGuid(), new UserContext("test", Guid.Empty),
                 nodeContainerId: _sutContainerId
@@ -103,7 +104,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(4)]
-        public async void TestDetachConduitToContainer_ShouldSucceed()
+        public async Task TestDetachConduitToContainer_ShouldSucceed()
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_3x10_CC_1_to_HH_11;
 
@@ -125,7 +126,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(5)]
-        public async void TryRemoveContainer_ShouldSucceed()
+        public async Task TryRemoveContainer_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

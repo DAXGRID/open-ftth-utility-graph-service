@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1)]
-        public async void GetSpanEquipmentPassageViewOnComplexCableWithManyHops_ShouldSucceed()
+        public async Task GetSpanEquipmentPassageViewOnComplexCableWithManyHops_ShouldSucceed()
         {
             var sutRouteNetworkElementId = TestRouteNetwork.FP_2;
 
@@ -106,7 +107,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(2)]
-        public async void GetSpanEquipmentPassageViewOnCableK667_ShouldSucceed()
+        public async Task GetSpanEquipmentPassageViewOnCableK667_ShouldSucceed()
         {
             // NB: cable K667 goes through connected conduits
             var sutRouteNetworkElementId = TestRouteNetwork.CC_1;
@@ -165,7 +166,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(0)]
-        public async void GetSpanEquipmentPassageViewNonConnectedConduit_ShouldSucceed()
+        public async Task GetSpanEquipmentPassageViewNonConnectedConduit_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -204,7 +205,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(11)]
-        public async void GetSpanEquipmentPassageViewOnConnectedConduit_ShouldSucceed()
+        public async Task GetSpanEquipmentPassageViewOnConnectedConduit_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

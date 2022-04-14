@@ -268,8 +268,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
             if (terminal == null)
             {
-                terminal = new UtilityGraphConnectedTerminal(terminalId, terminalNodeOfInterestId);
-                transaction.Add(terminal as GraphNode);
+                if (graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminalId, out var utilityGraphTerminalRef))
+                {
+                    terminal = new UtilityGraphConnectedTerminal(terminalId, utilityGraphTerminalRef.TerminalEquipmentId, terminalNodeOfInterestId, utilityGraphTerminalRef.StructureIndex, utilityGraphTerminalRef.TerminalIndex);
+                    transaction.Add(terminal as GraphNode);
+                    graph.UpdateIndex(terminalId, terminal);
+                }
+                else
+                {
+                    terminal = new UtilityGraphConnectedTerminal(terminalId, Guid.Empty, terminalNodeOfInterestId);
+                    transaction.Add(terminal as GraphNode);
+                }
             }
 
             return terminal;

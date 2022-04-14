@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestAddAdditionalStructuresTo5x10_ShouldSucceed()
+        public async Task TestAddAdditionalStructuresTo5x10_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -84,7 +85,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void TestAddAdditionalStructuresTo5x10_UsingSpanSegmentId_ShouldSucceed()
+        public async Task TestAddAdditionalStructuresTo5x10_UsingSpanSegmentId_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -112,7 +113,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestAddAdditionalStructuresFixedSpanEquipment_ShouldFail()
+        public async Task TestAddAdditionalStructuresFixedSpanEquipment_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

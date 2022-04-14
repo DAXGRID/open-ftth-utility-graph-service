@@ -72,6 +72,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<TerminalEquipmentAddressInfoChanged>(Project);
             ProjectEvent<TerminalEquipmentManufacturerChanged>(Project);
             ProjectEvent<TerminalEquipmentSpecificationChanged>(Project);
+            ProjectEvent<TerminalEquipmentRemoved>(Project);
 
             // Node container
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
@@ -85,6 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerRackHeightInUnitsChanged>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentAdded>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentsAddedToRack>(Project);
+            ProjectEvent<NodeContainerTerminalEquipmentReferenceRemoved>(Project);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -252,6 +254,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
                     break;
 
+                case (TerminalEquipmentRemoved @event):
+                    ProcessTerminalEquipmentRemoval(@event);
+                    break;
 
 
                 // Node container events
@@ -296,6 +301,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (NodeContainerTerminalEquipmentsAddedToRack @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerTerminalEquipmentReferenceRemoved @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
             }
@@ -534,6 +543,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
+        private void ProcessTerminalEquipmentRemoval(TerminalEquipmentRemoved @event)
+        {
+            var existingTerminalEquipment = _terminalEquipmentByEquipmentId[@event.TerminalEquipmentId];
+
+            TryRemoveTerminalEquipment(@event.TerminalEquipmentId);
+
+            // Remove terminals from the graph
+            foreach (var terminalStructure in existingTerminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    _utilityGraph.RemoveGraphElement(terminal.Id);
+                }
+            }
+        }
+
+
         private void ProcessNodeContainerRemoval(NodeContainerRemovedFromRouteNetwork @event)
         {
             var existingNodeContainer = _nodeContainerByEquipmentId[@event.NodeContainerId];
@@ -593,6 +619,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             if (!_spanEquipmentByInterestId.TryRemove(spanEquipmentInterestId, out _))
                 throw new ApplicationException($"Concurrency issue removing span equipment interest index. Span equipment id: {spanEquipmentId} Please make sure that events are applied in sequence to the projection.");
+        }
+
+        private void TryRemoveTerminalEquipment(Guid terminalEquipmentId)
+        {
+            if (!_terminalEquipmentByEquipmentId.TryRemove(terminalEquipmentId, out _))
+                throw new ApplicationException($"Concurrency issue removing teminal equipment from index. Terminal equipment id: {terminalEquipmentId} Please make sure that events are applied in sequence to the projection.");
         }
 
         private void TryRemoveNodeContainer(Guid nodeContainertId, Guid nodeContainerInterestId)

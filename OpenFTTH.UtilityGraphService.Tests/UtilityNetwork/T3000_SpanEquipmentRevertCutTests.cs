@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestRevertCut5x10ConduitAtHH_2_ShouldSucceed()
+        public async Task TestRevertCut5x10ConduitAtHH_2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -134,7 +135,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestRevertCut5x10ConduitAtHH_2Again_ShouldFail()
+        public async Task TestRevertCut5x10ConduitAtHH_2Again_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -165,7 +166,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(11)]
-        public async void TestRevertCut5x10ConduitAtCC_1_ShouldFail()
+        public async Task TestRevertCut5x10ConduitAtCC_1_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

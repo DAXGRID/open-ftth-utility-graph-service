@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,16 +39,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void CableConnectivityTraceInCO1_ShouldSucceed()
+        public async Task CableConnectivityTraceInCO1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CO_1;
-            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
             var sutCableName = "K69373563";
 
-            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
-
-            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNodeId, "K69373563");
+            var cable = FindSpanEquipmentRelatedToRouteNetworkElementByName(sutRouteNodeId, sutCableName);
 
             // Get connectivity trace on fiber 12
             var connectivityTraceQuery = new GetConnectivityTraceView(sutRouteNodeId, cable.SpanStructures[12].SpanSegments[0].Id);
@@ -65,12 +63,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(0)]
-        public async void TerminalEquipmentConnectivityTraceInCO1RackEquipment_ShouldSucceed()
+        public async Task TerminalEquipmentConnectivityTraceInCO1RackEquipment_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CO_1;
             var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
-            var sutCableName = "K69373563";
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -98,12 +95,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void TerminalEquipmentConnectivityTraceInCC1_ShouldSucceed()
+        public async Task TerminalEquipmentConnectivityTraceInCC1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.CC_1;
             var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
-            var sutCableName = "K69373563";
 
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

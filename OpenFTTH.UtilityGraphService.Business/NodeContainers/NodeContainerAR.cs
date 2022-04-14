@@ -35,6 +35,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerTerminalEquipmentAdded>(Apply);
             Register<NodeContainerTerminalEquipmentsAddedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentMovedToRack>(Apply);
+            Register<NodeContainerTerminalEquipmentReferenceRemoved>(Apply);
         }
 
         #region Place in network
@@ -181,15 +182,22 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             return false;
         }
 
-        private bool IsAnyTerminalEquipmentsContainedInContainer(List<SpanEquipment> relatedSpanEquipments)
+
+        private bool CheckIfTerminalReferenceExistsInContainer(Guid terminalEquipmentId)
         {
-            foreach (var spanEquipment in relatedSpanEquipments)
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.TerminalEquipmentReferences != null && _container.TerminalEquipmentReferences.Contains(terminalEquipmentId))
+                return true;
+
+            if (_container.Racks != null && _container.Racks.Length > 0)
             {
-                if (spanEquipment.NodeContainerAffixes != null)
+                foreach (var rack in _container.Racks)
                 {
-                    foreach (var affix in spanEquipment.NodeContainerAffixes)
+                    foreach (var subrackMount in rack.SubrackMounts)
                     {
-                        if (affix.NodeContainerId == this.Id)
+                        if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
                             return true;
                     }
                 }
@@ -198,14 +206,51 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             return false;
         }
 
+
         private void Apply(NodeContainerRemovedFromRouteNetwork @event)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
         }
 
+        #endregion
+
+
+        #region Remove terminal equipment reference
+        public Result RemoveTerminalEquipmentReference(CommandContext cmdContext, Guid terminalEquipmentId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (CheckIfTerminalReferenceExistsInContainer(terminalEquipmentId))
+            {
+                var @event = new NodeContainerTerminalEquipmentReferenceRemoved(
+                   nodeContainerId: this.Id,
+                   terminalEquipmentId: terminalEquipmentId
+                )
+                {
+                    CorrelationId = cmdContext.CorrelationId,
+                    IncitingCmdId = cmdContext.CmdId,
+                    UserName = cmdContext.UserContext?.UserName,
+                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                };
+
+                RaiseEvent(@event);
+            }
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerTerminalEquipmentReferenceRemoved @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
 
         #endregion
+
 
         #region Reverse vertical content alignment
         public Result ReverseVerticalContentAlignment(CommandContext cmdContext)
@@ -543,7 +588,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #endregion
 
-
         #region Rack name changed
         public Result ChangeRackName(CommandContext cmdContext, Guid rackId, string rackName)
         {
@@ -591,7 +635,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #endregion
 
-
         #region Rack height in units changed
         public Result ChangeRackHeightInUnits(CommandContext cmdContext, Guid rackId, int heightInUnits)
         {
@@ -638,8 +681,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
         #endregion
-
-
 
         #region Change subrack Mount
 

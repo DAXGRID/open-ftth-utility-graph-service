@@ -15,6 +15,7 @@ using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.TestData;
 using Xunit.Extensions.Ordering;
+using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
@@ -36,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestPlaceValidSpanEquipment_ShouldSucceed()
+        public async Task TestPlaceValidSpanEquipment_ShouldSucceed()
         {
             // Setup
             var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
@@ -96,7 +97,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestQuerySpanEquipmentByInterestId_ShouldSucceed()
+        public async Task TestQuerySpanEquipmentByInterestId_ShouldSucceed()
         {
             // Setup
             var specs = new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
@@ -122,7 +123,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestPlaceTwoSpanEquipmentWithSameId_SecondOneShouldFail()
+        public async Task TestPlaceTwoSpanEquipmentWithSameId_SecondOneShouldFail()
         {
             var walkOfInterest = new RouteNetworkInterest(Guid.NewGuid(), RouteNetworkInterestKindEnum.WalkOfInterest, new RouteNetworkElementIdList() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() });
 

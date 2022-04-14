@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -42,7 +43,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void CreateSchematicForCC1_ShouldSucceed()
+        public void CreateSchematicForCC1_ShouldSucceed()
         {
             /*
             // Act
@@ -57,7 +58,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void CreateSchematicForHH1_ShouldSucceed()
+        public void CreateSchematicForHH1_ShouldSucceed()
         {
             /*
             // Act
@@ -72,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(4)]
-        public async void CreateSchematicForCO1_ShouldSucceed()
+        public void CreateSchematicForCO1_ShouldSucceed()
         {
             /*
             // Act

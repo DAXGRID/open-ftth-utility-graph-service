@@ -10,6 +10,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -37,7 +38,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestConnect5x10Sub5ToCustomerConduitByIndexAtCC_1_ShouldSucceed()
+        public async Task TestConnect5x10Sub5ToCustomerConduitByIndexAtCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -83,7 +84,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(2)]
-        public async void TestConnect5x10Sub1_2_3To5x10IndexAtCC_1_ShouldSucceed()
+        public async Task TestConnect5x10Sub1_2_3To5x10IndexAtCC_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -140,7 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestConnectAlreadyConnected_ShouldFail()
+        public async Task TestConnectAlreadyConnected_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -167,7 +168,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void TestOutOfBoundsIndex_ShouldFail()
+        public async Task TestOutOfBoundsIndex_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

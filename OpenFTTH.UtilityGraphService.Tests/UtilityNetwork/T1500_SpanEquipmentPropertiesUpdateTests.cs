@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -42,7 +43,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void UpdateMarkingInfo_ShouldSucceed()
+        public async Task UpdateMarkingInfo_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -70,7 +71,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void UpdateMarkingInfoSetPropertyToNull_ShouldSucceed()
+        public async Task UpdateMarkingInfoSetPropertyToNull_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -93,7 +94,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(3)]
-        public async void UpdateManufacturer_ShouldSucceed()
+        public async Task UpdateManufacturer_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -121,7 +122,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(4)]
-        public async void UpdateManufacturerToGuidEmpty_ShouldSucceed()
+        public async Task UpdateManufacturerToGuidEmpty_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -149,7 +150,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(5)]
-        public async void UpdateAddressInfo_ShouldSucceed()
+        public async Task UpdateAddressInfo_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -177,7 +178,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestCutInnerConduit1In3x10_ShouldSucceed()
+        public async Task TestCutInnerConduit1In3x10_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -201,7 +202,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(11)]
-        public async void ChangeSpecificationFrom3x10to12x7_ShouldSucceed()
+        public async Task ChangeSpecificationFrom3x10to12x7_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
@@ -251,7 +252,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(12)]
-        public async void ChangeSpecificationFrom12x7to10x10_ShouldSucceed()
+        public async Task ChangeSpecificationFrom12x7to10x10_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
@@ -293,7 +294,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(100)]
-        public async void UpdateMarkingInfoToSameAsBefore_ShouldFail()
+        public async Task UpdateMarkingInfoToSameAsBefore_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

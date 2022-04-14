@@ -7,6 +7,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -27,7 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddSpanStructureSpecificationTest()
+        public async Task AddSpanStructureSpecificationTest()
         {
             // Setup
             var spec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø12", "Red")
@@ -61,7 +62,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void DepecateSpanStructureSpecificationTest()
+        public async Task DepecateSpanStructureSpecificationTest()
         {
             // Setup
             var spec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø12", "Blue")

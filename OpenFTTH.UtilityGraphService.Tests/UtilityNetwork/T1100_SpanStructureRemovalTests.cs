@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestRemoveNonConnectedStructureFromNonFixedSpanEquipment_ShouldSucceed()
+        public async Task TestRemoveNonConnectedStructureFromNonFixedSpanEquipment_ShouldSucceed()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -73,7 +74,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestRemoveInnerStructureFromFixedSpanEquipment_ShouldFail()
+        public async Task TestRemoveInnerStructureFromFixedSpanEquipment_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -94,7 +95,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void TestRemoveConnectedInnerStructureFromSpanEquipment_ShouldFail()
+        public async Task TestRemoveConnectedInnerStructureFromSpanEquipment_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -115,7 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(12)]
-        public async void TestRemoveOuterStructureFromSpanEquipmentWithConnectedInnerStructure_ShouldFail()
+        public async Task TestRemoveOuterStructureFromSpanEquipmentWithConnectedInnerStructure_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 

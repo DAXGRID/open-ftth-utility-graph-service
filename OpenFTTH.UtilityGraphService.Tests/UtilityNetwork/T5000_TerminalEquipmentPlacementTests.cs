@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -36,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void PlaceFirstTerminalEquipmentInCC1_ShouldSucceed()
+        public async Task PlaceFirstTerminalEquipmentInCC1_ShouldSucceed()
         {
             var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
                 correlationId: Guid.NewGuid(),
@@ -46,8 +47,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 terminalEquipmentSpecificationId: TestSpecifications.SpliceClosure_BUDI1S_16SCTrays,
                 numberOfEquipments: 1,
                 startSequenceNumber: 1,
-                namingMethod: TerminalEquipmentNamingMethodEnum.NameAndNumber,
-                namingInfo: new NamingInfo("Splice Closure", null)
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
+                namingInfo: new NamingInfo("CC1 Splice Closure 1", null)
             )
             {
                 AddressInfo = new AddressInfo(Guid.NewGuid(), Guid.NewGuid(), "hej")
@@ -83,7 +84,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             equipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
             equipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
-            equipment.Name.Should().Be("Splice Closure 1");
+            equipment.Name.Should().Be("CC1 Splice Closure 1");
 
             // test that terminal structures and terminal has been created
             equipment.TerminalStructures.Count().Should().Be(16);
@@ -99,7 +100,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void PlaceTwoMoreTerminalEquipmentsInCC1_ShouldSucceed()
+        public async Task PlaceTwoMoreTerminalEquipmentsInCC1_ShouldSucceed()
         {
             var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
                 correlationId: Guid.NewGuid(),
@@ -109,8 +110,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 terminalEquipmentSpecificationId: TestSpecifications.SpliceClosure_BUDI1S_16SCTrays,
                 numberOfEquipments: 2,
                 startSequenceNumber: 5,
-                namingMethod: TerminalEquipmentNamingMethodEnum.NumberOnly,
-                namingInfo: new NamingInfo("Splice Closure", null)
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameAndNumber,
+                namingInfo: new NamingInfo("CC1 Splice Closure", null)
             );
 
             // Act
@@ -139,12 +140,12 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             lastEquipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
             lastEquipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
-            lastEquipment.Name.Should().Be("6");
+            lastEquipment.Name.Should().Be("CC1 Splice Closure 6");
         }
 
 
         [Fact, Order(10)]
-        public async void PlaceFirstTwoTerminalEquipmentInJ1Rack1_ShouldSucceed()
+        public async Task PlaceFirstTwoTerminalEquipmentInJ1Rack1_ShouldSucceed()
         {
             // Setup
             var sutNodeContainer = TestUtilityNetwork.NodeContainer_J_1;
@@ -216,7 +217,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(11)]
-        public async void PlaceThirdTerminalEquipmentInJ1Rack1_ShouldSucceed()
+        public async Task PlaceThirdTerminalEquipmentInJ1Rack1_ShouldSucceed()
         {
             // Setup
             var sutNodeContainer = TestUtilityNetwork.NodeContainer_J_1;
@@ -300,7 +301,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(12)]
-        public async void PlaceTerminalEquipmentInCO1_ShouldSucceed()
+        public async Task PlaceTerminalEquipmentInCO1_ShouldSucceed()
         {
             var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
                 correlationId: Guid.NewGuid(),
@@ -327,7 +328,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(12)]
-        public async void PlaceCustomerTerminalEquipmentInSDU1_ShouldSucceed()
+        public async Task PlaceCustomerTerminalEquipmentInSDU1_ShouldSucceed()
         {
             var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
                 correlationId: Guid.NewGuid(),
@@ -361,7 +362,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async void QueryConnectivityInfoOneFirstTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        public async Task QueryConnectivityInfoOneFirstTerminalEquipmentInCC1Rack1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.J_1;
@@ -398,7 +399,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(101)]
-        public async void QueryConnectivityInfoOneAllTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        public async Task QueryConnectivityInfoOneAllTerminalEquipmentInCC1Rack1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.J_1;

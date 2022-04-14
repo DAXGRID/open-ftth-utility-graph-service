@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void AffixCableInConduit_N1_N2_4_And_ExtentConduitToN3_ShouldSucceed()
+        public async Task AffixCableInConduit_N1_N2_4_And_ExtentConduitToN3_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -97,7 +98,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void ShortenConduit_N1_N2_4_ToInitialExtend_ShouldSucceed()
+        public async Task ShortenConduit_N1_N2_4_ToInitialExtend_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -144,7 +145,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void Extent3x10Conduit_ShouldSucceed()
+        public async Task Extent3x10Conduit_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -221,7 +222,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void Shrink3x10Conduit_ShouldSucceed()
+        public async Task Shrink3x10Conduit_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -263,7 +264,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async void ExtendFromEndOfConduit_N1_N2_4_ShouldFail()
+        public async Task ExtendFromEndOfConduit_N1_N2_4_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -279,7 +280,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(101)]
-        public async void MoveMultiConduitToN6_ShouldFail()
+        public async Task MoveMultiConduitToN6_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

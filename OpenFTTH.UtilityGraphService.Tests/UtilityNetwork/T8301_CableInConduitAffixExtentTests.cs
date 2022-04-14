@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -39,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void ExtentS2CableIntoS1_ShouldSucceed()
+        public void ExtentS2CableIntoS1_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K10", TestSpecifications.FiberCable_12Fiber,
                 new Guid[] { ConduitTestUtilityNetwork.S2 });

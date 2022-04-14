@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void ConnectFirstTerminalEquipmentInCC1WithFiberCable_ShouldSucceed()
+        public async Task ConnectFirstTerminalEquipmentInCC1WithFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -51,7 +52,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
 
             // Get equipment
-            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipment);
+            var terminalEquipment = utilityNetwork.TerminalEquipmentByEquipmentId.Values.First(e => e.Name == "CC1 Splice Closure 1");
 
             // Get cable
             var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
@@ -91,6 +92,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
+
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminalEquipment.TerminalStructures[0].Terminals[0].Id, out var terminalRef);
+
 
             // Trace fiber 1 (should not be connected to anything)
             var fiber1TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
@@ -177,7 +181,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void ConnectFirstTerminalEquipmentInCO1WithFiberCable_ShouldSucceed()
+        public async Task ConnectFirstTerminalEquipmentInCO1WithFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -287,7 +291,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async void ConnectFirstRackEquipmentInCO1WithFiberCable_ShouldSucceed()
+        public async Task ConnectFirstRackEquipmentInCO1WithFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -337,7 +341,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(4)]
-        public async void ConnectFirstTerminalEquipmentInCC1WithCustomerFiberCable_ShouldSucceed()
+        public async Task ConnectFirstTerminalEquipmentInCC1WithCustomerFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -386,7 +390,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(5)]
-        public async void ConnectFirstTerminalEquipmentInSDU1WithCustomerFiberCable_ShouldSucceed()
+        public async Task ConnectFirstTerminalEquipmentInSDU1WithCustomerFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -436,7 +440,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(50)]
-        public async void DisconnectFirstTerminalEquipmentInCO1WithFiberCable_ShouldSucceed()
+        public async Task DisconnectFirstTerminalEquipmentInCO1WithFiberCable_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -502,7 +506,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(51)]
-        public async void ConnectFirstTerminalEquipmentInCO1WithFiberCableAgain_ShouldSucceed()
+        public async Task ConnectFirstTerminalEquipmentInCO1WithFiberCableAgain_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -560,7 +564,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1000)]
-        public async void TestTrace_ShouldSucceed()
+        public async Task TestTrace_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -590,7 +594,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1001)]
-        public async void CheckThatLISAInJ1Has24PatchesAnd24SplicesInTray_ShouldSucceed()
+        public async Task CheckThatLISAInJ1Has24PatchesAnd24SplicesInTray_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -627,7 +631,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(1002)]
-        public async void CheckThatBUDIInCC1Has0Patches12SplicesInTray_ShouldSucceed()
+        public async Task CheckThatBUDIInCC1Has0Patches12SplicesInTray_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

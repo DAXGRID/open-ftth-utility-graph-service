@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void ConnectConduitInSDU1_ShouldSucceed()
+        public async Task ConnectConduitInSDU1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -85,7 +86,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void MergeTheTwo12x7inJ_1_ShouldSucceed()
+        public async Task MergeTheTwo12x7inJ_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -178,7 +179,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(11)]
-        public async void TestAffixConduitToContainer_ShouldSucceed()
+        public async Task TestAffixConduitToContainer_ShouldSucceed()
         {
             var testConduitId = TestUtilityNetwork.MultiConduit_12x7_SDU_1_to_J_1;
 
@@ -198,7 +199,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(12)]
-        public async void CutMergeConduitInJ_1_ShouldSucceed()
+        public async Task CutMergeConduitInJ_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -225,7 +226,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(13)]
-        public async void ConnectInMergedConduitInJ_1_ShouldSucceed()
+        public async Task ConnectInMergedConduitInJ_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -251,7 +252,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(14)]
-        public async void DisconnectInMergedConduitInJ_1_ShouldSucceed()
+        public async Task DisconnectInMergedConduitInJ_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -275,7 +276,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(15)]
-        public async void ConnectAgainInMergedConduitInJ_1_ShouldSucceed()
+        public async Task ConnectAgainInMergedConduitInJ_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -307,7 +308,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(20)]
-        public async void TryMerge12x7With5x10_ShouldFail()
+        public async Task TryMerge12x7With5x10_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -335,7 +336,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(21)]
-        public async void TryMergeNotConnectedSpanEquipments_ShouldFail()
+        public async Task TryMergeNotConnectedSpanEquipments_ShouldFail()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

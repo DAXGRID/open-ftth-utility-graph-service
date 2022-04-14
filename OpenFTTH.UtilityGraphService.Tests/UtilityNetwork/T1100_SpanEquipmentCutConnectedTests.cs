@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact,Order(1)]
-        public async void TestConnectTwo5x10inCO1_ShouldSucceed()
+        public async Task TestConnectTwo5x10inCO1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -73,7 +74,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
           }
 
         [Fact, Order(2)]
-        public async void CutConduitInCC1_ShouldSucceed()
+        public async Task CutConduitInCC1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -140,7 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(3)]
-        public async void CutInnerConduit1InHH2_ShouldSucceed()
+        public async Task CutInnerConduit1InHH2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -185,7 +186,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(4)]
-        public async void ReconnectInnerConduit1InHH2_ShouldSucceed()
+        public async Task ReconnectInnerConduit1InHH2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -224,7 +225,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(5)]
-        public async void DisconnectInnerConduit1InHH2_ShouldSucceed()
+        public async Task DisconnectInnerConduit1InHH2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -262,7 +263,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(6)]
-        public async void ReconnectInnerConduit1AgainInHH2_ShouldSucceed()
+        public async Task ReconnectInnerConduit1AgainInHH2_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 

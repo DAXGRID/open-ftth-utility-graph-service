@@ -7,6 +7,7 @@ using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -27,7 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddValidMultiLevelSpanEquipmentSpecification_ShouldSucceed()
+        public async Task AddValidMultiLevelSpanEquipmentSpecification_ShouldSucceed()
         {
             // Create manufacturer
             var manufacturer = new Manufacturer(Guid.NewGuid(), "Conduit Manufacturer");
@@ -84,7 +85,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddInvalidSpanEquipmentSpecificationWithRootTemplateLevelDifferentFromOne_ShouldFail()
+        public async Task AddInvalidSpanEquipmentSpecificationWithRootTemplateLevelDifferentFromOne_ShouldFail()
         {
             // Setup some span structure specifications to be used in the span equipment specification
             var outerConduitSpanStructureSpec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø50", "Orange")
@@ -112,7 +113,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddInvalidSpanEquipmentSpecificationWithWrongChildTemplateLevel_ShouldFail()
+        public async Task AddInvalidSpanEquipmentSpecificationWithWrongChildTemplateLevel_ShouldFail()
         {
             // Setup some span structure specifications to be used in the span equipment specification
             var outerConduitSpanStructureSpec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø50", "Orange")
@@ -139,7 +140,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddInvalidSpanEquipmentSpecificationWithNonUniqueLevelAndPosition_ShouldFail()
+        public async Task AddInvalidSpanEquipmentSpecificationWithNonUniqueLevelAndPosition_ShouldFail()
         {
             // Setup some span structure specifications to be used in the span equipment specification
             var outerConduitSpanStructureSpec1 = new SpanStructureSpecification(Guid.NewGuid(), "Conduit", "Ø50", "Orange")
@@ -167,7 +168,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void AddInvalidSpanEquipmentSpecificationWithNonExistingStructureSpecification_ShouldFail()
+        public async Task AddInvalidSpanEquipmentSpecificationWithNonExistingStructureSpecification_ShouldFail()
         {
             // Setup
             var spanEquipmentIdThatDontExist = Guid.NewGuid();

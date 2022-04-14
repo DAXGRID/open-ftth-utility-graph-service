@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -38,7 +39,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestRemoveNonConnectedFixedSpanEquipment_ShouldSucceed()
+        public async Task TestRemoveNonConnectedFixedSpanEquipment_ShouldSucceed()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 
@@ -76,7 +77,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(10)]
-        public async void TestRemoveSpanEquipmentWithConnectedSegments_ShouldFail()
+        public async Task TestRemoveSpanEquipmentWithConnectedSegments_ShouldFail()
         {
             MakeSureTestConduitsHasInnerConduitsAndConnections();
 

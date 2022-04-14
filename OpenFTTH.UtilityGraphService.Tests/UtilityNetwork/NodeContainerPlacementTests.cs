@@ -11,6 +11,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -34,7 +35,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         
         [Fact]
-        public async void TestPlaceValidNodeContainer_ShouldSucceed()
+        public async Task TestPlaceValidNodeContainer_ShouldSucceed()
         {
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 
@@ -72,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact]
-        public async void TestPlacingMultipleNodeContainerInSameNode_ShouldFail()
+        public async Task TestPlacingMultipleNodeContainerInSameNode_ShouldFail()
         {
             new TestSpecifications(_commandDispatcher, _queryDispatcher).Run();
 

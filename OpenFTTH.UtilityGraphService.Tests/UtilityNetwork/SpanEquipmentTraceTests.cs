@@ -13,6 +13,7 @@ using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
@@ -40,7 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(1)]
-        public async void TestTrace_ShouldSucceed()
+        public async Task TestTrace_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -64,7 +65,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void SDU1Trace_ShouldReturnCorrectAddressInfo()
+        public async Task SDU1Trace_ShouldReturnCorrectAddressInfo()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -89,7 +90,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(2)]
-        public async void SDU2Trace_ShouldReturnCorrectAddressInfo()
+        public async Task SDU2Trace_ShouldReturnCorrectAddressInfo()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -114,7 +115,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(3)]
-        public async void SDU3Trace_ShouldReturnCorrectAddressInfo()
+        public async Task SDU3Trace_ShouldReturnCorrectAddressInfo()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
