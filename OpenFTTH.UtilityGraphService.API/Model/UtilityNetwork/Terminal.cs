@@ -17,9 +17,10 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public string? ConnectorType { get; }
         public Guid FromSegmentId { get; init; }
         public Guid ToSegmentId { get; init; }
+        public Guid? InternalConnectivityNodeId { get; init; }
         public string? Description => null;
 
-        public Terminal(Guid id, string name, TerminalDirectionEnum direction, bool isPigtail, bool isSplice, string? connectorType)
+        public Terminal(Guid id, string name, TerminalDirectionEnum direction, bool isPigtail, bool isSplice, string? connectorType, Guid? internalConnectivityNodeId)
         {
             Id = id;
             Name = name;
@@ -27,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             IsPigtail = isPigtail;
             IsSplice = isSplice;
             ConnectorType = connectorType;
+            InternalConnectivityNodeId = internalConnectivityNodeId;
         }
     }
 }

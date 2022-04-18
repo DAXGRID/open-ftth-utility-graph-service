@@ -91,12 +91,30 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             {
                 if (terminalStructureSpecifications.TryGetValue(structureTemplate.TerminalStructureSpecificationId, out var terminalStructureSpecification))
                 {
+                    Dictionary<string, Guid> internalConnectivityNodesByName = new();
+
                     List<Terminal> terminals = new();
 
                     foreach (var terminalTemplate in terminalStructureSpecification.TerminalTemplates)
                     {
+                        // Create internal connectivity node if specified in template and don't exist yet
+                        if (terminalTemplate.InternalConnectivityNode != null)
+                        {
+                            if (!internalConnectivityNodesByName.TryGetValue(terminalTemplate.InternalConnectivityNode, out var _))
+                            {
+                                internalConnectivityNodesByName.Add(terminalTemplate.InternalConnectivityNode, Guid.NewGuid());
+                            }
+                        }
+
+                        // Get id of eventually specificed internal connectivity node
+                        Guid internalConnectivityNodeId = terminalTemplate.InternalConnectivityNode == null ? Guid.Empty : internalConnectivityNodesByName[terminalTemplate.InternalConnectivityNode];
+
+                        // A non-bi terminal must always be connected to an internal connectivity node
+                        if (terminalTemplate.Direction != TerminalDirectionEnum.BI && internalConnectivityNodeId == Guid.Empty)
+                            throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipmentSpecification.Id} All non-bi terminals must reference an internal connectivity node");
+
                         terminals.Add(
-                            new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType)
+                            new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType, internalConnectivityNodeId)
                         );
                     }
 

@@ -65,15 +65,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var connectivityTraceView = connectivityViewResult.Value.TerminalEquipments.First();
 
-            connectivityTraceView.Name.Should().Be("CO-1 - Rack 2 - Bakke 5");
-
-            // Checke z end name
-            //connectivityTraceView.TerminalStructures[0].Lines[0].Z.End.Should().Be("CC-1 Splice Closure 1-1-12");
-            
-
+            connectivityTraceView.Name.Should().Be("CO-1 - Rack 2 - Bakke 1");
         }
-
-
 
         private SpanEquipment? FindSpanEquipmentRelatedToRouteNetworkElementByName(Guid routeNetworkElementId, string spanEquipmentName)
         {

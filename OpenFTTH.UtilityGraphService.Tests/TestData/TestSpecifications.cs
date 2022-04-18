@@ -172,6 +172,8 @@ namespace OpenFTTH.TestData
         public static Guid SplicePatchTray_GPS2_12SC = Guid.Parse("8e36b878-5f14-40f3-b088-f04f2ffb03d7");
         public static Guid SplicePatchTray_GPS2_24LC = Guid.Parse("e24b4f50-24f6-4a33-8b56-cf9a52dce522");
 
+        public static Guid GSS_1_2_Splitter = Guid.Parse("52e3f107-872b-428b-8eff-af29a08f2e3a");
+
 
         // Terminal Equipments
         public static Guid SpliceClosure_VMC_12Tray = Guid.Parse("c27377df-f5d0-483c-bc35-2ce8ab56c31b");
@@ -193,6 +195,7 @@ namespace OpenFTTH.TestData
         public static Guid Subrack_GPS_72_SC = Guid.Parse("aa8027fc-25d6-498e-98e6-4eb7d634070c");
         public static Guid Subrack_GPS_144_LC = Guid.Parse("d1748de5-de10-45d9-a2a9-1b5b344bf159");
 
+        public static Guid GSS_24_Splitters = Guid.Parse("87e7932e-5192-4914-b3eb-f3564348f682");
 
 
         public FluentResults.Result<TestSpecifications> Run()
@@ -1163,6 +1166,16 @@ namespace OpenFTTH.TestData
                 }
             ));
 
+            // GSS 1:2 splitter
+            AddSpecification(new TerminalStructureSpecification(GSS_1_2_Splitter, "Splitters", "GSS 1:2 Splitter", "1:2 Split",
+                new TerminalTemplate[]
+                {
+                    new TerminalTemplate("ind", TerminalDirectionEnum.IN, true, false) { ConnectorType = "LC/APC", InternalConnectivityNode = "spl" },
+                    new TerminalTemplate("ud1", TerminalDirectionEnum.OUT, true, false) { ConnectorType = "LC/APC", InternalConnectivityNode = "spl" },
+                    new TerminalTemplate("ud2", TerminalDirectionEnum.OUT, true, false) { ConnectorType = "LC/APC", InternalConnectivityNode = "spl" },
+                }
+            ));
+
         }
 
         private void AddTerminalEquipmentSpecifications()
@@ -1380,6 +1393,40 @@ namespace OpenFTTH.TestData
                     new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 4),
                     new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 5),
                     new TerminalStructureTemplate(SplicePatchTray_GPS2_24LC, 6)
+               }
+            )
+            { ManufacturerRefs = new Guid[] { Manu_CommScope } });
+
+
+
+            // GSS with 24 1:2 splitters  
+            AddSpecification(new TerminalEquipmentSpecification(GSS_24_Splitters, "Subrack", "GSS m. 1:2 split komplet", "1:2 Split", true, 4,
+                new TerminalStructureTemplate[]
+                {
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 1),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 2),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 3),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 4),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 5),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 6),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 7),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 8),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 9),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 10),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 11),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 12),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 13),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 14),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 15),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 16),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 17),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 18),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 19),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 20),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 21),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 22),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 23),
+                    new TerminalStructureTemplate(GSS_1_2_Splitter, 24)
                }
             )
             { ManufacturerRefs = new Guid[] { Manu_CommScope } });

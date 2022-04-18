@@ -36,6 +36,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerTerminalEquipmentsAddedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentMovedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentReferenceRemoved>(Apply);
+            Register<NodeContainerRackRemoved>(Apply);
         }
 
         #region Place in network
@@ -88,6 +89,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return Result.Ok();
         }
+
+      
 
         private void Apply(NodeContainerPlacedInRouteNetwork obj)
         {
@@ -215,6 +218,40 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         #endregion
 
+        #region Remove Rack
+        public Result RemoveRack(CommandContext cmdContext, Guid rackId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
+                return Result.Fail(new NodeContainerError(NodeContainerErrorCodes.RACK_ID_NOT_FOUND, $"No rack with id: {rackId} found"));
+
+            var @event = new NodeContainerRackRemoved(
+                   nodeContainerId: this.Id,
+                   rackId: rackId
+                )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerRackRemoved @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        #endregion
 
         #region Remove terminal equipment reference
         public Result RemoveTerminalEquipmentReference(CommandContext cmdContext, Guid terminalEquipmentId)

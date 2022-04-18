@@ -97,13 +97,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // Trace fiber 1 (should not be connected to anything)
-            var fiber1TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
+            var fiber1TraceResult = utilityNetwork.Graph.SimpleTrace(spanEquipment.SpanStructures[1].SpanSegments[0].Id);
 
             fiber1TraceResult.Upstream.Length.Should().Be(0);
             fiber1TraceResult.Downstream.Length.Should().Be(0);
 
             // Trace fiber 2
-            var fiber2TraceResult = utilityNetwork.Graph.Trace(spanEquipment.SpanStructures[2].SpanSegments[0].Id);
+            var fiber2TraceResult = utilityNetwork.Graph.SimpleTrace(spanEquipment.SpanStructures[2].SpanSegments[0].Id);
 
             var upstreamTerminalFromTrace = fiber2TraceResult.Upstream.First(t => t.Id == terminalEquipment.TerminalStructures[0].Terminals[0].Id) as IUtilityGraphTerminalRef;
 
@@ -112,7 +112,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentFromTracedTerminal.Should().Be(terminalEquipment);
 
             // Trace terminal 4
-            var term4TraceResult = utilityNetwork.Graph.Trace(terminalEquipment.TerminalStructures[0].Terminals[5].Id);
+            var term4TraceResult = utilityNetwork.Graph.SimpleTrace(terminalEquipment.TerminalStructures[0].Terminals[5].Id);
 
             term4TraceResult.Downstream.Length.Should().Be(0);
             term4TraceResult.Upstream.Length.Should().Be(2); // a segment and a terminal at the end
@@ -238,13 +238,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectCmdResult.IsSuccess.Should().BeTrue();
 
             // Trace tray 1 fiber 1 (should not be connected to anything)
-            var fiber1TraceResult = utilityNetwork.Graph.Trace(cableSpanEquipment.SpanStructures[1].SpanSegments[0].Id);
+            var fiber1TraceResult = utilityNetwork.Graph.SimpleTrace(cableSpanEquipment.SpanStructures[1].SpanSegments[0].Id);
 
             fiber1TraceResult.Upstream.Length.Should().Be(0);
             fiber1TraceResult.Downstream.Length.Should().Be(0);
 
             // Trace 2
-            var fiber2TraceResult = utilityNetwork.Graph.Trace(cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id);
+            var fiber2TraceResult = utilityNetwork.Graph.SimpleTrace(cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id);
 
             var downstreamTerminalFromTrace = fiber2TraceResult.Downstream.First(t => t.Id == terminalEquipment.TerminalStructures[1].Terminals[0].Id) as IUtilityGraphTerminalRef;
 
@@ -253,7 +253,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentFromTracedTerminal.Should().Be(terminalEquipment);
 
             // Trace tray 1 terminal 1
-            var term4TraceResult = utilityNetwork.Graph.Trace(terminalEquipment.TerminalStructures[1].Terminals[0].Id);
+            var term4TraceResult = utilityNetwork.Graph.SimpleTrace(terminalEquipment.TerminalStructures[1].Terminals[0].Id);
 
             term4TraceResult.Downstream.Length.Should().Be(0);
             term4TraceResult.Upstream.Length.Should().Be(2); // a segment and a terminal at the end
@@ -470,7 +470,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var cableBeforeDisconnect);
 
-            var beforeTrace = utilityNetwork.Graph.Trace(cableBeforeDisconnect.SpanStructures[2].SpanSegments[0].Id);
+            var beforeTrace = utilityNetwork.Graph.SimpleTrace(cableBeforeDisconnect.SpanStructures[2].SpanSegments[0].Id);
             beforeTrace.All.Any(g => g.Id == terminalEquipment.TerminalStructures[1].Terminals[0].Id).Should().BeTrue();
 
 
@@ -497,10 +497,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableAfterDisconnect.SpanStructures[2].SpanSegments[0].FromTerminalId.Should().BeEmpty();
             cableAfterDisconnect.SpanStructures[3].SpanSegments[0].FromTerminalId.Should().BeEmpty();
         
-            var afterTraceFiber2 = utilityNetwork.Graph.Trace(cableAfterDisconnect.SpanStructures[2].SpanSegments[0].Id);
+            var afterTraceFiber2 = utilityNetwork.Graph.SimpleTrace(cableAfterDisconnect.SpanStructures[2].SpanSegments[0].Id);
             afterTraceFiber2.All.Any(g => g.Id == terminalEquipment.TerminalStructures[1].Terminals[0].Id).Should().BeFalse();
 
-            var afterTraceFiber3 = utilityNetwork.Graph.Trace(cableAfterDisconnect.SpanStructures[3].SpanSegments[0].Id);
+            var afterTraceFiber3 = utilityNetwork.Graph.SimpleTrace(cableAfterDisconnect.SpanStructures[3].SpanSegments[0].Id);
             afterTraceFiber2.All.Any(g => g.Id == terminalEquipment.TerminalStructures[1].Terminals[1].Id).Should().BeFalse();
         }
 
@@ -556,7 +556,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             connectCmdResult.IsSuccess.Should().BeTrue();
 
-            var trace = utilityNetwork.Graph.Trace(cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id);
+            var trace = utilityNetwork.Graph.SimpleTrace(cableSpanEquipment.SpanStructures[2].SpanSegments[0].Id);
             trace.All.Any(g => g.Id == terminalEquipment.TerminalStructures[1].Terminals[0].Id).Should().BeTrue();
 
         }

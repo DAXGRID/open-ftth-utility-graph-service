@@ -205,7 +205,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                 {
                     TraceInfo traceInfo = new TraceInfo();
 
-                    var terminalTraceResult = _utilityNetwork.Graph.Trace(segment.Id);
+                    var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(segment.Id);
 
                     if (terminalTraceResult != null)
                     {

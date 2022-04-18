@@ -130,7 +130,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async Task PlaceRackAndEquipmentInCO_1_ShouldSucceed()
+        public async Task PlaceRackInCO_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -158,6 +158,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placeRackResult.IsSuccess.Should().BeTrue();
         }
 
+
+
+        
         [Fact, Order(4)]
         public async Task PlaceRackEquipmentInCO_1_ShouldSucceed()
         {
@@ -173,8 +176,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainerId: sutNodeContainerId,
             Guid.NewGuid(),
             terminalEquipmentSpecificationId: TestSpecifications.Subrack_LISA_APC_UPC,
-            numberOfEquipments: 1,
-            startSequenceNumber: 5,
+            numberOfEquipments: 80,
+            startSequenceNumber: 1,
             namingMethod: TerminalEquipmentNamingMethodEnum.NumberOnly,
             namingInfo: null
              )
@@ -189,6 +192,70 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Assert
             placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+        
+        [Fact, Order(5)]
+        public async Task PlaceSplitterInCORack1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                nodeContainerId: sutNodeContainer,
+                Guid.NewGuid(),
+                terminalEquipmentSpecificationId: TestSpecifications.GSS_24_Splitters,
+                numberOfEquipments: 1,
+                startSequenceNumber: 1,
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
+                namingInfo: new Events.Core.Infos.NamingInfo() { Name = "24 stk 1:2 Splittere"}
+            )
+            {
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 40, SubrackPlacmentMethod.BottomUp)
+            };
+
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+
+            var nodeContainerQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { placeEquipmentCmd.NodeContainerId })
+            );
+
+            var nodeContainer = nodeContainerQueryResult.Value.NodeContainers.First();
+
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList(nodeContainer.Racks[0].SubrackMounts.Select(s => s.TerminalEquipmentId)))
+            );
+
+            var firstMount = nodeContainer.Racks[0].SubrackMounts[40];
+            var sutEquipment = equipmentQueryResult.Value.TerminalEquipment[firstMount.TerminalEquipmentId];
+
+
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+            nodeContainerQueryResult.IsSuccess.Should().BeTrue();
+            equipmentQueryResult.IsSuccess.Should().BeTrue();
+
+            // Try simple trace of splitter 1 terminal 1 (in port) - should return nothing
+            var splitter1terminal1traceResult = utilityNetwork.Graph.SimpleTrace(sutEquipment.TerminalStructures.First().Terminals.First().Id);
+            splitter1terminal1traceResult.Upstream.Length.Should().Be(0);
+            splitter1terminal1traceResult.Downstream.Length.Should().Be(0);
+
+
+            // Try advanced trace of splitter 1 terminal 1 (in port) - should return the two output terminals downstream
+            var splitter1terminal1advancedTraceResult = utilityNetwork.Graph.AdvancedTrace(sutEquipment.TerminalStructures.First().Terminals.First().Id);
+            //splitter1terminal1advancedTraceResult.Upstream.Length.Should().Be(0);
+            //splitter1terminal1advancedTraceResult.Downstream.Length.Should().Be(4);
+
+
+
         }
     }
 }

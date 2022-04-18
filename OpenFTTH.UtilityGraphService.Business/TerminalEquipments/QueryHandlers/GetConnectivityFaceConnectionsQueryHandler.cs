@@ -81,7 +81,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             // TODO: Support making breakout on cable
             var spanSegmentId = spanEquipment.SpanStructures[structureIndex].SpanSegments[0].Id;
 
-            var spanSegmentTraceResult = _utilityNetwork.Graph.Trace(spanSegmentId);
+            var spanSegmentTraceResult = _utilityNetwork.Graph.SimpleTrace(spanSegmentId);
 
             bool isConnected = CheckIfCableIsConnected(spanSegmentTraceResult, query.routeNodeId, query.FaceType);
 
@@ -143,7 +143,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
 
-            var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
+            var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(terminal.Id);
 
             bool isConnected = CheckIfTerminalIsConnected(terminalTraceResult, query.FaceType);
 

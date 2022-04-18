@@ -371,7 +371,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 {
                     TraceInfo traceInfo = new TraceInfo();
 
-                    var terminalTraceResult = _utilityNetwork.Graph.Trace(terminal.Id);
+                    var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(terminal.Id);
 
                     if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminal.Id, out var terminalRef))
                     {

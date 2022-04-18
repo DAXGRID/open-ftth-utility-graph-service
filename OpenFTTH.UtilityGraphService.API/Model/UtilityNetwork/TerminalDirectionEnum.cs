@@ -2,8 +2,8 @@
 {
     public enum TerminalDirectionEnum
     {
-        LEFT = 1,
-        RIGHT = 2,
+        IN = 1,
+        OUT = 2,
         BI = 3
     }
 }

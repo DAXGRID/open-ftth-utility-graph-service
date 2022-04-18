@@ -158,7 +158,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
         {
             IntermidiateTraceResult result = new();
 
-            var spanTraceResult = _utilityNetwork.Graph.Trace(spanSegmentIdToTrace);
+            var spanTraceResult = _utilityNetwork.Graph.SimpleTrace(spanSegmentIdToTrace);
 
             // We're dealing with a connected segment if non-empty trace result is returned
             if (spanTraceResult.Upstream.Length > 0)

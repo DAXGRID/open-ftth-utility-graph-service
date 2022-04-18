@@ -52,7 +52,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
         private Result<ConnectivityTraceView> BuildTraceViewFromTerminal(IUtilityGraphTerminalRef sourceTerminalRef)
         {
-            var traceResult = _utilityNetwork.Graph.Trace(sourceTerminalRef.TerminalId);
+            var traceResult = _utilityNetwork.Graph.SimpleTrace(sourceTerminalRef.TerminalId);
 
             List<IGraphObject> traceElements = new();
 
@@ -110,7 +110,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
         private Result<ConnectivityTraceView> BuildTraceViewFromSegment(Guid spanSegmentId, IUtilityGraphSegmentRef utilityGraphSegmentRef)
         {
-            var traceResult = _utilityNetwork.Graph.Trace(spanSegmentId);
+            var traceResult = _utilityNetwork.Graph.SimpleTrace(spanSegmentId);
 
             List<IGraphObject> traceElements = traceResult.All;
 

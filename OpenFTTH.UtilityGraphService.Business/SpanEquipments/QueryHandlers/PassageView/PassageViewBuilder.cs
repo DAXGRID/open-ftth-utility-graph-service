@@ -84,7 +84,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
                     {
                         var firstSegmentId = utilityHop.ParentAffixes[0].SpanSegmentId;
 
-                        var spanTraceResult = _utilityNetwork.Graph.Trace(firstSegmentId);
+                        var spanTraceResult = _utilityNetwork.Graph.SimpleTrace(firstSegmentId);
 
                         // Add the interest of the span equipment holding the first span segment
                         if (_utilityNetwork.TryGetEquipment<SpanEquipment>(firstSegmentId, out var spanEquipment))
@@ -113,7 +113,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
 
             if (_segmentIdToTrace != null)
             {
-                var spanTraceResult = _utilityNetwork.Graph.Trace(_segmentIdToTrace.Value);
+                var spanTraceResult = _utilityNetwork.Graph.SimpleTrace(_segmentIdToTrace.Value);
 
                 // Add the interest of the span equipment holding the first span segment
                 if (_utilityNetwork.TryGetEquipment<SpanEquipment>(_segmentIdToTrace.Value, out var spanEquipment))
@@ -180,7 +180,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
         {
             List<SegmentTraceHopInfo> tracedHopsToReturn = new();
 
-            var spanTraceResult = _utilityNetwork.Graph.Trace(segmentIdToTrace);
+            var spanTraceResult = _utilityNetwork.Graph.SimpleTrace(segmentIdToTrace);
 
             // If hop is a disconnected segment
             if (spanTraceResult.Source == null)

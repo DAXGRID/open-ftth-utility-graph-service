@@ -131,6 +131,39 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(3)]
+        public async Task RemoveRackInJ1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.J_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_J_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get rack
+            var rackToBeRemoved = nodeContainer.Racks.First();
+
+            // Remove it
+            var removeCmd = new RemoveRackFromNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutNodeId, rackToBeRemoved.Id);
+
+            var removeResult = await _commandDispatcher.HandleAsync<RemoveRackFromNodeContainer, Result>(removeCmd);
+
+            // Assert
+            removeResult.IsSuccess.Should().BeTrue();
+
+            // Check that rack is removed from node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerAfterRackRemoval);
+            nodeContainerAfterRackRemoval.Racks.Any(r => r.Id == rackToBeRemoved.Id).Should().BeFalse();
+
+            // Check that terminal equipmens within rack are removed as well
+            foreach (var subrackMount in rackToBeRemoved.SubrackMounts)
+            {
+                utilityNetwork.TryGetEquipment<TerminalEquipment>(subrackMount.TerminalEquipmentId, out _).Should().BeFalse();
+            }
+        }
+
 
         [Fact, Order(10)]
         public async Task RemoveFirstClosureFromCC1_ShouldFail_BecauseItHasConnections()

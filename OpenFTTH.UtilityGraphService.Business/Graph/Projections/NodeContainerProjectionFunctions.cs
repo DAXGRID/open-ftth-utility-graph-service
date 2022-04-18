@@ -50,6 +50,26 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerRackRemoved @event)
+        {
+            List<Rack> newRackList = new();
+
+            if (existingEquipment.Racks != null)
+            {
+                foreach (var rack in existingEquipment.Racks)
+                {
+                    if (rack.Id != @event.RackId)
+                        newRackList.Add(rack);
+                }
+            }
+
+            return existingEquipment with
+            {
+                Racks = newRackList.ToArray()
+            };
+        }
+
+
         public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalEquipmentAdded @event)
         {
             List<Guid> newTerminalEquipmentRefList = new();
@@ -282,6 +302,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 return existingEquipment;
             }
         }
+
 
 
     }

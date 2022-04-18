@@ -327,7 +327,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
-        [Fact, Order(12)]
+        [Fact, Order(50)]
         public async Task PlaceCustomerTerminalEquipmentInSDU1_ShouldSucceed()
         {
             var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
@@ -362,7 +362,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(100)]
-        public async Task QueryConnectivityInfoOneFirstTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        public async Task QueryConnectivityInfoOneFirstTerminalEquipmentInJ1Rack1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.J_1;
@@ -399,7 +399,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(101)]
-        public async Task QueryConnectivityInfoOneAllTerminalEquipmentInCC1Rack1_ShouldSucceed()
+        public async Task QueryConnectivityInfoOneAllTerminalEquipmentInJ1Rack1_ShouldSucceed()
         {
             // Setup
             var sutRouteNodeId = TestRouteNetwork.J_1;

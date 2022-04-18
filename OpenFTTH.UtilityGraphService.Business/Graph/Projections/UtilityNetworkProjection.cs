@@ -81,6 +81,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerSpecificationChanged>(Project);
             ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
             ProjectEvent<NodeContainerRackAdded>(Project);
+            ProjectEvent<NodeContainerRackRemoved>(Project);
             ProjectEvent<NodeContainerRackSpecificationChanged>(Project);
             ProjectEvent<NodeContainerRackNameChanged>(Project);
             ProjectEvent<NodeContainerRackHeightInUnitsChanged>(Project);
@@ -284,6 +285,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
 
+                case (NodeContainerRackRemoved @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
                 case (NodeContainerRackSpecificationChanged @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
@@ -438,6 +443,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             var nodeContainer = _nodeContainerByEquipmentId[terminalEquipment.NodeContainerId];
 
+
+            HashSet<Guid> internalNodes = new();
+
             // Add terminals to the graph
             for (UInt16 structureIndex = 0; structureIndex < terminalEquipment.TerminalStructures.Length; structureIndex++)
             {
@@ -449,8 +457,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     // We're dealing with a virgin terminal
                     _utilityGraph.AddDisconnectedTerminal(nodeContainer.RouteNodeId, terminalEquipment, terminal.Id, structureIndex, terminalIndex);
+
+                    // Add eventually internal node
+                    if (terminal.InternalConnectivityNodeId != null && terminal.InternalConnectivityNodeId != Guid.Empty)
+                        internalNodes.Add(terminal.InternalConnectivityNodeId.Value);
                 }
             }
+
+            // If we're dealing with a terminal equipment with internal nodes, we need connect them in the graph
+            if (internalNodes.Count > 0)
+            {
+                // First create all the internal nodes in the graph
+                UtilityGraphTerminalEquipmentProjections.ApplyInternalConnectivityToGraph(nodeContainer, terminalEquipment, Graph);
+            }
+
         }
 
         private void StoreAndIndexVirginContainerEquipment(NodeContainer nodeContainer)
