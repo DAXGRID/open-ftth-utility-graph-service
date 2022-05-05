@@ -162,7 +162,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             // If segment follow terminal, then write span segment information in connection info
             if (graphElementIndex < (traceElements.Count - 1))
             {
-                return GetSpanConnectionInfo(relatedData, traceElements[graphElementIndex + 1] as IUtilityGraphSegmentRef);
+                var graphElement = traceElements[graphElementIndex + 1];
+
+                if (graphElement is UtilityGraphConnectedSegment)
+                {
+                    return GetSpanConnectionInfo(relatedData, traceElements[graphElementIndex + 1] as IUtilityGraphSegmentRef);
+                }
+                else
+                {
+                    return "Patch coord";
+                }
             }
             else
             {

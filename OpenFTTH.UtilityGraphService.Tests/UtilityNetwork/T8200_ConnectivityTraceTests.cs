@@ -56,7 +56,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var hops = connectivityTraceQueryResult.Value.Hops;
 
-            hops.Length.Should().Be(3);
+            hops.Length.Should().Be(5);
             hops[0].HopSeqNo.Should().Be(1);
             hops[1].HopSeqNo.Should().Be(2);
         }
@@ -74,7 +74,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Get node container
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
 
-            // Get equipment
+            // Get first lisa tray in rack
             utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId, out var terminalEquipment);
 
 
@@ -87,7 +87,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var hops = connectivityTraceQueryResult.Value.Hops;
 
-            hops.Length.Should().Be(3);
+            hops.Length.Should().Be(5);
             hops[0].HopSeqNo.Should().Be(1);
             hops[1].HopSeqNo.Should().Be(2);
 

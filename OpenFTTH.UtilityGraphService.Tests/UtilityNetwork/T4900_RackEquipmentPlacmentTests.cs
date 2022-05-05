@@ -21,15 +21,15 @@ using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-    [Order(551)]
-    public class T0551_NodeContainerRackTests
+    [Order(4900)]
+    public class T4900_RackEquipmentPlacmenentTests
     {
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly FakeExternalEventProducer _externalEventProducer;
 
-        public T0551_NodeContainerRackTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public T4900_RackEquipmentPlacmenentTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;
@@ -130,7 +130,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         [Fact, Order(3)]
-        public async Task PlaceRackInCO_1_ShouldSucceed()
+        public async Task PlaceODFRackInCO_1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -144,7 +144,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 sutNodeContainerId,
                 Guid.NewGuid(),
                 TestSpecifications.Rack_ESTI,
-                "Rack 2",
+                "ODF",
                 80
             );
 
@@ -158,11 +158,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placeRackResult.IsSuccess.Should().BeTrue();
         }
 
-
-
         
         [Fact, Order(4)]
-        public async Task PlaceRackEquipmentInCO_1_ShouldSucceed()
+        public async Task Place80LisaTraysInODFRackInCO1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
@@ -195,7 +193,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
         
         [Fact, Order(5)]
-        public async Task PlaceSplitterInCORack1_ShouldSucceed()
+        public async Task Place_1_to_2_SplitterGSSInODFRackInCO1_ShouldSucceed()
         {
             // Setup
             var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
@@ -213,7 +211,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 numberOfEquipments: 1,
                 startSequenceNumber: 1,
                 namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
-                namingInfo: new Events.Core.Infos.NamingInfo() { Name = "24 stk 1:2 Splittere"}
+                namingInfo: new Events.Core.Infos.NamingInfo() { Name = "1:2 Split"}
             )
             {
                 SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 40, SubrackPlacmentMethod.BottomUp)
@@ -253,10 +251,99 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var splitter1terminal1advancedTraceResult = utilityNetwork.Graph.AdvancedTrace(sutEquipment.TerminalStructures.First().Terminals.First().Id);
             //splitter1terminal1advancedTraceResult.Upstream.Length.Should().Be(0);
             //splitter1terminal1advancedTraceResult.Downstream.Length.Should().Be(4);
-
-
-
         }
+
+        [Fact, Order(6)]
+        public async Task PlaceEmplyLISASplitterHolderInODFRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                nodeContainerId: sutNodeContainer,
+                Guid.NewGuid(),
+                terminalEquipmentSpecificationId: TestSpecifications.LISA_SplitterHolder,
+                numberOfEquipments: 1,
+                startSequenceNumber: 1,
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
+                namingInfo: new Events.Core.Infos.NamingInfo() { Name = "1:32 Split" }
+            )
+            {
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 84, SubrackPlacmentMethod.BottomUp)
+            };
+
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+
+            var nodeContainerQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList() { placeEquipmentCmd.NodeContainerId })
+            );
+
+            var nodeContainer = nodeContainerQueryResult.Value.NodeContainers.First();
+
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new EquipmentIdList(nodeContainer.Racks[0].SubrackMounts.Select(s => s.TerminalEquipmentId)))
+            );
+
+            // Get last mount which should be the splitter placed at the top
+            var splitterMount = nodeContainer.Racks[0].SubrackMounts.Last();
+            var sutEquipment = equipmentQueryResult.Value.TerminalEquipment[splitterMount.TerminalEquipmentId];
+
+            sutEquipment.Name.Should().Be("1:32 Split");
+            sutEquipment.TerminalStructures.Length.Should().Be(0);
+
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(7)]
+        public async Task PlaceSplitterInLISASplitterHolderInODFRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get last mount which should be the splitter placed at the top
+            var splitterMount = nodeContainerBeforeCommand.Racks[0].SubrackMounts.Last();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var placeEquipmentCmd = new PlaceAdditionalStructuresInTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                structureSpecificationId: TestSpecifications.LISA_1_32_Splitter,
+                position: 1,
+                numberOfStructures: 4
+            );
+           
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
+
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentAfterUpdate);
+        
+            terminalEquipmentAfterUpdate.TerminalStructures.Length.Should().Be(4);
+
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(terminalEquipmentAfterUpdate.TerminalStructures.First().Terminals.First().Id, out var firstTerminalInGraph);
+
+            firstTerminalInGraph.Should().NotBeNull();
+        }
+
+
     }
 }
 

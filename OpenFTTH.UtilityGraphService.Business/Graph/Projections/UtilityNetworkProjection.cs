@@ -73,6 +73,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<TerminalEquipmentManufacturerChanged>(Project);
             ProjectEvent<TerminalEquipmentSpecificationChanged>(Project);
             ProjectEvent<TerminalEquipmentRemoved>(Project);
+            ProjectEvent<AdditionalStructuresAddedToTerminalEquipment>(Project);
+
 
             // Node container
             ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
@@ -88,6 +90,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerTerminalEquipmentAdded>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentsAddedToRack>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentReferenceRemoved>(Project);
+            ProjectEvent<NodeContainerTerminalsConnected>(Project);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -259,6 +262,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessTerminalEquipmentRemoval(@event);
                     break;
 
+                case (AdditionalStructuresAddedToTerminalEquipment @event):
+                    ProcessTerminalEquipmentAdditionalStructuresAdded(@event);
+                    break;
+
+
+                    
+
 
                 // Node container events
                 case (NodeContainerPlacedInRouteNetwork @event):
@@ -312,7 +322,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (NodeContainerTerminalEquipmentReferenceRemoved @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
+
+                case (NodeContainerTerminalsConnected @event):
+                    ProcessTerminalsConnected(@event);
+                    break;
             }
+        }
+
+       
+        private void ProcessTerminalsConnected(NodeContainerTerminalsConnected @event)
+        {
+            var existingNodeContainer = _nodeContainerByEquipmentId[@event.NodeContainerId];
+            TryUpdate(NodeContainerProjectionFunctions.Apply(existingNodeContainer, @event));
+
+            UtilityGraphTerminalEquipmentProjections.ApplyTerminalToTerminalConnectionToGraph(@event, existingNodeContainer.RouteNodeId, _utilityGraph);
         }
 
         private void ProcessSpanEquipmentParentDetach(SpanEquipmentDetachedFromParent @event)
@@ -443,34 +466,18 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             var nodeContainer = _nodeContainerByEquipmentId[terminalEquipment.NodeContainerId];
 
+            UtilityGraphTerminalEquipmentProjections.ApplyConnectivityToGraph(terminalEquipment, nodeContainer, Graph);
+        }
 
-            HashSet<Guid> internalNodes = new();
+        private void ProcessTerminalEquipmentAdditionalStructuresAdded(AdditionalStructuresAddedToTerminalEquipment @event)
+        {
+            var before = _terminalEquipmentByEquipmentId[@event.TerminalEquipmentId];
+            var after = TerminalEquipmentProjectionFunctions.Apply(before, @event);
+            TryUpdate(after);
 
-            // Add terminals to the graph
-            for (UInt16 structureIndex = 0; structureIndex < terminalEquipment.TerminalStructures.Length; structureIndex++)
-            {
-                var terminalStructure = terminalEquipment.TerminalStructures[structureIndex];
+            var nodeContainer = _nodeContainerByEquipmentId[after.NodeContainerId];
 
-                for (UInt16 terminalIndex = 0; terminalIndex < terminalStructure.Terminals.Length; terminalIndex++)
-                {
-                    var terminal = terminalStructure.Terminals[terminalIndex];
-
-                    // We're dealing with a virgin terminal
-                    _utilityGraph.AddDisconnectedTerminal(nodeContainer.RouteNodeId, terminalEquipment, terminal.Id, structureIndex, terminalIndex);
-
-                    // Add eventually internal node
-                    if (terminal.InternalConnectivityNodeId != null && terminal.InternalConnectivityNodeId != Guid.Empty)
-                        internalNodes.Add(terminal.InternalConnectivityNodeId.Value);
-                }
-            }
-
-            // If we're dealing with a terminal equipment with internal nodes, we need connect them in the graph
-            if (internalNodes.Count > 0)
-            {
-                // First create all the internal nodes in the graph
-                UtilityGraphTerminalEquipmentProjections.ApplyInternalConnectivityToGraph(nodeContainer, terminalEquipment, Graph);
-            }
-
+            UtilityGraphTerminalEquipmentProjections.ApplyConnectivityToGraph(after, nodeContainer, @event.TerminalStructuresToAdd.Select(t => t.Id).ToHashSet(), Graph);
         }
 
         private void StoreAndIndexVirginContainerEquipment(NodeContainer nodeContainer)

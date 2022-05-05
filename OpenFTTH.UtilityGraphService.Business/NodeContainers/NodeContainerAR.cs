@@ -5,6 +5,7 @@ using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
@@ -28,15 +29,18 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerVerticalAlignmentReversed>(Apply);
             Register<NodeContainerManufacturerChanged>(Apply);
             Register<NodeContainerSpecificationChanged>(Apply);
+
             Register<NodeContainerRackAdded>(Apply);
+            Register<NodeContainerRackRemoved>(Apply);
             Register<NodeContainerRackSpecificationChanged>(Apply);
             Register<NodeContainerRackNameChanged>(Apply);
             Register<NodeContainerRackHeightInUnitsChanged>(Apply);
+
             Register<NodeContainerTerminalEquipmentAdded>(Apply);
             Register<NodeContainerTerminalEquipmentsAddedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentMovedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentReferenceRemoved>(Apply);
-            Register<NodeContainerRackRemoved>(Apply);
+            Register<NodeContainerTerminalsConnected>(Apply);
         }
 
         #region Place in network
@@ -89,7 +93,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return Result.Ok();
         }
-
       
 
         private void Apply(NodeContainerPlacedInRouteNetwork obj)
@@ -287,7 +290,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
         #endregion
-
 
         #region Reverse vertical content alignment
         public Result ReverseVerticalContentAlignment(CommandContext cmdContext)
@@ -493,6 +495,121 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             }
 
             return startUnitPosition;
+        }
+
+        #endregion
+
+        #region Connect Terminals
+        public Result ConnectTerminals(CommandContext cmdContext, UtilityGraph graph, TerminalEquipment fromTerminalEquipment, Guid fromTerminalId, TerminalEquipment toTerminalEquipment, Guid toTerminalId, double fiberCoordLength)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (!CheckIfTerminalReferenceExistsInContainer(fromTerminalEquipment.Id))
+                throw new ApplicationException($"Terminal equipment with id: {fromTerminalEquipment.Id} not found in node container with id: {this.Id}");
+
+            if (!CheckIfTerminalReferenceExistsInContainer(toTerminalEquipment.Id))
+                throw new ApplicationException($"Terminal equipment with id: {toTerminalEquipment.Id} not found in node container with id: {this.Id}");
+            
+            if (!CheckIfTerminalExistsInEquipment(fromTerminalEquipment, fromTerminalId))
+                throw new ApplicationException($"Terminal with id: {fromTerminalId} not found in terminal equipment with id: {fromTerminalEquipment.Id} Error trying to connect terminals in node container with id: {this.Id}");
+
+            if (!CheckIfTerminalExistsInEquipment(toTerminalEquipment, toTerminalId))
+                throw new ApplicationException($"Terminal with id: {toTerminalId} not found in terminal equipment with id: {toTerminalEquipment.Id} Error trying to connect terminals in node container with id: {this.Id}");
+        
+            if (fromTerminalId == toTerminalId)
+                throw new ApplicationException($"Terminal with id: {toTerminalId} can't be connected to itself. Error trying to connect terminals in node container with id: {this.Id}");
+
+            if (IsTerminalConnected(graph, fromTerminalEquipment, fromTerminalId))
+                return Result.Fail(new ConnectTerminalsAtRouteNodeError(ConnectTerminalsAtRouteNodeErrorCodes.TERMINAL_ALREADY_CONNECTED, $"The terminal with id: {fromTerminalId} in terminal equipment with id: {fromTerminalEquipment.Id} is allready fully connected"));
+
+            if (IsTerminalConnected(graph, toTerminalEquipment, toTerminalId))
+                return Result.Fail(new ConnectTerminalsAtRouteNodeError(ConnectTerminalsAtRouteNodeErrorCodes.TERMINAL_ALREADY_CONNECTED, $"The terminal with id: {toTerminalId} in terminal equipment with id: {toTerminalEquipment.Id} is allready fully connected"));
+
+            var e = new NodeContainerTerminalsConnected(
+                  connectionId: Guid.NewGuid(),
+                  nodeContainerId: this.Id,
+                  fromTerminalEquipmentId: fromTerminalEquipment.Id,
+                  fromTerminalId: fromTerminalId,
+                  toTerminalEquipmentId: toTerminalEquipment.Id,
+                  toTerminalId: toTerminalId,
+                  fiberCoordLength: fiberCoordLength
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(e);
+
+            return Result.Ok();
+
+        }
+
+        private void Apply(NodeContainerTerminalsConnected @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        private bool CheckIfTerminalExistsInEquipment(TerminalEquipment fromTerminalEquipment, Guid fromTerminalId)
+        {
+            foreach (var terminalStructure in fromTerminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    if (terminal.Id == fromTerminalId)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+
+        private bool IsTerminalConnected(UtilityGraph graph, TerminalEquipment _terminalEquipment, Guid terminalId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.TerminalToTerminalConnections != null && _container.TerminalToTerminalConnections.Any(t => t.FromTerminalId == terminalId))
+                return true;
+
+            if (_container.TerminalToTerminalConnections != null && _container.TerminalToTerminalConnections.Any(t => t.ToTerminalId == terminalId))
+                return true;
+
+            var version = graph.LatestCommitedVersion;
+
+            foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    if (terminal.Id == terminalId)
+                    {
+                        var terminalElement = graph.GetTerminal(terminal.Id, version);
+
+                        if (terminalElement != null && terminalElement is UtilityGraphConnectedTerminal connectedTerminal)
+                        {
+                            if (terminal.Direction == TerminalDirectionEnum.BI)
+                            {
+                                if (connectedTerminal.NeighborElements(version).Count > 1)
+                                    return true;
+                            }
+                            else
+                            {
+                                if (connectedTerminal.NeighborElements(version).Where(n => !(n is UtilityGraphInternalEquipmentConnectivityLink)).Count() > 0)
+                                    return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         #endregion

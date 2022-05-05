@@ -9,6 +9,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 {
@@ -27,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             Register<TerminalEquipmentAddressInfoChanged>(Apply);
             Register<TerminalEquipmentManufacturerChanged>(Apply);
             Register<TerminalEquipmentSpecificationChanged>(Apply);
+            Register<AdditionalStructuresAddedToTerminalEquipment>(Apply);
         }
 
         #region Place
@@ -83,6 +85,36 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             return Result.Ok();
         }
 
+        public Result AddAdditionalStructures(CommandContext cmdContext, TerminalStructureSpecification terminalStructureSpecification, int startPosition, int numberOfStructures)
+        {
+            List<TerminalStructure> additionalStructures = new();
+
+            for (int position = startPosition; position < startPosition + numberOfStructures; position++)
+            {
+                additionalStructures.Add(CreateTerminalStructureFromSpecification(terminalStructureSpecification, position));
+            }
+
+            var terminalEquipmentAdditionalStructuresAddedEvent = new AdditionalStructuresAddedToTerminalEquipment(this.Id, additionalStructures.ToArray())
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(terminalEquipmentAdditionalStructuresAddedEvent);
+
+            return Result.Ok();
+        }
+
+        private void Apply(AdditionalStructuresAddedToTerminalEquipment @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
+        }
+
         private TerminalStructure[] CreateTerminalStructuresFromSpecification(TerminalEquipmentSpecification terminalEquipmentSpecification, LookupCollection<TerminalStructureSpecification> terminalStructureSpecifications)
         {
             List<TerminalStructure> terminalStructures = new();
@@ -91,34 +123,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             {
                 if (terminalStructureSpecifications.TryGetValue(structureTemplate.TerminalStructureSpecificationId, out var terminalStructureSpecification))
                 {
-                    Dictionary<string, Guid> internalConnectivityNodesByName = new();
-
-                    List<Terminal> terminals = new();
-
-                    foreach (var terminalTemplate in terminalStructureSpecification.TerminalTemplates)
-                    {
-                        // Create internal connectivity node if specified in template and don't exist yet
-                        if (terminalTemplate.InternalConnectivityNode != null)
-                        {
-                            if (!internalConnectivityNodesByName.TryGetValue(terminalTemplate.InternalConnectivityNode, out var _))
-                            {
-                                internalConnectivityNodesByName.Add(terminalTemplate.InternalConnectivityNode, Guid.NewGuid());
-                            }
-                        }
-
-                        // Get id of eventually specificed internal connectivity node
-                        Guid internalConnectivityNodeId = terminalTemplate.InternalConnectivityNode == null ? Guid.Empty : internalConnectivityNodesByName[terminalTemplate.InternalConnectivityNode];
-
-                        // A non-bi terminal must always be connected to an internal connectivity node
-                        if (terminalTemplate.Direction != TerminalDirectionEnum.BI && internalConnectivityNodeId == Guid.Empty)
-                            throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipmentSpecification.Id} All non-bi terminals must reference an internal connectivity node");
-
-                        terminals.Add(
-                            new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType, internalConnectivityNodeId)
-                        );
-                    }
-
-                    terminalStructures.Add(new TerminalStructure(Guid.NewGuid(), structureTemplate.TerminalStructureSpecificationId, structureTemplate.Position, terminals.ToArray()));
+                    terminalStructures.Add(
+                        CreateTerminalStructureFromSpecification(terminalStructureSpecification, structureTemplate.Position)
+                    );
                 }
                 else
                 {
@@ -127,6 +134,41 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             }
 
             return terminalStructures.ToArray();
+        }
+
+        private TerminalStructure CreateTerminalStructureFromSpecification(TerminalStructureSpecification terminalStructureSpecification, int position)
+        {
+            if (_terminalEquipment != null && _terminalEquipment.TerminalStructures.Any(s => s.Position == position))
+                throw new ApplicationException($"A structure already exists at position: {position} in terminal equipment: {_terminalEquipment.Id}");
+
+            Dictionary<string, Guid> internalConnectivityNodesByName = new();
+
+            List<Terminal> terminals = new();
+
+            foreach (var terminalTemplate in terminalStructureSpecification.TerminalTemplates)
+            {
+                // Create internal connectivity node if specified in template and don't exist yet
+                if (terminalTemplate.InternalConnectivityNode != null)
+                {
+                    if (!internalConnectivityNodesByName.TryGetValue(terminalTemplate.InternalConnectivityNode, out var _))
+                    {
+                        internalConnectivityNodesByName.Add(terminalTemplate.InternalConnectivityNode, Guid.NewGuid());
+                    }
+                }
+
+                // Get id of eventually specificed internal connectivity node
+                Guid internalConnectivityNodeId = terminalTemplate.InternalConnectivityNode == null ? Guid.Empty : internalConnectivityNodesByName[terminalTemplate.InternalConnectivityNode];
+
+                // A non-bi terminal must always be connected to an internal connectivity node
+                if (terminalTemplate.Direction != TerminalDirectionEnum.BI && internalConnectivityNodeId == Guid.Empty)
+                    throw new ApplicationException($"Invalid/corrupted terminal structure specification: {terminalStructureSpecification.Id} All non-bi terminals must reference an internal connectivity node");
+
+                terminals.Add(
+                    new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType, internalConnectivityNodeId)
+                );
+            }
+      
+            return new TerminalStructure(Guid.NewGuid(), terminalStructureSpecification.Id, (ushort)position, terminals.ToArray());
         }
 
 

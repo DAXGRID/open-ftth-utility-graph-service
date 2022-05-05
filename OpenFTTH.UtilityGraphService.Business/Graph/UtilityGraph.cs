@@ -101,10 +101,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
         {
-            var downstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+
+            var downstreamTrace = connectedSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
-                n => n != connectedSegment.OutV(version),
-                e => e.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)
+                n => n != connectedSegment.OutV(version) && terminalTracker.Add(n),
+                e => terminalTracker.ContinueTrace(e)
             ).ToList();
 
             var lastDownstreamObject = downstreamTrace.Last();
@@ -125,17 +127,19 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            return downstreamTrace;
+            return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
         }
 
         private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version)
         {
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+
             var lastSegment = terminal.NeighborElements(version).Last();
 
-            var downstreamTrace = lastSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
+            var downstreamTrace = lastSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
-                n => n != terminal,
-                e => e.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)
+                n => n != terminal && terminalTracker.Add(n),
+                e => terminalTracker.ContinueTrace(e)
             ).ToList();
 
             var lastDownstreamObject = downstreamTrace.Last();
@@ -156,15 +160,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            return downstreamTrace;
+            return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
         }
 
         private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
         {
-            var upstreamTrace = connectedSegment.UndirectionalDFS<UtilityGraphConnectedTerminal, UtilityGraphConnectedSegment>(
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+
+            var upstreamTrace = connectedSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
-                n => n != connectedSegment.InV(version),
-                e => e.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)
+                n => n != connectedSegment.InV(version) && terminalTracker.Add(n),
+                e => terminalTracker.ContinueTrace(e)
             ).ToList();
 
             var lastUpstreamObject = upstreamTrace.Last();
@@ -185,18 +191,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            return upstreamTrace;
+            return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
         }
 
         private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version)
         {
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+
             var firstSegment = terminal.NeighborElements(version).First();
 
             var upstreamTrace = firstSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
-                n => n != terminal,
-                e => e.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)
-            ).ToList();
+                n => n != terminal && terminalTracker.Add(n),
+                e => terminalTracker.ContinueTrace(e)
+             ).ToList();
 
             var lastUpstreamObject = upstreamTrace.Last();
 
@@ -215,9 +223,102 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     throw new ApplicationException($"Last element in upstream trace was a UtilityGraphConnectedSegment with id: {lastUpstreamSegment.Id}, not a terminal. However, the segment seems to have to have an upstream terminal connection. Something wrong!");
                 }
             }
-
-            return upstreamTrace;
+            
+            return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
         }
+
+        private class SimpleTraceHelper
+        {
+            private readonly UtilityNetworkProjection _utilityNetworkProjection;
+            private readonly long _version;
+            private bool _upstreamTrace;
+
+            HashSet<UtilityGraphConnectedTerminal> visited = new();
+
+            public IGraphNode LastVisit = null;
+
+            public SimpleTraceHelper(UtilityNetworkProjection utilityNetworkProjection, long version)
+            {
+                _utilityNetworkProjection = utilityNetworkProjection;
+                _version = version;
+            }
+
+            public bool Add(IGraphNode node)
+            {
+                if (visited.Contains(node))
+                {
+                    return false;
+                }
+                else
+                {
+                    LastVisit = node;
+                    return true;
+                }
+
+            }
+
+            public bool ContinueTrace(GraphEdge e)
+            {
+                var edgeType = e.GetType();
+
+                if (edgeType == typeof(UtilityGraphConnectedSegment))
+                    return true;
+
+                if (edgeType == typeof(UtilityGraphTerminalToTerminalConnectivityLink))
+                    return true;
+
+                if (edgeType == typeof(UtilityGraphInternalEquipmentConnectivityLink))
+                {
+                    // If we're comming from an internal connectivity node
+                    if (LastVisit != null && LastVisit is UtilityGraphInternalEquipmentConnectivityNode)
+                    {
+                        // If edge out is connected to last node, we're tracing upstream a splitter, which is allowed
+                        if (e.OutV(_version) == LastVisit)
+                            return true;
+                    }
+
+                    // if the last node is an out terminal, then we're tracing upstrem splitter, which is allowed
+                    if (LastVisit != null && LastVisit is UtilityGraphConnectedTerminal && !((UtilityGraphConnectedTerminal)LastVisit).IsSimpleTerminal)
+                    {
+                        _upstreamTrace = true;
+
+                        var lastTerminal = ((UtilityGraphConnectedTerminal)LastVisit).Terminal(_utilityNetworkProjection);
+
+                        if (lastTerminal.Direction == TerminalDirectionEnum.OUT)
+                            return true;
+                    }
+                }
+
+
+                return false;
+            }
+
+            public List<IGraphObject> FilterUnrelevantElementsAway(List<IGraphObject> upstreamTrace)
+            {
+                List<IGraphObject> result = new();
+
+                foreach (var graphElement in upstreamTrace)
+                {
+                    // Filter ways terminal internal connections
+                    if (graphElement is UtilityGraphInternalEquipmentConnectivityNode || graphElement is UtilityGraphInternalEquipmentConnectivityLink)
+                        continue;
+
+                    // If downstream trace filter away out terminals
+                    if (!_upstreamTrace && graphElement is UtilityGraphConnectedTerminal && !((UtilityGraphConnectedTerminal)graphElement).IsSimpleTerminal && ((UtilityGraphConnectedTerminal)graphElement).Terminal(_utilityNetworkProjection).Direction == TerminalDirectionEnum.OUT)
+                        continue;
+
+                    // If upstream trace filter away in terminals
+                    if (_upstreamTrace && graphElement is UtilityGraphConnectedTerminal && !((UtilityGraphConnectedTerminal)graphElement).IsSimpleTerminal && ((UtilityGraphConnectedTerminal)graphElement).Terminal(_utilityNetworkProjection).Direction == TerminalDirectionEnum.IN)
+                        continue;
+
+
+                    result.Add(graphElement);
+                }
+
+                return result;
+            }
+        }
+
 
         #endregion
 

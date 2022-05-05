@@ -23,15 +23,15 @@ using Xunit.Extensions.Ordering;
 
 namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 {
-    [Order(5015)]
-    public class T5015_RackEquipmentPropertiesUpdateTests
+    [Order(4901)]
+    public class T4901_RackEquipmentPropertiesUpdateTests
     {
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly FakeExternalEventProducer _externalEventProducer;
 
-        public T5015_RackEquipmentPropertiesUpdateTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public T4901_RackEquipmentPropertiesUpdateTests(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
             _commandDispatcher = commandDispatcher;

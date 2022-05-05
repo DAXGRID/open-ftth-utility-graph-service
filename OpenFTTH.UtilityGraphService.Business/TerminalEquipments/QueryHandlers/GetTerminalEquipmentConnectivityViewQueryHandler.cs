@@ -235,7 +235,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
                 var a = relevantEquipmentData.TracedTerminals[terminal.Id].A;
 
-                if (a.NeighborSegment.IsPatch)
+                if (a.NeighborSegment is UtilityGraphTerminalToTerminalConnectivityLink)
                 {
                     aIsPatched = true;
                 }
@@ -255,7 +255,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
                 var z = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
 
-                if (z.NeighborSegment.IsPatch)
+                if (z.NeighborSegment is UtilityGraphTerminalToTerminalConnectivityLink)
                 {
                     zIsPatched = true;
                 }
@@ -282,10 +282,18 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             if (traceInfo == null)
                 return null;
 
-            var spanEquipment = traceInfo.NeighborSegment.SpanEquipment(_utilityNetwork);
-            var fiberNo = traceInfo.NeighborSegment.StructureIndex;
+            if (traceInfo.NeighborSegment is UtilityGraphConnectedSegment)
+            {
 
-            return relevantEquipmentData.GetSpanEquipmentFullFiberCableString(spanEquipment, fiberNo);
+                var spanEquipment = ((UtilityGraphConnectedSegment)traceInfo.NeighborSegment).SpanEquipment(_utilityNetwork);
+                var fiberNo = ((UtilityGraphConnectedSegment)traceInfo.NeighborSegment).StructureIndex;
+
+                return relevantEquipmentData.GetSpanEquipmentFullFiberCableString(spanEquipment, fiberNo);
+            }
+            else
+            {
+                return "Patch coord";
+            }
         }
 
         private RelevantEquipmentData GatherRelevantTerminalEquipmentData(TerminalEquipment terminalEquipment)
@@ -483,18 +491,25 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             // Get neighbor segment
             var neighborSegment = trace.First();
 
-            if (!(neighborSegment is UtilityGraphConnectedSegment))
-                throw new ApplicationException($"Expected neighbor to be a UtilityGraphConnectedSegment. Please check trace on terminal with id: {tracedTerminalId}");
-
-
+      
             // Get end terminal
             var terminalEnd = trace.Last();
 
             if (!(terminalEnd is UtilityGraphConnectedTerminal))
                 throw new ApplicationException($"Expected end to be a UtilityGraphConnectedTerminal. Please check trace on terminal with id: {tracedTerminalId}");
 
-
-            return new TraceEndInfo((UtilityGraphConnectedSegment)neighborSegment, (UtilityGraphConnectedTerminal)terminalEnd);
+            if (neighborSegment is UtilityGraphConnectedSegment)
+            {
+                return new TraceEndInfo((UtilityGraphConnectedSegment)neighborSegment, (UtilityGraphConnectedTerminal)terminalEnd);
+            }
+            else if (neighborSegment is UtilityGraphTerminalToTerminalConnectivityLink)
+            {
+                return new TraceEndInfo((UtilityGraphTerminalToTerminalConnectivityLink)neighborSegment, (UtilityGraphConnectedTerminal)terminalEnd);
+            }
+            else
+            {
+                throw new ApplicationException($"Expected neighbor to be a UtilityGraphConnectedSegment or UtilityGraphTerminalToTerminalConnectivityLink. Please check trace on terminal with id: {tracedTerminalId}");
+            }
         }
 
         private string GetConnectorSymbol(Terminal fromTerminal, Terminal toTerminal)
@@ -555,10 +570,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private record TraceEndInfo
         {
-            public UtilityGraphConnectedSegment NeighborSegment { get; set; }
+            public GraphEdge NeighborSegment { get; set; }
             public UtilityGraphConnectedTerminal EndTerminal { get; set; }
 
-            public TraceEndInfo(UtilityGraphConnectedSegment neighborSegment, UtilityGraphConnectedTerminal endTerminal)
+            public TraceEndInfo(GraphEdge neighborSegment, UtilityGraphConnectedTerminal endTerminal)
             {
                 NeighborSegment = neighborSegment;
                 EndTerminal = endTerminal;

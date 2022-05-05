@@ -1,5 +1,6 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
+using System.Collections.Generic;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 {
@@ -37,6 +38,21 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             return existingSpanEquipment with
             {
                 SpecificationId = @event.NewSpecificationId
+            };
+        }
+
+        public static TerminalEquipment Apply(TerminalEquipment existingSpanEquipment, AdditionalStructuresAddedToTerminalEquipment @event)
+        {
+            List<TerminalStructure> newTerminalStructureList = new();
+
+            if (existingSpanEquipment.TerminalStructures != null)
+                newTerminalStructureList.AddRange(existingSpanEquipment.TerminalStructures);
+
+            newTerminalStructureList.AddRange(@event.TerminalStructuresToAdd);
+
+            return existingSpanEquipment with
+            {
+                TerminalStructures = newTerminalStructureList.ToArray()
             };
         }
 

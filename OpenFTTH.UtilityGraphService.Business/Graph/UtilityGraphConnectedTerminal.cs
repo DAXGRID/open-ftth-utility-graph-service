@@ -24,7 +24,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         public override string ToString()
         {
-            return $"Terminal at route node: {RouteNodeId}";
+            if (IsSimpleTerminal)
+                return $"Simple Terminal: {Id} at equipment: {TerminalEquipmentId} route node: {RouteNodeId}";
+            else if (IsDummyEnd)
+                return $"Dummy Terminal: {Id} at route node: {RouteNodeId}";
+            else
+                return $"Terminal: {Id} at equipment: {TerminalEquipmentId} at route node: {RouteNodeId}";
         }
 
         public TerminalEquipment TerminalEquipment(UtilityNetworkProjection utilityNetwork)
