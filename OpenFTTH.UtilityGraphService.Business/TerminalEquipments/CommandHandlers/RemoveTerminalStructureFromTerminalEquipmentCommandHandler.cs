@@ -77,7 +77,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
                     applicationInfo: null,
-                    category: "EquipmentModification",
+                    category: "EquipmentStructureModification",
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );

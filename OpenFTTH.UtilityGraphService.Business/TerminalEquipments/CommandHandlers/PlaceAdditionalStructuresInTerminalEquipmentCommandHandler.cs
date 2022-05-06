@@ -82,7 +82,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
                     applicationInfo: null,
-                    category: "EquipmentModification",
+                    category: "EquipmentStructureModification",
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
