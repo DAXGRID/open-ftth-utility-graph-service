@@ -344,6 +344,56 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+
+        [Fact, Order(50)]
+        public async Task RemoveSplitter3InLISASplitterHolderInODFRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get last mount which should be the splitter placed at the top
+            var splitterMount = nodeContainerBeforeCommand.Racks[0].SubrackMounts.Last();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var terminalStructureToRemove = terminalEquipmentBeforeUpdate.TerminalStructures[2];
+
+            var removeStructure = new RemoveTerminalStructureFromTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                terminalStructureId: terminalStructureToRemove.Id
+            );
+
+            // Act
+            var removeStructureResult = await _commandDispatcher.HandleAsync<RemoveTerminalStructureFromTerminalEquipment, Result>(removeStructure);
+
+            removeStructureResult.IsSuccess.Should().BeTrue();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentAfterUpdate);
+
+            // Check that structure is removed from equipment
+            terminalEquipmentAfterUpdate.TerminalStructures.Length.Should().Be(3);
+
+            // Check that terminal of removed structure are removed from graph
+            foreach (var terminal in terminalStructureToRemove.Terminals)
+            {
+                utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(terminal.Id, out var _).Should().BeFalse();
+            }
+
+            // Check that terminals of non-removed structure are still in graph
+            foreach (var terminal in terminalEquipmentAfterUpdate.TerminalStructures[0].Terminals)
+            {
+                utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(terminal.Id, out var _).Should().BeTrue();
+            }
+        }
+
+
     }
 }
 

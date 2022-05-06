@@ -74,6 +74,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<TerminalEquipmentSpecificationChanged>(Project);
             ProjectEvent<TerminalEquipmentRemoved>(Project);
             ProjectEvent<AdditionalStructuresAddedToTerminalEquipment>(Project);
+            ProjectEvent<TerminalStructureRemoved>(Project);
 
 
             // Node container
@@ -161,7 +162,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (AdditionalStructuresAddedToSpanEquipment @event):
-                    ProcessAdditionalStructures(@event);
+                    ProcessAdditionalStructuresAddToSpanEquipment(@event);
                     break;
 
                 case (SpanStructureRemoved @event):
@@ -263,11 +264,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (AdditionalStructuresAddedToTerminalEquipment @event):
-                    ProcessTerminalEquipmentAdditionalStructuresAdded(@event);
+                    ProcessAdditionalStructuresAddedToTerminalEquipment(@event);
                     break;
 
+                case (TerminalStructureRemoved @event):
+                    ProcessTerminalEquipmentStructureRemoval(@event);
+                    break;
 
-                    
 
 
                 // Node container events
@@ -329,13 +332,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
-       
+
         private void ProcessTerminalsConnected(NodeContainerTerminalsConnected @event)
         {
             var existingNodeContainer = _nodeContainerByEquipmentId[@event.NodeContainerId];
             TryUpdate(NodeContainerProjectionFunctions.Apply(existingNodeContainer, @event));
 
-            UtilityGraphTerminalEquipmentProjections.ApplyTerminalToTerminalConnectionToGraph(@event, existingNodeContainer.RouteNodeId, _utilityGraph);
+            UtilityGraphTerminalEquipmentProjections.ApplyNewTerminalToTerminalConnectionToGraph(@event, existingNodeContainer.RouteNodeId, _utilityGraph);
         }
 
         private void ProcessSpanEquipmentParentDetach(SpanEquipmentDetachedFromParent @event)
@@ -469,7 +472,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             UtilityGraphTerminalEquipmentProjections.ApplyConnectivityToGraph(terminalEquipment, nodeContainer, Graph);
         }
 
-        private void ProcessTerminalEquipmentAdditionalStructuresAdded(AdditionalStructuresAddedToTerminalEquipment @event)
+        private void ProcessAdditionalStructuresAddedToTerminalEquipment(AdditionalStructuresAddedToTerminalEquipment @event)
         {
             var before = _terminalEquipmentByEquipmentId[@event.TerminalEquipmentId];
             var after = TerminalEquipmentProjectionFunctions.Apply(before, @event);
@@ -478,6 +481,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             var nodeContainer = _nodeContainerByEquipmentId[after.NodeContainerId];
 
             UtilityGraphTerminalEquipmentProjections.ApplyConnectivityToGraph(after, nodeContainer, @event.TerminalStructuresToAdd.Select(t => t.Id).ToHashSet(), Graph);
+        }
+
+        private void ProcessTerminalEquipmentStructureRemoval(TerminalStructureRemoved @event)
+        {
+            var existingTerminalEquipment = _terminalEquipmentByEquipmentId[@event.TerminalEquipmentId];
+            var after = TerminalEquipmentProjectionFunctions.Apply(existingTerminalEquipment, @event);
+            TryUpdate(after);
+
+            // Remove terminals from the graph
+            foreach (var terminalStructure in existingTerminalEquipment.TerminalStructures)
+            {
+                if (terminalStructure.Id == @event.TerminalStructureId)
+                {
+                    foreach (var terminal in terminalStructure.Terminals)
+                    {
+                        _utilityGraph.RemoveGraphElement(terminal.Id);
+                    }
+                }
+            }
         }
 
         private void StoreAndIndexVirginContainerEquipment(NodeContainer nodeContainer)
@@ -532,7 +554,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
 
-        private void ProcessAdditionalStructures(AdditionalStructuresAddedToSpanEquipment @event)
+        private void ProcessAdditionalStructuresAddToSpanEquipment(AdditionalStructuresAddedToSpanEquipment @event)
         {
             var before = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
             var after = SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event);
@@ -549,7 +571,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             UtilityGraphSegmentProjections.ApplyConnectivityChangesToGraph(before, after, _utilityGraph);
         }
-
 
         private void ProcessSpanEquipmentRemoval(SpanEquipmentRemoved @event)
         {
@@ -586,7 +607,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             }
         }
 
-
         private void ProcessNodeContainerRemoval(NodeContainerRemovedFromRouteNetwork @event)
         {
             var existingNodeContainer = _nodeContainerByEquipmentId[@event.NodeContainerId];
@@ -607,7 +627,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             TryUpdate(SpanEquipmentProjectionFunctions.Apply(_spanEquipmentByEquipmentId[@event.SpanEquipmentId], @event));
         }
-
 
         private void TryUpdate(SpanEquipment newSpanEquipmentState)
         {

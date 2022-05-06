@@ -1021,7 +1021,7 @@ namespace OpenFTTH.TestData
                     new TerminalTemplate("1", TerminalDirectionEnum.BI, false, true),
                     new TerminalTemplate("2", TerminalDirectionEnum.BI, false, true),
                     new TerminalTemplate("3", TerminalDirectionEnum.BI, false, true),
-                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true),
+                    new TerminalTemplate("4", TerminalDirectionEnum.BI, false, true),   
                     new TerminalTemplate("5", TerminalDirectionEnum.BI, false, true),
                     new TerminalTemplate("6", TerminalDirectionEnum.BI, false, true),
                     new TerminalTemplate("7", TerminalDirectionEnum.BI, false, true),

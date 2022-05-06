@@ -56,5 +56,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             };
         }
 
+        public static TerminalEquipment Apply(TerminalEquipment existingSpanEquipment, TerminalStructureRemoved @event)
+        {
+            List<TerminalStructure> newTerminalStructureList = new();
+
+            if (existingSpanEquipment.TerminalStructures != null)
+            {
+                foreach (var terminalStructure in existingSpanEquipment.TerminalStructures)
+                {
+                    if (terminalStructure.Id != @event.TerminalStructureId)
+                        newTerminalStructureList.Add(terminalStructure);
+                }
+            }
+
+            return existingSpanEquipment with
+            {
+                TerminalStructures = newTerminalStructureList.ToArray()
+            };
+        }
+
     }
 }

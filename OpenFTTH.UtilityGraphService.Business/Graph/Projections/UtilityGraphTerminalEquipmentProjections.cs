@@ -2,6 +2,7 @@
 using DAX.ObjectVersioning.Graph;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
         }
 
-        public static void ApplyTerminalToTerminalConnectionToGraph(NodeContainerTerminalsConnected @event, Guid routeNodeId, UtilityGraph graph)
+        public static void ApplyNewTerminalToTerminalConnectionToGraph(NodeContainerTerminalsConnected @event, Guid routeNodeId, UtilityGraph graph)
         {
             var trans = graph.CreateTransaction();
 

@@ -29,9 +29,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             Register<TerminalEquipmentManufacturerChanged>(Apply);
             Register<TerminalEquipmentSpecificationChanged>(Apply);
             Register<AdditionalStructuresAddedToTerminalEquipment>(Apply);
+            Register<TerminalStructureRemoved>(Apply);
         }
 
-        #region Place
+        #region Place equipment
 
         public Result Place(
             CommandContext cmdContext,
@@ -85,120 +86,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             return Result.Ok();
         }
 
-        public Result AddAdditionalStructures(CommandContext cmdContext, TerminalStructureSpecification terminalStructureSpecification, int startPosition, int numberOfStructures)
-        {
-            List<TerminalStructure> additionalStructures = new();
-
-            for (int position = startPosition; position < startPosition + numberOfStructures; position++)
-            {
-                additionalStructures.Add(CreateTerminalStructureFromSpecification(terminalStructureSpecification, position));
-            }
-
-            var terminalEquipmentAdditionalStructuresAddedEvent = new AdditionalStructuresAddedToTerminalEquipment(this.Id, additionalStructures.ToArray())
-            {
-                CorrelationId = cmdContext.CorrelationId,
-                IncitingCmdId = cmdContext.CmdId,
-                UserName = cmdContext.UserContext?.UserName,
-                WorkTaskId = cmdContext.UserContext?.WorkTaskId
-            };
-
-            RaiseEvent(terminalEquipmentAdditionalStructuresAddedEvent);
-
-            return Result.Ok();
-        }
-
-        private void Apply(AdditionalStructuresAddedToTerminalEquipment @event)
-        {
-            if (_terminalEquipment == null)
-                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
-
-            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
-        }
-
-        private TerminalStructure[] CreateTerminalStructuresFromSpecification(TerminalEquipmentSpecification terminalEquipmentSpecification, LookupCollection<TerminalStructureSpecification> terminalStructureSpecifications)
-        {
-            List<TerminalStructure> terminalStructures = new();
-
-            foreach (var structureTemplate in terminalEquipmentSpecification.StructureTemplates)
-            {
-                if (terminalStructureSpecifications.TryGetValue(structureTemplate.TerminalStructureSpecificationId, out var terminalStructureSpecification))
-                {
-                    terminalStructures.Add(
-                        CreateTerminalStructureFromSpecification(terminalStructureSpecification, structureTemplate.Position)
-                    );
-                }
-                else
-                {
-                    throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipmentSpecification.Id} References a non-existing terminal structure specification with id: {structureTemplate.TerminalStructureSpecificationId}");
-                }
-            }
-
-            return terminalStructures.ToArray();
-        }
-
-        private TerminalStructure CreateTerminalStructureFromSpecification(TerminalStructureSpecification terminalStructureSpecification, int position)
-        {
-            if (_terminalEquipment != null && _terminalEquipment.TerminalStructures.Any(s => s.Position == position))
-                throw new ApplicationException($"A structure already exists at position: {position} in terminal equipment: {_terminalEquipment.Id}");
-
-            Dictionary<string, Guid> internalConnectivityNodesByName = new();
-
-            List<Terminal> terminals = new();
-
-            foreach (var terminalTemplate in terminalStructureSpecification.TerminalTemplates)
-            {
-                // Create internal connectivity node if specified in template and don't exist yet
-                if (terminalTemplate.InternalConnectivityNode != null)
-                {
-                    if (!internalConnectivityNodesByName.TryGetValue(terminalTemplate.InternalConnectivityNode, out var _))
-                    {
-                        internalConnectivityNodesByName.Add(terminalTemplate.InternalConnectivityNode, Guid.NewGuid());
-                    }
-                }
-
-                // Get id of eventually specificed internal connectivity node
-                Guid internalConnectivityNodeId = terminalTemplate.InternalConnectivityNode == null ? Guid.Empty : internalConnectivityNodesByName[terminalTemplate.InternalConnectivityNode];
-
-                // A non-bi terminal must always be connected to an internal connectivity node
-                if (terminalTemplate.Direction != TerminalDirectionEnum.BI && internalConnectivityNodeId == Guid.Empty)
-                    throw new ApplicationException($"Invalid/corrupted terminal structure specification: {terminalStructureSpecification.Id} All non-bi terminals must reference an internal connectivity node");
-
-                terminals.Add(
-                    new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType, internalConnectivityNodeId)
-                );
-            }
-      
-            return new TerminalStructure(Guid.NewGuid(), terminalStructureSpecification.Id, (ushort)position, terminals.ToArray());
-        }
-
-
-        private NamingInfo CalculateName(NamingInfo? namingInfo, int sequenceNumber, TerminalEquipmentNamingMethodEnum namingMethod)
-        {
-            NamingInfo resultNamingInfo = new();
-
-            resultNamingInfo.Description = namingInfo?.Description;
-
-            switch (namingMethod)
-            {
-                case TerminalEquipmentNamingMethodEnum.NumberOnly:
-                    resultNamingInfo.Name = sequenceNumber.ToString();
-                    break;
-
-                case TerminalEquipmentNamingMethodEnum.NameOnly:
-                    resultNamingInfo.Name = namingInfo?.Name;
-                    break;
-
-                case TerminalEquipmentNamingMethodEnum.NameAndNumber:
-                    if (namingInfo != null && !String.IsNullOrEmpty(namingInfo.Name))
-                        resultNamingInfo.Name = namingInfo.Name + " " + sequenceNumber.ToString();
-                    else
-                        resultNamingInfo.Name = sequenceNumber.ToString();
-                    break;
-            }
-
-            return resultNamingInfo;
-        }
-
         private void Apply(TerminalEquipmentPlacedInNodeContainer obj)
         {
             Id = obj.Equipment.Id;
@@ -207,7 +94,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 
         #endregion
 
-        #region Remove
+        #region Remove equipment
         public Result Remove(CommandContext cmdContext, UtilityGraph graph)
         {
             if (_terminalEquipment == null)
@@ -242,28 +129,86 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                 throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
         }
 
-        private bool IsAnyTerminalsConnected(UtilityGraph graph)
+ 
+        #endregion
+
+        #region Add Structure
+        public Result AddAdditionalStructures(CommandContext cmdContext, TerminalStructureSpecification terminalStructureSpecification, int startPosition, int numberOfStructures)
+        {
+            List<TerminalStructure> additionalStructures = new();
+
+            for (int position = startPosition; position < startPosition + numberOfStructures; position++)
+            {
+                additionalStructures.Add(CreateTerminalStructureFromSpecification(terminalStructureSpecification, position));
+            }
+
+            var terminalEquipmentAdditionalStructuresAddedEvent = new AdditionalStructuresAddedToTerminalEquipment(this.Id, additionalStructures.ToArray())
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(terminalEquipmentAdditionalStructuresAddedEvent);
+
+            return Result.Ok();
+        }
+
+        private void Apply(AdditionalStructuresAddedToTerminalEquipment @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
+        }
+
+        #endregion
+
+        #region Remove Structure
+        public Result RemoveStructure(CommandContext cmdContext, Guid terminalStructureId, UtilityGraph graph)
         {
             if (_terminalEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
-            var version = graph.LatestCommitedVersion;
-
-            foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
+            if (!_terminalEquipment.TerminalStructures.Any(t => t.Id == terminalStructureId))
             {
-                foreach (var terminal in terminalStructure.Terminals)
-                {
-                    var terminalElement = graph.GetTerminal(terminal.Id, version);
-
-                    if (terminalElement != null && terminalElement is UtilityGraphConnectedTerminal connectedTerminal)
-                    {
-                        if (connectedTerminal.NeighborElements(version).Count > 0)
-                            return true;
-                    }
-                }
+                return Result.Fail(new TerminalEquipmentError(
+                    TerminalEquipmentErrorCodes.TERMINAL_STRUCTURE_NOT_FOUND,
+                    $"Can't find any terminal structure with id: {terminalStructureId} in terminal equipment with id: {this.Id}")
+                );
             }
 
-            return false;
+            if (IsAnyTerminalsConnected(graph, terminalStructureId))
+            {
+                return Result.Fail(new TerminalEquipmentError(
+                    TerminalEquipmentErrorCodes.CANNOT_REMOVE_TERMINAL_STRUCTURE_WITH_CONNECTED_TERMINALS,
+                    $"Cannot remove a terminal structure if some of its terminals are connected")
+                );
+            }
+
+            var @event = new TerminalStructureRemoved(
+               terminalEquipmentId: this.Id,
+               terminalStructureId: terminalStructureId
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalStructureRemoved @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
         }
 
         #endregion
@@ -427,5 +372,122 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
         }
 
         #endregion
+
+
+        #region Helper functions
+
+        private TerminalStructure[] CreateTerminalStructuresFromSpecification(TerminalEquipmentSpecification terminalEquipmentSpecification, LookupCollection<TerminalStructureSpecification> terminalStructureSpecifications)
+        {
+            List<TerminalStructure> terminalStructures = new();
+
+            foreach (var structureTemplate in terminalEquipmentSpecification.StructureTemplates)
+            {
+                if (terminalStructureSpecifications.TryGetValue(structureTemplate.TerminalStructureSpecificationId, out var terminalStructureSpecification))
+                {
+                    terminalStructures.Add(
+                        CreateTerminalStructureFromSpecification(terminalStructureSpecification, structureTemplate.Position)
+                    );
+                }
+                else
+                {
+                    throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipmentSpecification.Id} References a non-existing terminal structure specification with id: {structureTemplate.TerminalStructureSpecificationId}");
+                }
+            }
+
+            return terminalStructures.ToArray();
+        }
+
+        private TerminalStructure CreateTerminalStructureFromSpecification(TerminalStructureSpecification terminalStructureSpecification, int position)
+        {
+            if (_terminalEquipment != null && _terminalEquipment.TerminalStructures.Any(s => s.Position == position))
+                throw new ApplicationException($"A structure already exists at position: {position} in terminal equipment: {_terminalEquipment.Id}");
+
+            Dictionary<string, Guid> internalConnectivityNodesByName = new();
+
+            List<Terminal> terminals = new();
+
+            foreach (var terminalTemplate in terminalStructureSpecification.TerminalTemplates)
+            {
+                // Create internal connectivity node if specified in template and don't exist yet
+                if (terminalTemplate.InternalConnectivityNode != null)
+                {
+                    if (!internalConnectivityNodesByName.TryGetValue(terminalTemplate.InternalConnectivityNode, out var _))
+                    {
+                        internalConnectivityNodesByName.Add(terminalTemplate.InternalConnectivityNode, Guid.NewGuid());
+                    }
+                }
+
+                // Get id of eventually specificed internal connectivity node
+                Guid internalConnectivityNodeId = terminalTemplate.InternalConnectivityNode == null ? Guid.Empty : internalConnectivityNodesByName[terminalTemplate.InternalConnectivityNode];
+
+                // A non-bi terminal must always be connected to an internal connectivity node
+                if (terminalTemplate.Direction != TerminalDirectionEnum.BI && internalConnectivityNodeId == Guid.Empty)
+                    throw new ApplicationException($"Invalid/corrupted terminal structure specification: {terminalStructureSpecification.Id} All non-bi terminals must reference an internal connectivity node");
+
+                terminals.Add(
+                    new Terminal(Guid.NewGuid(), terminalTemplate.Name, terminalTemplate.Direction, terminalTemplate.IsPigtail, terminalTemplate.IsSplice, terminalTemplate.ConnectorType, internalConnectivityNodeId)
+                );
+            }
+
+            return new TerminalStructure(Guid.NewGuid(), terminalStructureSpecification.Id, (ushort)position, terminals.ToArray());
+        }
+
+        private NamingInfo CalculateName(NamingInfo? namingInfo, int sequenceNumber, TerminalEquipmentNamingMethodEnum namingMethod)
+        {
+            NamingInfo resultNamingInfo = new();
+
+            resultNamingInfo.Description = namingInfo?.Description;
+
+            switch (namingMethod)
+            {
+                case TerminalEquipmentNamingMethodEnum.NumberOnly:
+                    resultNamingInfo.Name = sequenceNumber.ToString();
+                    break;
+
+                case TerminalEquipmentNamingMethodEnum.NameOnly:
+                    resultNamingInfo.Name = namingInfo?.Name;
+                    break;
+
+                case TerminalEquipmentNamingMethodEnum.NameAndNumber:
+                    if (namingInfo != null && !String.IsNullOrEmpty(namingInfo.Name))
+                        resultNamingInfo.Name = namingInfo.Name + " " + sequenceNumber.ToString();
+                    else
+                        resultNamingInfo.Name = sequenceNumber.ToString();
+                    break;
+            }
+
+            return resultNamingInfo;
+        }
+
+        private bool IsAnyTerminalsConnected(UtilityGraph graph, Guid? structureId = null)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            var version = graph.LatestCommitedVersion;
+
+            foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
+            {
+                if (structureId != null && terminalStructure.Id != structureId)
+                    continue;
+
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    var terminalElement = graph.GetTerminal(terminal.Id, version);
+
+                    if (terminalElement != null && terminalElement is UtilityGraphConnectedTerminal connectedTerminal)
+                    {
+                        if (connectedTerminal.NeighborElements(version).Where(n => n is not UtilityGraphInternalEquipmentConnectivityLink).Count() > 0)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
+        #endregion
+
     }
 }
