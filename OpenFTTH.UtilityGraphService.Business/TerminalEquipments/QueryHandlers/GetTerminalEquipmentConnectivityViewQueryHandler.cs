@@ -147,7 +147,31 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                             }
                         );
                     }
+                    else if (terminal.Direction == TerminalDirectionEnum.IN)
+                    {
+
+                        lineInfos.Add(
+                            new TerminalEquipmentAZConnectivityViewLineInfo(GetConnectorSymbol(terminal, terminal))
+                            {
+                                A = GetAEndInfo(equipmentData, terminal),
+                                Z = null
+                            }
+                        );
+                    }
+                    else if (terminal.Direction == TerminalDirectionEnum.OUT)
+                    {
+
+                        lineInfos.Add(
+                            new TerminalEquipmentAZConnectivityViewLineInfo(GetConnectorSymbol(terminal, terminal))
+                            {
+                                A = null,
+                                Z = GetOutEndInfo(equipmentData, terminal)
+                            }
+                        );
+                    }
                 }
+
+
 
                 terminalStructureInfos.Add(
                     new TerminalEquipmentAZConnectivityViewTerminalStructureInfo(
@@ -155,7 +179,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                         category: terminalStructureSpecification.Category,
                         name: terminalStructure.Name,
                         specName: terminalStructureSpecification.Name,
-                        lines: lineInfos.ToArray()
+                        lines: CompactLines(lineInfos).ToArray()
                     )
                 );
             }
@@ -172,6 +196,41 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                     ParentNodeStructureId = parentStructureId
                 }
             );
+        }
+
+        private List<TerminalEquipmentAZConnectivityViewLineInfo> CompactLines(List<TerminalEquipmentAZConnectivityViewLineInfo> lineInfos)
+        {
+            List<TerminalEquipmentAZConnectivityViewLineInfo> compactedLines = new();
+
+            for (int i = 0; i < lineInfos.Count; i++)
+            {
+                var addLine = true;
+
+                var currentLine = lineInfos[i];
+
+                // If we're not the last
+                if (i < lineInfos.Count - 1)
+                {
+                    var nextLine = lineInfos[i + 1];
+
+                    if (currentLine.A is not null && currentLine.Z is null && nextLine.A is null && nextLine.Z is not null)
+                    {
+                        // push the A of current line to next line
+                        lineInfos[i + 1] = new TerminalEquipmentAZConnectivityViewLineInfo(currentLine.ConnectorSymbol)
+                        {
+                            A = currentLine.A,
+                            Z = nextLine.Z
+                        };
+
+                        addLine = false;
+                    }
+                }
+
+                if (addLine)
+                    compactedLines.Add(currentLine);
+            }
+
+            return compactedLines;
         }
 
         private TerminalEquipmentAZConnectivityViewEndInfo GetAEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
@@ -191,6 +250,23 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         }
 
         private TerminalEquipmentAZConnectivityViewEndInfo GetZEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
+        {
+            var terminalInfo = new TerminalEquipmentAZConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
+
+            var traceInfo = relevantEquipmentData.TracedTerminals[terminal.Id].Z;
+
+            FaceKindEnum faceKind = GetZEndFaceKind(relevantEquipmentData, terminal);
+
+            return new TerminalEquipmentAZConnectivityViewEndInfo(terminalInfo, faceKind)
+            {
+                ConnectedToSpanSegmentId = traceInfo == null ? Guid.Empty : traceInfo.NeighborSegment.Id,
+                ConnectedTo = traceInfo == null ? null : CreateConnectedToString(relevantEquipmentData, traceInfo),
+                End = traceInfo == null ? null : relevantEquipmentData.GetNodeAndEquipmentEndString(traceInfo.EndTerminal)
+            };
+        }
+
+
+        private TerminalEquipmentAZConnectivityViewEndInfo GetOutEndInfo(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
         {
             var terminalInfo = new TerminalEquipmentAZConnectivityViewTerminalInfo(terminal.Id, terminal.Name);
 
@@ -290,9 +366,20 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
                 return relevantEquipmentData.GetSpanEquipmentFullFiberCableString(spanEquipment, fiberNo);
             }
+            else if (traceInfo.NeighborSegment is UtilityGraphTerminalToTerminalConnectivityLink)
+            {
+                if (traceInfo.NeighborTerminal != null)
+                {
+                    return relevantEquipmentData.GetEquipmentWithStructureInfoString(traceInfo.NeighborTerminal);
+                }
+                else
+                {
+                    return "Error finding end terminal";
+                }
+            }
             else
             {
-                return "Patch coord";
+                return "Unknown connection type";
             }
         }
 
@@ -378,6 +465,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 foreach (var terminal in terminalStructure.Terminals)
                 {
                     TraceInfo traceInfo = new TraceInfo();
+
+                    if (terminal.Name == "ind")
+                    {
+
+                    }
 
                     var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(terminal.Id);
 
@@ -504,7 +596,12 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             }
             else if (neighborSegment is UtilityGraphTerminalToTerminalConnectivityLink)
             {
-                return new TraceEndInfo((UtilityGraphTerminalToTerminalConnectivityLink)neighborSegment, (UtilityGraphConnectedTerminal)terminalEnd);
+                var neighborTerminal = terminalEnd;
+
+                if (trace.Length > 1 && trace[1] is UtilityGraphConnectedTerminal)
+                    neighborTerminal = trace[1];
+
+                return new TraceEndInfo((UtilityGraphTerminalToTerminalConnectivityLink)neighborSegment, (UtilityGraphConnectedTerminal)terminalEnd, (UtilityGraphConnectedTerminal)neighborTerminal);
             }
             else
             {
@@ -573,10 +670,13 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             public GraphEdge NeighborSegment { get; set; }
             public UtilityGraphConnectedTerminal EndTerminal { get; set; }
 
-            public TraceEndInfo(GraphEdge neighborSegment, UtilityGraphConnectedTerminal endTerminal)
+            public UtilityGraphConnectedTerminal? NeighborTerminal { get; set; }
+
+            public TraceEndInfo(GraphEdge neighborSegment, UtilityGraphConnectedTerminal endTerminal, UtilityGraphConnectedTerminal? neighborTerminal = null)
             {
                 NeighborSegment = neighborSegment;
                 EndTerminal = endTerminal;
+                NeighborTerminal = neighborTerminal;
             }
         }
     }

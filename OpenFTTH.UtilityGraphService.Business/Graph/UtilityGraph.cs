@@ -134,7 +134,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
 
-            var lastSegment = terminal.NeighborElements(version).Last();
+            var lastSegment = terminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).Last();
 
             var downstreamTrace = lastSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
@@ -198,7 +198,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
 
-            var firstSegment = terminal.NeighborElements(version).First();
+            var firstSegment = terminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).First();
 
             var upstreamTrace = firstSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
@@ -353,7 +353,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     if (terminal != null)
                     {
-                        var nTerminalNeigbours = terminal.NeighborElements(version).Count;
+                        var nTerminalNeigbours = terminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).Count();
 
                         if (nTerminalNeigbours == 1)
                         {

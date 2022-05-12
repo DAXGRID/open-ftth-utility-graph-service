@@ -354,6 +354,22 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var trace = utilityNetwork.Graph.SimpleTrace(lisaTray.TerminalStructures.First().Terminals.First().Id);
             
             trace.All.Any(g => g.Id == customerSplitter.TerminalStructures.First().Terminals[5].Id).Should().BeTrue();
+
+
+            // Check equipment connectivity view on 1:32 splitter
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, customerSplitter.Id);
+
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
+            );
+
+            connectivityViewResult.IsSuccess.Should().BeTrue();
+
+            var connectivityTraceView = connectivityViewResult.Value.TerminalEquipments.First();
+
+            //connectivityTraceView.Name.Should().Be("CO-1 - ODF - Bakke 1");
+
+
         }
 
         [Fact, Order(5)]
