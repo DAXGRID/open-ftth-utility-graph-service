@@ -152,6 +152,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return false;
         }
 
+        public bool CheckIfConduitSegmentContainsCables(Guid conduitSpanSegmentId)
+        {
+            if (_relatedCablesByConduitSegmentId.ContainsKey(conduitSpanSegmentId) && _relatedCablesByConduitSegmentId[conduitSpanSegmentId].Count > 0)
+                return true;
+            else
+                return false;
+        }
+        
+
         private void Project(IEventEnvelope eventEnvelope)
         {
             switch (eventEnvelope.Data)

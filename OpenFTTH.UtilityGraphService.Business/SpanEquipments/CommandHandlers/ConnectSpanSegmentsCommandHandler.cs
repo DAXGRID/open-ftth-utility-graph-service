@@ -56,7 +56,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             foreach (var spanSegmentToConnect in command.SpanSegmentsToConnect)
             {
-                if (_utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegmentToConnect) && _utilityNetwork.RelatedCablesByConduitSegmentId[spanSegmentToConnect].Count() > 0)
+                if (_utilityNetwork.CheckIfConduitSegmentContainsCables(spanSegmentToConnect))
                     return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegmentToConnect} contain a cable. Cannot be connected.")));
             }
 

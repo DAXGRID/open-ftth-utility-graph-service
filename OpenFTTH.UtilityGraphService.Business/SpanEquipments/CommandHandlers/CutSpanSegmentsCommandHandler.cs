@@ -47,7 +47,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             foreach (var spanSegmentToCut in command.SpanSegmentsToCut)
             {
-                if (utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegmentToCut))
+                if (utilityNetwork.CheckIfConduitSegmentContainsCables(spanSegmentToCut))
                     return Task.FromResult(Result.Fail(new CutSpanSegmentsAtRouteNodeError(CutSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegmentToCut} contain a cable. Cannot be cut.")));
             }
 

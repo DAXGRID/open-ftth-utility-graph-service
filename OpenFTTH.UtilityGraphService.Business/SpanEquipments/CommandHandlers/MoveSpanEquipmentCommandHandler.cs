@@ -167,7 +167,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 foreach (var spanSegment in spanStructure.SpanSegments)
                 {
-                    if (_utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
+                    if (_utilityNetwork.CheckIfConduitSegmentContainsCables(spanSegment.Id))
                         return true;
                 }
             }
@@ -183,7 +183,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 foreach (var spanSegment in spanStructure.SpanSegments)
                 {
-                    if (_utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
+                    if (_utilityNetwork.CheckIfConduitSegmentContainsCables(spanSegment.Id))
                     {
                         var childIds = _utilityNetwork.RelatedCablesByConduitSegmentId[spanSegment.Id];
 
