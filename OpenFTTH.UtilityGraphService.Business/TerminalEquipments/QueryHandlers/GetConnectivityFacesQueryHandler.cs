@@ -174,7 +174,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private bool HasSpliceSide(TerminalEquipment terminalEquipment)
         {
-            foreach (var structure in terminalEquipment.TerminalStructures)
+            foreach (var structure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted))
             {
                 foreach (var terminal in structure.Terminals)
                 {
@@ -188,7 +188,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private bool HasPatchSide(TerminalEquipment terminalEquipment)
         {
-            foreach (var structure in terminalEquipment.TerminalStructures)
+            foreach (var structure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted))
             {
                 foreach (var terminal in structure.Terminals)
                 {

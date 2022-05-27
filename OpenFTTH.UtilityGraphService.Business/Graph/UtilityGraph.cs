@@ -64,33 +64,43 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     return new UtilityGraphTraceResult(id, connectedSegment, downstream, upstream);
                 }
-                else if (utilityGraphElement is IUtilityGraphTerminalRef)
+                else if (utilityGraphElement is UtilityGraphConnectedTerminal)
                 {
-                    IUtilityGraphTerminalRef terminalRef = (IUtilityGraphTerminalRef)utilityGraphElement;
+                    IUtilityGraphTerminalRef terminalRef = (UtilityGraphConnectedTerminal)utilityGraphElement;
 
                     var version = _objectManager.GetLatestCommitedVersion();
 
-                    var terminal = (UtilityGraphConnectedTerminal)_objectManager.GetObject(terminalRef.TerminalId);
+                    var graphTerminal = (UtilityGraphConnectedTerminal)_objectManager.GetObject(terminalRef.TerminalId);
 
-                    if (terminal != null)
+                    var terminal = graphTerminal.Terminal(_utilityNetworkProjection);
+
+                    if (graphTerminal != null)
                     {
-                        var nSegmentNeigbours = terminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).Count();
+                        var nSegmentNeigbours = graphTerminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).Count();
 
                         if (nSegmentNeigbours == 1)
                         {
-                            var upstream = UpstreamTerminalTrace(terminal, version).ToArray();
-                            return new UtilityGraphTraceResult(id, terminal, Array.Empty<IGraphObject>(), upstream);
+                            if (terminal.Direction == TerminalDirectionEnum.OUT)
+                            {
+                                var downstream = DownstreamTerminalTrace(graphTerminal, version).ToArray();
+                                return new UtilityGraphTraceResult(id, graphTerminal, downstream, Array.Empty<IGraphObject>());
+                            }
+                            else
+                            {
+                                var upstream = UpstreamTerminalTrace(graphTerminal, version).ToArray();
+                                return new UtilityGraphTraceResult(id, graphTerminal, Array.Empty<IGraphObject>(), upstream);
+                            }
                         }
                         else if (nSegmentNeigbours == 2)
                         {
-                            var upstream = UpstreamTerminalTrace(terminal, version).ToArray();
-                            var downstream = DownstreamTerminalTrace(terminal, version).ToArray();
+                            var upstream = UpstreamTerminalTrace(graphTerminal, version).ToArray();
+                            var downstream = DownstreamTerminalTrace(graphTerminal, version).ToArray();
 
-                            return new UtilityGraphTraceResult(id, terminal, downstream, upstream);
+                            return new UtilityGraphTraceResult(id, graphTerminal, downstream, upstream);
                         }
                         else if (nSegmentNeigbours > 2)
                         {
-                            throw new ApplicationException($"terminal with id: {terminal.Id} version: {version} have more than two segment connected to it. The system must prevent that to never happend!");
+                            throw new ApplicationException($"terminal with id: {graphTerminal.Id} version: {version} have more than two segment connected to it. The system must prevent that to never happend!");
                         }
                     }
                 }
@@ -277,15 +287,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                             return true;
                     }
 
-                    // if the last node is an out terminal, then we're tracing upstrem splitter, which is allowed
+                    // if the last node is an out terminal, then we're tracing upstream, which is allowed
                     if (LastVisit != null && LastVisit is UtilityGraphConnectedTerminal && !((UtilityGraphConnectedTerminal)LastVisit).IsSimpleTerminal)
                     {
-                        _upstreamTrace = true;
-
                         var lastTerminal = ((UtilityGraphConnectedTerminal)LastVisit).Terminal(_utilityNetworkProjection);
 
                         if (lastTerminal.Direction == TerminalDirectionEnum.OUT)
+                        {
+                            _upstreamTrace = true;
                             return true;
+                        }
+                        else
+                        {
+                            _upstreamTrace = false;
+                        }
                     }
                 }
 

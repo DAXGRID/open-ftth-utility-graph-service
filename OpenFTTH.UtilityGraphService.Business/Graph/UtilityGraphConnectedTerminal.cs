@@ -56,36 +56,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             throw new ApplicationException($"Cannot find terminial equipment with id: {TerminalEquipmentId}. State corrupted!");
         }
 
-        /*
-        public TerminalEquipment TerminalEquipment(UtilityNetworkProjection utilityNetwork)
-        {
-            if (utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(Id, out var terminalGraphElement))
-            {
-                return terminalGraphElement.TerminalEquipment(utilityNetwork);
-            }
-
-            throw new ApplicationException($"Cannot find terminal equipment by terminal id: {Id}. State corrupted!");
-        }
-
-        public TerminalStructure TerminalStructure(UtilityNetworkProjection utilityNetwork)
-        {
-            if (utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(Id, out var terminalGraphElement))
-            {
-                return terminalGraphElement.TerminalEquipment(utilityNetwork).TerminalStructures[terminalGraphElement.StructureIndex];
-            }
-
-            throw new ApplicationException($"Cannot find terminal equipment by terminal id: {Id}. State corrupted!");
-        }
-
-        public Terminal Terminal(UtilityNetworkProjection utilityNetwork)
-        {
-            if (utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(Id, out var terminalGraphElement))
-            {
-                return terminalGraphElement.TerminalEquipment(utilityNetwork).TerminalStructures[terminalGraphElement.StructureIndex].Terminals[terminalGraphElement.TerminalIndex];
-            }
-
-            throw new ApplicationException($"Cannot find terminal equipment by terminal id: {Id}. State corrupted!");
-        }
-        */
+      
     }
 }

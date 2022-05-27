@@ -466,7 +466,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 
             var version = graph.LatestCommitedVersion;
 
-            foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
+            foreach (var terminalStructure in _terminalEquipment.TerminalStructures.Where(t => !t.Deleted))
             {
                 if (structureId != null && terminalStructure.Id != structureId)
                     continue;

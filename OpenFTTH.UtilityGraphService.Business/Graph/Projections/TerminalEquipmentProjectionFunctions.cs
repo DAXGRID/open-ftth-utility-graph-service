@@ -64,7 +64,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             {
                 foreach (var terminalStructure in existingSpanEquipment.TerminalStructures)
                 {
-                    if (terminalStructure.Id != @event.TerminalStructureId)
+                    if (terminalStructure.Id == @event.TerminalStructureId)
+                        newTerminalStructureList.Add(terminalStructure with { Deleted = true });
+                    else
                         newTerminalStructureList.Add(terminalStructure);
                 }
             }

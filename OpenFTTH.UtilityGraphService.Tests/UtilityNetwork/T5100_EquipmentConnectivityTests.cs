@@ -502,6 +502,55 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             firstSpanEquipment.Lines[11].A.End.Should().Contain("1:2 Split");
         }
 
+        [Fact, Order(7)]
+        public async Task ConnectOltToWdm_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get olt
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[1].SubrackMounts.First(s => s.Position == 30).TerminalEquipmentId, out var olt);
+
+            // Get lgx holder
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[1].SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId, out var lgx);
+
+
+            var oltCard1Port1 = olt.TerminalStructures.First().Terminals[0].Id;
+            var wdmIpPort = lgx.TerminalStructures.First().Terminals[1].Id;
+
+            // Connect olt with wdm
+            var connectCmd = new ConnectTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                fromTerminalId: oltCard1Port1,
+                toTerminalId: wdmIpPort,
+                fiberCoordLength: 100.0
+            );
+
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+
+
+            // Check equipment connectivity view
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, olt.Id);
+
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
+            );
+
+            connectivityViewResult.IsSuccess.Should().BeTrue();
+
+            var connectivityTraceView = connectivityViewResult.Value;
+        }
+
 
 
 

@@ -128,7 +128,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             List<ConnectivityFaceConnection> connectivityFacesResult = new();
 
-            foreach(var terminalStructure in terminalEquipment.TerminalStructures)
+            foreach(var terminalStructure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted))
             {
                 foreach (var terminal in terminalStructure.Terminals)
                 {

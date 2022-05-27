@@ -558,7 +558,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
         private bool CheckIfTerminalExistsInEquipment(TerminalEquipment fromTerminalEquipment, Guid fromTerminalId)
         {
-            foreach (var terminalStructure in fromTerminalEquipment.TerminalStructures)
+            foreach (var terminalStructure in fromTerminalEquipment.TerminalStructures.Where(t => !t.Deleted))
             {
                 foreach (var terminal in terminalStructure.Terminals)
                 {

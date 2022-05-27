@@ -343,6 +343,162 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             firstTerminalInGraph.Should().NotBeNull();
         }
 
+        [Fact, Order(10)]
+        public async Task PlaceDataRackInCO_1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerBeforeCommand);
+
+            var placeRackCmd = new PlaceRackInNodeContainer(
+                Guid.NewGuid(),
+                new UserContext("test", Guid.Empty),
+                sutNodeContainerId,
+                Guid.NewGuid(),
+                TestSpecifications.Rack_ESTI,
+                "DATA",
+                60
+            );
+
+            var placeRackResult = await _commandDispatcher.HandleAsync<PlaceRackInNodeContainer, Result>(placeRackCmd);
+
+            var equipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                new GetEquipmentDetails(new InterestIdList() { nodeContainerBeforeCommand.InterestId })
+            );
+
+            // Assert
+            placeRackResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(11)]
+        public async Task PlaceOltDataRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                nodeContainerId: sutNodeContainer,
+                Guid.NewGuid(),
+                terminalEquipmentSpecificationId: TestSpecifications.OLT,
+                numberOfEquipments: 1,
+                startSequenceNumber: 1,
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
+                namingInfo: new Events.Core.Infos.NamingInfo() { Name = "OLT 1" }
+            )
+            {
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[1].Id, 30, SubrackPlacmentMethod.BottomUp)
+            };
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(12)]
+        public async Task PlaceLineCardInOltInDataRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get olt
+            var olt = nodeContainerBeforeCommand.Racks[1].SubrackMounts.First(s => s.Position == 30);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(olt.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var placeEquipmentCmd = new PlaceAdditionalStructuresInTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                structureSpecificationId: TestSpecifications.OLT_LineCard16Port,
+                position: 1,
+                numberOfStructures: 1
+            );
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
+
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+
+
+        [Fact, Order(13)]
+        public async Task PlaceEmptyLgxHolderInDataRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            var placeEquipmentCmd = new PlaceTerminalEquipmentInNodeContainer(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                nodeContainerId: sutNodeContainer,
+                Guid.NewGuid(),
+                terminalEquipmentSpecificationId: TestSpecifications.LGX_Holder,
+                numberOfEquipments: 1,
+                startSequenceNumber: 1,
+                namingMethod: TerminalEquipmentNamingMethodEnum.NameOnly,
+                namingInfo: new Events.Core.Infos.NamingInfo() { Name = "LGX Holder" }
+            )
+            {
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[1].Id, 10, SubrackPlacmentMethod.BottomUp)
+            };
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceTerminalEquipmentInNodeContainer, Result>(placeEquipmentCmd);
+    
+            // Assert
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(14)]
+        public async Task PlaceWdmInLgxHolderInDataRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get LGX holder at position 10
+            var splitterMount = nodeContainerBeforeCommand.Racks[1].SubrackMounts.First(s => s.Position == 10);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var placeEquipmentCmd = new PlaceAdditionalStructuresInTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                structureSpecificationId: TestSpecifications.LGX_WDMType1,
+                position: 1,
+                numberOfStructures: 1
+            );
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
+
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+        }
 
 
         [Fact, Order(50)]
@@ -377,8 +533,11 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentAfterUpdate);
 
-            // Check that structure is removed from equipment
-            terminalEquipmentAfterUpdate.TerminalStructures.Length.Should().Be(3);
+            // Check that removed structure is marked as deleted
+            terminalEquipmentAfterUpdate.TerminalStructures.First(t => t.Id == terminalStructureToRemove.Id).Deleted.Should().BeTrue();
+
+            // Check that the rest is not marked as deleted
+            terminalEquipmentAfterUpdate.TerminalStructures.First(t => t.Id != terminalStructureToRemove.Id).Deleted.Should().BeFalse();
 
             // Check that terminal of removed structure are removed from graph
             foreach (var terminal in terminalStructureToRemove.Terminals)
