@@ -575,13 +575,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
-
-            if (_container.TerminalToTerminalConnections != null && _container.TerminalToTerminalConnections.Any(t => t.FromTerminalId == terminalId))
-                return true;
-
-            if (_container.TerminalToTerminalConnections != null && _container.TerminalToTerminalConnections.Any(t => t.ToTerminalId == terminalId))
-                return true;
-
+          
             var version = graph.LatestCommitedVersion;
 
             foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
