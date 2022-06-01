@@ -284,21 +284,36 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private FaceKindEnum GetZEndFaceKind(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
         {
+            // If no connector, then it's always a splice no matter if bi teminal or not
             if (terminal.ConnectorType == null)
                 return FaceKindEnum.SpliceSide;
 
-            var faceKind = GetAEndFaceKind(relevantEquipmentData, terminal);
+            // If terminal is bi-directional, check whether other side is patched or spliced and return opposite of that
+            if (terminal.Direction == TerminalDirectionEnum.BI)
+            {
+                var aEndFaceKind = GetAEndFaceKind(relevantEquipmentData, terminal);
 
-            if (faceKind == FaceKindEnum.SpliceSide)
-                return FaceKindEnum.PatchSide;
+                if (aEndFaceKind == FaceKindEnum.SpliceSide)
+                    return FaceKindEnum.PatchSide;
+                else
+                    return FaceKindEnum.SpliceSide;
+            }
             else
-                return FaceKindEnum.SpliceSide;
+            {
+                return FaceKindEnum.PatchSide;
+            }
+
         }
 
         private FaceKindEnum GetAEndFaceKind(RelevantEquipmentData relevantEquipmentData, Terminal terminal)
         {
             if (terminal.ConnectorType == null)
                 return FaceKindEnum.SpliceSide;
+
+            // If non bi terminal, and we have a patch connector, then it must be a patch
+            if (terminal.Direction != TerminalDirectionEnum.BI)
+                return FaceKindEnum.PatchSide;
+
 
             bool aConnected = false;
             bool aIsPatched = false;
