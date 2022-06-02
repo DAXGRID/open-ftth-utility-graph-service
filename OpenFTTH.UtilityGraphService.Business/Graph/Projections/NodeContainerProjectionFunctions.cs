@@ -324,5 +324,29 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
         }
 
 
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalsDisconnected @event)
+        {
+            List<TerminalToTerminalConnection> newTerminalConnectionsList = new();
+
+            if (existingEquipment.TerminalToTerminalConnections != null)
+            {
+                foreach (var existingConnection in existingEquipment.TerminalToTerminalConnections)
+                {
+                    if ((existingConnection.FromTerminalId == @event.FromTerminalId && existingConnection.ToTerminalId == @event.ToTerminalId) || (existingConnection.FromTerminalId == @event.ToTerminalId && existingConnection.ToTerminalId == @event.FromTerminalId))
+                    {
+                        continue;
+                    }
+
+                    newTerminalConnectionsList.Add(existingConnection);
+                }
+            }
+
+            return existingEquipment with
+            {
+                TerminalToTerminalConnections = newTerminalConnectionsList.ToArray()
+            };
+        }
+
+
     }
 }

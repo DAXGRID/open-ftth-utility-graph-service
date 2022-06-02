@@ -92,6 +92,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEvent<NodeContainerTerminalEquipmentsAddedToRack>(Project);
             ProjectEvent<NodeContainerTerminalEquipmentReferenceRemoved>(Project);
             ProjectEvent<NodeContainerTerminalsConnected>(Project);
+            ProjectEvent<NodeContainerTerminalsDisconnected>(Project);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -338,6 +339,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 case (NodeContainerTerminalsConnected @event):
                     ProcessTerminalsConnected(@event);
                     break;
+
+                case (NodeContainerTerminalsDisconnected @event):
+                    ProcessTerminalsDisconnected(@event);
+                    break;
             }
         }
 
@@ -349,6 +354,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             UtilityGraphTerminalEquipmentProjections.ApplyNewTerminalToTerminalConnectionToGraph(@event, existingNodeContainer.RouteNodeId, _utilityGraph);
         }
+
+        private void ProcessTerminalsDisconnected(NodeContainerTerminalsDisconnected @event)
+        {
+            var existingNodeContainer = _nodeContainerByEquipmentId[@event.NodeContainerId];
+            TryUpdate(NodeContainerProjectionFunctions.Apply(existingNodeContainer, @event));
+
+            UtilityGraphTerminalEquipmentProjections.ApplyTerminalToTerminalDisconnectedToGraph(@event, existingNodeContainer.RouteNodeId, _utilityGraph);
+        }
+
 
         private void ProcessSpanEquipmentParentDetach(SpanEquipmentDetachedFromParent @event)
         {

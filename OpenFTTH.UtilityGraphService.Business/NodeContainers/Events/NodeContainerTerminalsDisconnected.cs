@@ -10,5 +10,14 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Events
         public Guid FromTerminalId { get; }
         public Guid ToTerminalEquipmentId { get; }
         public Guid ToTerminalId { get; }
+
+        public NodeContainerTerminalsDisconnected(Guid nodeContainerId, Guid fromTerminalEquipmentId, Guid fromTerminalId, Guid toTerminalEquipmentId, Guid toTerminalId)
+        {
+            NodeContainerId = nodeContainerId;
+            FromTerminalEquipmentId = fromTerminalEquipmentId;
+            FromTerminalId = fromTerminalId;
+            ToTerminalEquipmentId = toTerminalEquipmentId;
+            ToTerminalId = toTerminalId;
+        }
     }
 }

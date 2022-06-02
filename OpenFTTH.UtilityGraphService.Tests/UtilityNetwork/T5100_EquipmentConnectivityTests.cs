@@ -409,7 +409,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             trace.All.Any(g => g.Id == customerSplitter.TerminalStructures.First().Terminals[5].Id).Should().BeTrue();
         }
 
-
         [Fact, Order(6)]
         public async Task Connect1_2SplitterTo1_32Splitter_ShouldSucceed()
         {
@@ -549,6 +548,72 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityViewResult.IsSuccess.Should().BeTrue();
 
             var connectivityTraceView = connectivityViewResult.Value;
+        }
+
+
+        [Fact, Order(8)]
+        public async Task DisonnectOltFromWdm_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get olt
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[1].SubrackMounts.First(s => s.Position == 30).TerminalEquipmentId, out var olt);
+
+            // Get lgx holder
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[1].SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId, out var lgx);
+
+            var oltCard1Port1Id = olt.TerminalStructures.First().Terminals[0].Id;
+            var wdmIpPortId = lgx.TerminalStructures.First().Terminals[1].Id;
+
+            // Get terminal to terminal connection
+            var version = utilityNetwork.Graph.LatestCommitedVersion;
+            utilityNetwork.Graph.TryGetGraphElement<UtilityGraphConnectedTerminal>(oltCard1Port1Id, out var oltCard1Port1Terminal);
+            var terminalToTerminalConnection = oltCard1Port1Terminal.NeighborElements(version).First(n => n is UtilityGraphTerminalToTerminalConnectivityLink) as UtilityGraphTerminalToTerminalConnectivityLink;
+
+
+            // Check disconnect view
+            var getDisconnectView = new GetDisconnectSpanEquipmentFromTerminalView(terminalToTerminalConnection.Id, oltCard1Port1Id);
+
+            var getDisconnectViewQueryResult = await _queryDispatcher.HandleAsync<GetDisconnectSpanEquipmentFromTerminalView, Result<DisconnectSpanEquipmentFromTerminalView>>(
+                getDisconnectView
+            );
+
+
+            // Disconnect olt with wdm
+            var disconnectCmd = new DisconnectSpanSegmentsFromTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                disconnects: new DisconnectSpanSegmentFromTerminalOperation[]
+                {
+                    new DisconnectSpanSegmentFromTerminalOperation(terminalToTerminalConnection.Id, oltCard1Port1Id)
+                }
+            ); 
+
+            var disconnectCmdResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsFromTerminalsAtRouteNode, Result>(disconnectCmd);
+
+            // Assert
+            disconnectCmdResult.IsSuccess.Should().BeTrue();
+
+
+            // Check equipment connectivity view
+            var connectivityViewQuery = new GetTerminalEquipmentConnectivityView(sutNodeId, olt.Id);
+
+            var connectivityViewResult = await _queryDispatcher.HandleAsync<GetTerminalEquipmentConnectivityView, Result<TerminalEquipmentAZConnectivityViewModel>>(
+                connectivityViewQuery
+            );
+
+            connectivityViewResult.IsSuccess.Should().BeTrue();
+            var oltTerminal1line = connectivityViewResult.Value.TerminalEquipments.First().TerminalStructures.First().Lines.First();
+
+            oltTerminal1line.Z.ConnectedTo.Should().BeNull();
+
         }
 
 

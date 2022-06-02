@@ -158,5 +158,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             trans.Commit();
         }
 
+        public static void ApplyTerminalToTerminalDisconnectedToGraph(NodeContainerTerminalsDisconnected @event, Guid routeNodeId, UtilityGraph graph)
+        {
+            var trans = graph.CreateTransaction();
+
+            var version = trans.Version.InternalVersionId;
+
+            // Find from terminal
+            if (!graph.TryGetGraphElement<UtilityGraphConnectedTerminal>(@event.FromTerminalId, out var fromTerminal))
+                return;
+
+            // Find segment connecting the two terminals
+            var terminalToTerminalConnection = fromTerminal.NeighborElements(version).OfType<UtilityGraphTerminalToTerminalConnectivityLink>().First(e => e.InV(version).Id == @event.ToTerminalId || e.OutV(version).Id == @event.ToTerminalId);
+
+            if (terminalToTerminalConnection != null)
+            {
+                trans.Delete(terminalToTerminalConnection.Id);
+            }
+
+            trans.Commit();
+        }
     }
 }

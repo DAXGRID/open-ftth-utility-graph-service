@@ -41,6 +41,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             Register<NodeContainerTerminalEquipmentMovedToRack>(Apply);
             Register<NodeContainerTerminalEquipmentReferenceRemoved>(Apply);
             Register<NodeContainerTerminalsConnected>(Apply);
+            Register<NodeContainerTerminalsDisconnected>(Apply);
         }
 
         #region Place in network
@@ -605,6 +606,60 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return false;
         }
+
+        #endregion
+
+        #region Disconnect Terminals
+        public Result DisconnectTerminals(CommandContext cmdContext, UtilityGraph graph, TerminalEquipment fromTerminalEquipment, Guid fromTerminalId, TerminalEquipment toTerminalEquipment, Guid toTerminalId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (!CheckIfTerminalReferenceExistsInContainer(fromTerminalEquipment.Id))
+                throw new ApplicationException($"Terminal equipment with id: {fromTerminalEquipment.Id} not found in node container with id: {this.Id}");
+
+            if (!CheckIfTerminalReferenceExistsInContainer(toTerminalEquipment.Id))
+                throw new ApplicationException($"Terminal equipment with id: {toTerminalEquipment.Id} not found in node container with id: {this.Id}");
+
+            if (!CheckIfTerminalExistsInEquipment(fromTerminalEquipment, fromTerminalId))
+                throw new ApplicationException($"Terminal with id: {fromTerminalId} not found in terminal equipment with id: {fromTerminalEquipment.Id} Error trying to disconnect terminals in node container with id: {this.Id}");
+
+            if (!CheckIfTerminalExistsInEquipment(toTerminalEquipment, toTerminalId))
+                throw new ApplicationException($"Terminal with id: {toTerminalId} not found in terminal equipment with id: {toTerminalEquipment.Id} Error trying to disconnect terminals in node container with id: {this.Id}");
+
+            if (!IsTerminalConnected(graph, fromTerminalEquipment, fromTerminalId))
+                return Result.Fail(new ConnectTerminalsAtRouteNodeError(ConnectTerminalsAtRouteNodeErrorCodes.TERMINAL_NOT_CONNECTED, $"The terminal with id: {fromTerminalId} in terminal equipment with id: {fromTerminalEquipment.Id} is not connected"));
+
+            if (!IsTerminalConnected(graph, toTerminalEquipment, toTerminalId))
+                return Result.Fail(new ConnectTerminalsAtRouteNodeError(ConnectTerminalsAtRouteNodeErrorCodes.TERMINAL_NOT_CONNECTED, $"The terminal with id: {toTerminalId} in terminal equipment with id: {toTerminalEquipment.Id} is not connected"));
+
+            var e = new NodeContainerTerminalsDisconnected(
+                  nodeContainerId: this.Id,
+                  fromTerminalEquipmentId: fromTerminalEquipment.Id,
+                  fromTerminalId: fromTerminalId,
+                  toTerminalEquipmentId: toTerminalEquipment.Id,
+                  toTerminalId: toTerminalId
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(e);
+
+            return Result.Ok();
+        }
+
+        private void Apply(NodeContainerTerminalsDisconnected @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+       
 
         #endregion
 

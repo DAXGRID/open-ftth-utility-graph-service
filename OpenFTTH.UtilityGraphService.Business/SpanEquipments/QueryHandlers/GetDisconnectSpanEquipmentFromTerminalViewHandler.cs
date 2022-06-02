@@ -46,14 +46,24 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(query.TerminalId, out var terminalRef))
                 return Task.FromResult(Result.Fail<DisconnectSpanEquipmentFromTerminalView>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_TERMINAL_ID, $"Invalid query. Cannot find any terminal equipment by the terminal id specified: {query.TerminalId}")));
 
-            if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(query.SpanSegmentId, out var segmentRef))
-                return Task.FromResult(Result.Fail<DisconnectSpanEquipmentFromTerminalView>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_SEGMENT_ID, $"Invalid query. Cannot find any span equipment by the span segment id specified: {query.SpanSegmentId}")));
+            if (IsTerminalToTerminalLink(query.TerminalId, query.SpanSegmentId))
+            {
+                var link = GetTerminalToTerminalConnectivityLink(query.TerminalId, query.SpanSegmentId);
 
 
-            //return Task.FromResult(Result.Fail<SpanEquipmentAZConnectivityViewModel>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_EQUIPMENT_ID, $"Invalid query. Cannot find any span equipment by the equipment or span segment id specified: {spanEquipmentOrSegmentId}")));
+                return Task.FromResult(Result.Ok(BuildDisconnectLinkFromTerminalView(terminalRef, link)));
 
-            return Task.FromResult(Result.Ok(BuildDisconnectSpanEquipmentFromTerminalView(terminalRef, segmentRef)));
+            }
+            else
+            {
+                if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(query.SpanSegmentId, out var segmentRef))
+                    return Task.FromResult(Result.Fail<DisconnectSpanEquipmentFromTerminalView>(new GetEquipmentDetailsError(GetEquipmentDetailsErrorCodes.INVALID_QUERY_ARGUMENT_ERROR_LOOKING_UP_SPECIFIED_EQUIPMENT_BY_SEGMENT_ID, $"Invalid query. Cannot find any span equipment by the span segment id specified: {query.SpanSegmentId}")));
+
+                return Task.FromResult(Result.Ok(BuildDisconnectSpanEquipmentFromTerminalView(terminalRef, segmentRef)));
+            }
         }
+
+      
 
         private DisconnectSpanEquipmentFromTerminalView BuildDisconnectSpanEquipmentFromTerminalView(IUtilityGraphTerminalRef terminalRef, IUtilityGraphSegmentRef segmentRef)
         {
@@ -110,6 +120,52 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             }
 
             return new DisconnectSpanEquipmentFromTerminalView(spanEquipment.Name, lines.ToArray());
+        }
+
+        private DisconnectSpanEquipmentFromTerminalView BuildDisconnectLinkFromTerminalView(IUtilityGraphTerminalRef terminalRef, UtilityGraphTerminalToTerminalConnectivityLink? link)
+        {
+            var equipmentData = GatherRelevantSpanEquipmentData(terminalRef.TerminalId, link);
+
+            int seqNo = 1;
+
+            List<DisconnectSpanEquipmentFromTerminalViewConnection> lines = new();
+
+
+            var traceInfo = equipmentData.TracedSegments[terminalRef.TerminalId];
+
+            var terminalEquipmentTraceEnd = GetTerminalEquipmentEnd(equipmentData, traceInfo, terminalRef.RouteNodeId);
+
+            var oppositeTraceEnd = GetOppositeEquipmentEnd(equipmentData, traceInfo, terminalRef.RouteNodeId);
+
+            string? equipmentName = null;
+            string? equipmentStrutureName = null;
+            string? equipmentTerminalName = null;
+
+            if (terminalEquipmentTraceEnd != null)
+            {
+                equipmentName = GetEquipmentName(equipmentData, terminalEquipmentTraceEnd.NeighborTerminal);
+                equipmentStrutureName = equipmentData.GetEquipmentStructureInfoString(terminalEquipmentTraceEnd.NeighborTerminal);
+                equipmentTerminalName = equipmentData.GetEquipmentTerminalInfoString(terminalEquipmentTraceEnd.NeighborTerminal);
+            }
+
+            lines.Add(
+                new DisconnectSpanEquipmentFromTerminalViewConnection(
+                    isConnected: IsConnected(terminalEquipmentTraceEnd),
+                    terminalId: terminalEquipmentTraceEnd != null ? terminalEquipmentTraceEnd.NeighborTerminal.Id : Guid.Empty,
+                    segmentId: link.Id,
+                    spanStructurePosition: 1,
+                    spanStructureName: "patch/pigtail",
+                    terminalEquipmentName: equipmentName,
+                    terminalStructureName: equipmentStrutureName,
+                    terminalName: equipmentTerminalName,
+                    end: null
+                )
+            );
+
+            seqNo++;
+
+
+            return new DisconnectSpanEquipmentFromTerminalView("patch/pigtail", lines.ToArray());
         }
 
         private string GetEquipmentName(RelevantEquipmentData equipmentData, UtilityGraphConnectedTerminal neighborTerminal)
@@ -194,6 +250,19 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             return relevantEquipmentData;
         }
 
+        private RelevantEquipmentData GatherRelevantSpanEquipmentData(Guid terminalId, UtilityGraphTerminalToTerminalConnectivityLink? link)
+        {
+            var tracedSegments = TraceOneTerminal(terminalId);
+
+            var endNodesIds = GetEndNodeIdsFromTraceResult(tracedSegments.Values);
+
+            RelevantEquipmentData relevantEquipmentData = new RelevantEquipmentData(_eventStore, _utilityNetwork, _queryDispatcher, endNodesIds);
+
+            relevantEquipmentData.TracedSegments = tracedSegments;
+
+            return relevantEquipmentData;
+        }
+
         private Dictionary<Guid, TraceInfo> TraceAllSegments(SpanEquipment spanEquipment)
         {
             Dictionary<Guid, TraceInfo> traceInfosByTerminalId = new();
@@ -223,6 +292,32 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                     traceInfosByTerminalId.Add(segment.Id, traceInfo);
                 }
             }
+
+            return traceInfosByTerminalId;
+        }
+
+        private Dictionary<Guid, TraceInfo> TraceOneTerminal(Guid terminalId)
+        {
+            Dictionary<Guid, TraceInfo> traceInfosByTerminalId = new();
+
+            TraceInfo traceInfo = new TraceInfo();
+
+            var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(terminalId);
+
+            if (terminalTraceResult != null)
+            {
+                if (terminalTraceResult.Upstream.Length > 0)
+                {
+                    traceInfo.Upstream = GetEndInfoFromTrace(terminalId, terminalTraceResult.Upstream);
+                }
+
+                if (terminalTraceResult.Downstream.Length > 0)
+                {
+                    traceInfo.Downstream = GetEndInfoFromTrace(terminalId, terminalTraceResult.Downstream);
+                }
+            }
+
+            traceInfosByTerminalId.Add(terminalId, traceInfo);
 
             return traceInfosByTerminalId;
         }
@@ -276,7 +371,29 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
             return new TraceEndInfo((UtilityGraphConnectedTerminal)neighborTerminal, (UtilityGraphConnectedTerminal)terminalEnd);
         }
-       
+
+        private bool IsTerminalToTerminalLink(Guid terminalId, Guid segmentId)
+        {
+            var link = GetTerminalToTerminalConnectivityLink(terminalId, segmentId);
+
+            if (link != null)
+                return true;
+            else
+                return false;
+        }
+
+        private UtilityGraphTerminalToTerminalConnectivityLink? GetTerminalToTerminalConnectivityLink(Guid terminalId, Guid terminalToTerminalLinkId)
+        {
+            if (!_utilityNetwork.Graph.TryGetGraphElement<UtilityGraphConnectedTerminal>(terminalId, out var terminal))
+                throw new ApplicationException($"Error looking up connected terminal by id: {terminalId}");
+
+            var version = _utilityNetwork.Graph.LatestCommitedVersion;
+
+            var terminalToTerminalLink = terminal.NeighborElements(version).FirstOrDefault(n => n.Id == terminalToTerminalLinkId) as UtilityGraphTerminalToTerminalConnectivityLink;
+
+            return terminalToTerminalLink;
+        }
+
         private class RelevantEquipmentData : RelatedDataHolder
         {
             public Dictionary<Guid, TraceInfo> TracedSegments { get; set; }
