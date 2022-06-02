@@ -550,7 +550,6 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var connectivityTraceView = connectivityViewResult.Value;
         }
 
-
         [Fact, Order(8)]
         public async Task DisonnectOltFromWdm_ShouldSucceed()
         {
@@ -613,6 +612,176 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var oltTerminal1line = connectivityViewResult.Value.TerminalEquipments.First().TerminalStructures.First().Lines.First();
 
             oltTerminal1line.Z.ConnectedTo.Should().BeNull();
+
+        }
+
+        [Fact, Order(10)]
+        public async Task ConnectLisaTray10Pin1ToLisaTray11Pin1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get lisa tray 10
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId, out var lisaTray10);
+
+            // Get lisa tray 11
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 11).TerminalEquipmentId, out var lisaTray11);
+
+            // Connect 
+            var connectCmd = new ConnectTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                fromTerminalId: lisaTray10.TerminalStructures.First().Terminals.First().Id,
+                toTerminalId: lisaTray11.TerminalStructures.First().Terminals.First().Id,
+                fiberCoordLength: 100.0
+            );
+
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+        [Fact, Order(11)]
+        public async Task ConnectLisaTray10Pin1ToLisaTray12Pin1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get lisa tray 10
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId, out var lisaTray10);
+
+            // Get lisa tray 12
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 12).TerminalEquipmentId, out var lisaTray12);
+
+            // Connect 
+            var connectCmd = new ConnectTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                toTerminalId: lisaTray10.TerminalStructures.First().Terminals.First().Id,
+                fromTerminalId: lisaTray12.TerminalStructures.First().Terminals.First().Id,
+                fiberCoordLength: 100.0
+            );
+
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+        }
+
+
+
+        [Fact, Order(12)]
+        public async Task DisonnectLisaTray10Pin1FromLisaTray11Pin1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get lisa tray 10
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId, out var lisaTray10);
+            var lisaTray10Port1TerminalId = lisaTray10.TerminalStructures.First().Terminals.First().Id;
+
+            // Get lisa tray 11
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 11).TerminalEquipmentId, out var lisaTray11);
+            var lisaTray11Port1TerminalId = lisaTray11.TerminalStructures.First().Terminals.First().Id;
+
+            // Get terminal to terminal connection
+            var version = utilityNetwork.Graph.LatestCommitedVersion;
+            utilityNetwork.Graph.TryGetGraphElement<UtilityGraphConnectedTerminal>(lisaTray10Port1TerminalId, out var lisaTray10Port1Terminal);
+            var terminalToTerminalConnection = lisaTray10Port1Terminal.NeighborElements(version).OfType<UtilityGraphTerminalToTerminalConnectivityLink>().First(n => n.NeighborElements(version).Exists(n => n.Id == lisaTray11Port1TerminalId)) as UtilityGraphTerminalToTerminalConnectivityLink;
+
+
+            // Check disconnect view
+            var getDisconnectView = new GetDisconnectSpanEquipmentFromTerminalView(terminalToTerminalConnection.Id, lisaTray10Port1TerminalId);
+
+            var getDisconnectViewQueryResult = await _queryDispatcher.HandleAsync<GetDisconnectSpanEquipmentFromTerminalView, Result<DisconnectSpanEquipmentFromTerminalView>>(
+                getDisconnectView
+            );
+
+
+            // Disconnect olt with wdm
+            var disconnectCmd = new DisconnectSpanSegmentsFromTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                disconnects: new DisconnectSpanSegmentFromTerminalOperation[]
+                {
+                    new DisconnectSpanSegmentFromTerminalOperation(terminalToTerminalConnection.Id, lisaTray10Port1TerminalId)
+                }
+            );
+
+            var disconnectCmdResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsFromTerminalsAtRouteNode, Result>(disconnectCmd);
+
+            // Assert
+            disconnectCmdResult.IsSuccess.Should().BeTrue();
+
+        }
+
+        [Fact, Order(13)]
+        public async Task DisonnectLisaTray10Pin1FromLisaTray12Pin1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get lisa tray 10
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId, out var lisaTray10);
+            var lisaTray10Port1TerminalId = lisaTray10.TerminalStructures.First().Terminals.First().Id;
+
+            // Get lisa tray 12
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 12).TerminalEquipmentId, out var lisaTray12);
+            var lisaTray12Port1TerminalId = lisaTray12.TerminalStructures.First().Terminals.First().Id;
+
+            // Get terminal to terminal connection
+            var version = utilityNetwork.Graph.LatestCommitedVersion;
+            utilityNetwork.Graph.TryGetGraphElement<UtilityGraphConnectedTerminal>(lisaTray10Port1TerminalId, out var lisaTray10Port1Terminal);
+            var terminalToTerminalConnection = lisaTray10Port1Terminal.NeighborElements(version).OfType<UtilityGraphTerminalToTerminalConnectivityLink>().First(n => n.NeighborElements(version).Exists(n => n.Id == lisaTray12Port1TerminalId)) as UtilityGraphTerminalToTerminalConnectivityLink;
+
+
+            // Check disconnect view
+            var getDisconnectView = new GetDisconnectSpanEquipmentFromTerminalView(terminalToTerminalConnection.Id, lisaTray10Port1TerminalId);
+
+            var getDisconnectViewQueryResult = await _queryDispatcher.HandleAsync<GetDisconnectSpanEquipmentFromTerminalView, Result<DisconnectSpanEquipmentFromTerminalView>>(
+                getDisconnectView
+            );
+
+
+            // Disconnect olt with wdm
+            var disconnectCmd = new DisconnectSpanSegmentsFromTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                disconnects: new DisconnectSpanSegmentFromTerminalOperation[]
+                {
+                    new DisconnectSpanSegmentFromTerminalOperation(terminalToTerminalConnection.Id, lisaTray10Port1TerminalId)
+                }
+            );
+
+            var disconnectCmdResult = await _commandDispatcher.HandleAsync<DisconnectSpanSegmentsFromTerminalsAtRouteNode, Result>(disconnectCmd);
+
+            // Assert
+            disconnectCmdResult.IsSuccess.Should().BeTrue();
 
         }
 

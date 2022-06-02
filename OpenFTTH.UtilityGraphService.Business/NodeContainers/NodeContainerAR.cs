@@ -521,10 +521,10 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             if (fromTerminalId == toTerminalId)
                 throw new ApplicationException($"Terminal with id: {toTerminalId} can't be connected to itself. Error trying to connect terminals in node container with id: {this.Id}");
 
-            if (IsTerminalConnected(graph, fromTerminalEquipment, fromTerminalId))
+            if (IsTerminalFullyConnected(graph, fromTerminalEquipment, fromTerminalId))
                 return Result.Fail(new ConnectTerminalsAtRouteNodeError(ConnectTerminalsAtRouteNodeErrorCodes.TERMINAL_ALREADY_CONNECTED, $"The terminal with id: {fromTerminalId} in terminal equipment with id: {fromTerminalEquipment.Id} is allready fully connected"));
 
-            if (IsTerminalConnected(graph, toTerminalEquipment, toTerminalId))
+            if (IsTerminalFullyConnected(graph, toTerminalEquipment, toTerminalId))
                 return Result.Fail(new ConnectTerminalsAtRouteNodeError(ConnectTerminalsAtRouteNodeErrorCodes.TERMINAL_ALREADY_CONNECTED, $"The terminal with id: {toTerminalId} in terminal equipment with id: {toTerminalEquipment.Id} is allready fully connected"));
 
             var e = new NodeContainerTerminalsConnected(
@@ -572,7 +572,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
 
-        private bool IsTerminalConnected(UtilityGraph graph, TerminalEquipment _terminalEquipment, Guid terminalId)
+        private bool IsTerminalFullyConnected(UtilityGraph graph, TerminalEquipment _terminalEquipment, Guid terminalId)
         {
             if (_container == null)
                 throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
@@ -606,6 +606,42 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return false;
         }
+
+        private bool IsTerminalConnected(UtilityGraph graph, TerminalEquipment _terminalEquipment, Guid terminalId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            var version = graph.LatestCommitedVersion;
+
+            foreach (var terminalStructure in _terminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    if (terminal.Id == terminalId)
+                    {
+                        var terminalElement = graph.GetTerminal(terminal.Id, version);
+
+                        if (terminalElement != null && terminalElement is UtilityGraphConnectedTerminal connectedTerminal)
+                        {
+                            if (terminal.Direction == TerminalDirectionEnum.BI)
+                            {
+                                if (connectedTerminal.NeighborElements(version).Count > 0)
+                                    return true;
+                            }
+                            else
+                            {
+                                if (connectedTerminal.NeighborElements(version).Where(n => !(n is UtilityGraphInternalEquipmentConnectivityLink)).Count() > 0)
+                                    return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
 
         #endregion
 
