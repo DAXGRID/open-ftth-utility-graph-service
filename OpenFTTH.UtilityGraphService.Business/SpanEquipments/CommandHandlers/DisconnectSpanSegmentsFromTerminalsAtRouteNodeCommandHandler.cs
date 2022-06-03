@@ -105,21 +105,24 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 }
 
 
-                // Disconnect the first span equipment from the terminal
+                // Disconnect the segments
                 var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
                 var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
 
-                var firstSpanEquipmentConnectResult = spanEquipmentAR.DisconnectSegmentsFromTerminals(
+                var disconnectResult = spanEquipmentAR.DisconnectSegmentsFromTerminals(
                     cmdContext: commandContext,
                     command.Disconnects
                 );
 
-                _eventStore.Aggregates.Store(spanEquipmentAR);
+                if (disconnectResult.IsSuccess)
+                {
+                    _eventStore.Aggregates.Store(spanEquipmentAR);
 
-                NotifyExternalServicesAboutChange(command.RouteNodeId, new Guid[] { spanEquipment.Id });
+                    NotifyExternalServicesAboutChange(command.RouteNodeId, new Guid[] { spanEquipment.Id });
+                }
 
-                return Task.FromResult(Result.Ok());
+                return Task.FromResult(disconnectResult);
             }
         }
 
@@ -188,4 +191,3 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
     }
 }
 
-  

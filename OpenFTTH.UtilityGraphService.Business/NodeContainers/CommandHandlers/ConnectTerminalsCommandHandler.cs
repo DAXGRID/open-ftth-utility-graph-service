@@ -5,10 +5,8 @@ using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers;
-using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
@@ -90,8 +88,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     eventId: Guid.NewGuid(),
                     eventTimestamp: DateTime.UtcNow,
                     applicationName: "UtilityNetworkService",
-                    applicationInfo: null,
-                    category: "EquipmentConnectivityModification",
+                    applicationInfo: null,  
+                    category: "FiberConnectivityModification.Connect",
                     idChangeSets: idChangeSets.ToArray(),
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
