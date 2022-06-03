@@ -122,48 +122,44 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             return new DisconnectSpanEquipmentFromTerminalView(spanEquipment.Name, lines.ToArray());
         }
 
-        private DisconnectSpanEquipmentFromTerminalView BuildDisconnectLinkFromTerminalView(IUtilityGraphTerminalRef terminalRef, UtilityGraphTerminalToTerminalConnectivityLink? link)
+        private DisconnectSpanEquipmentFromTerminalView BuildDisconnectLinkFromTerminalView(IUtilityGraphTerminalRef terminalRef, UtilityGraphTerminalToTerminalConnectivityLink link)
         {
-            var equipmentData = GatherRelevantSpanEquipmentData(terminalRef.TerminalId, link);
-
-            int seqNo = 1;
-
             List<DisconnectSpanEquipmentFromTerminalViewConnection> lines = new();
 
+            var oppositeEndTerminal = GetOppositeTerminal(link, terminalRef.TerminalId);
 
-            var traceInfo = equipmentData.TracedSegments[terminalRef.TerminalId];
-
-            var terminalEquipmentTraceEnd = GetTerminalEquipmentEnd(equipmentData, traceInfo, terminalRef.RouteNodeId);
-
-            var oppositeTraceEnd = GetOppositeEquipmentEnd(equipmentData, traceInfo, terminalRef.RouteNodeId);
-
-            string? equipmentName = null;
-            string? equipmentStrutureName = null;
-            string? equipmentTerminalName = null;
-
-            if (terminalEquipmentTraceEnd != null)
+            if (oppositeEndTerminal != null)
             {
-                equipmentName = GetEquipmentName(equipmentData, terminalEquipmentTraceEnd.NeighborTerminal);
-                equipmentStrutureName = equipmentData.GetEquipmentStructureInfoString(terminalEquipmentTraceEnd.NeighborTerminal);
-                equipmentTerminalName = equipmentData.GetEquipmentTerminalInfoString(terminalEquipmentTraceEnd.NeighborTerminal);
+                var equipmentData = GatherRelevantSpanEquipmentData(oppositeEndTerminal.Id);
+
+                int seqNo = 1;
+
+                var traceInfo = equipmentData.TracedSegments[oppositeEndTerminal.Id];
+
+                string? equipmentName = null;
+                string? equipmentStrutureName = null;
+                string? equipmentTerminalName = null;
+
+                equipmentName = GetEquipmentName(equipmentData, oppositeEndTerminal);
+                equipmentStrutureName = equipmentData.GetEquipmentStructureInfoString(oppositeEndTerminal);
+                equipmentTerminalName = equipmentData.GetEquipmentTerminalInfoString(oppositeEndTerminal);
+
+                lines.Add(
+                    new DisconnectSpanEquipmentFromTerminalViewConnection(
+                        isConnected: true,
+                        terminalId: oppositeEndTerminal.TerminalId,
+                        segmentId: link.Id,
+                        spanStructurePosition: 1,
+                        spanStructureName: "patch/pigtail",
+                        terminalEquipmentName: equipmentName,
+                        terminalStructureName: equipmentStrutureName,
+                        terminalName: equipmentTerminalName,
+                        end: null
+                    )
+                );
+
+                seqNo++;
             }
-
-            lines.Add(
-                new DisconnectSpanEquipmentFromTerminalViewConnection(
-                    isConnected: IsConnected(terminalEquipmentTraceEnd),
-                    terminalId: terminalEquipmentTraceEnd != null ? terminalEquipmentTraceEnd.NeighborTerminal.Id : Guid.Empty,
-                    segmentId: link.Id,
-                    spanStructurePosition: 1,
-                    spanStructureName: "patch/pigtail",
-                    terminalEquipmentName: equipmentName,
-                    terminalStructureName: equipmentStrutureName,
-                    terminalName: equipmentTerminalName,
-                    end: null
-                )
-            );
-
-            seqNo++;
-
 
             return new DisconnectSpanEquipmentFromTerminalView("patch/pigtail", lines.ToArray());
         }
@@ -250,8 +246,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             return relevantEquipmentData;
         }
 
-        private RelevantEquipmentData GatherRelevantSpanEquipmentData(Guid terminalId, UtilityGraphTerminalToTerminalConnectivityLink? link)
+        private RelevantEquipmentData GatherRelevantSpanEquipmentData(Guid terminalId)
         {
+            // Get opposite link terminal
             var tracedSegments = TraceOneTerminal(terminalId);
 
             var endNodesIds = GetEndNodeIdsFromTraceResult(tracedSegments.Values);
@@ -261,6 +258,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             relevantEquipmentData.TracedSegments = tracedSegments;
 
             return relevantEquipmentData;
+        }
+
+        private UtilityGraphConnectedTerminal? GetOppositeTerminal(UtilityGraphTerminalToTerminalConnectivityLink link, Guid terminalId)
+        {
+            var version = _utilityNetwork.Graph.LatestCommitedVersion;
+
+            var neighbors = link.NeighborElements(version).ToArray();
+
+            return link.NeighborElements(version).FirstOrDefault(n => n.Id != terminalId) as UtilityGraphConnectedTerminal;
         }
 
         private Dictionary<Guid, TraceInfo> TraceAllSegments(SpanEquipment spanEquipment)
