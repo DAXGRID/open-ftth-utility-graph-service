@@ -599,6 +599,22 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             var existingSpanEquipment = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
 
+            // Remove references from conduit index
+            if (existingSpanEquipment.UtilityNetworkHops != null)
+            {
+                foreach (var hop in existingSpanEquipment.UtilityNetworkHops)
+                {
+                    foreach (var affix in hop.ParentAffixes)
+                    {
+                        if (_relatedCablesByConduitSegmentId.TryGetValue(affix.SpanSegmentId, out var cableIds))
+                        {
+                            cableIds.Remove(existingSpanEquipment.Id);
+                        }
+                    }
+                }
+            }
+
+
             TryRemoveSpanEquipment(@event.SpanEquipmentId, existingSpanEquipment.WalkOfInterestId);
 
             // Remove span segments from the graph

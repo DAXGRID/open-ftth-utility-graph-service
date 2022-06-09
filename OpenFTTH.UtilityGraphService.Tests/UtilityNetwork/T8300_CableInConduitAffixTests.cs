@@ -106,7 +106,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
         }
 
-        [Fact, Order(10)]
+        [Fact, Order(2)]
         public void AffixCableToConduit_N2_N4_2_AffectingWoi_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K2", TestSpecifications.FiberCable_12Fiber,
@@ -150,7 +150,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableWoiAfterFirstAffix[10].Should().Be(ConduitTestUtilityNetwork.N4);
         }
 
-        [Fact, Order(0)]
+        [Fact, Order(3)]
         public void AffixCableToConduit_N2_N1_1_AffectingWoi_ShouldSucceed()
         {
             var sutCable = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K3", TestSpecifications.FiberCable_12Fiber,
@@ -193,6 +193,51 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             cableWoiAfterFirstAffix[9].Should().Be(ConduitTestUtilityNetwork.S3);
             cableWoiAfterFirstAffix[10].Should().Be(ConduitTestUtilityNetwork.N4);
         }
+
+        [Fact, Order(3)]
+        public void AffixCableRemoveCableAffixAnotherCableToSingleConduit_ShouldSucceed()
+        {
+            // Create cable 1
+            var sutCable1 = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("K1_to_be_removed", TestSpecifications.FiberCable_12Fiber,
+                new Guid[] { ConduitTestUtilityNetwork.S6,
+                    ConduitTestUtilityNetwork.S10,
+                    ConduitTestUtilityNetwork.S3,
+                    ConduitTestUtilityNetwork.S2,
+                    ConduitTestUtilityNetwork.S1 });
+
+            // Affix 1
+            var cable1AfterFirstAffix = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable1.Id, ConduitTestUtilityNetwork.Conduit_Single_N3_N7);
+
+            // Remove cable 1
+            var removeStructureCmd = new RemoveSpanStructureFromSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), cable1AfterFirstAffix.SpanStructures[0].SpanSegments[0].Id);
+
+            var removeStructureCmdResult = _commandDispatcher.HandleAsync<RemoveSpanStructureFromSpanEquipment, Result>(removeStructureCmd).Result;
+
+            removeStructureCmdResult.IsSuccess.Should().BeTrue();
+
+            // Create cable 2
+            var sutCable2 = _conduitTestUtilityNetwork.PlaceCableDirectlyInRouteNetwork("k2_to_be_removed", TestSpecifications.FiberCable_12Fiber,
+                new Guid[] { ConduitTestUtilityNetwork.S6,
+                    ConduitTestUtilityNetwork.S10,
+                    ConduitTestUtilityNetwork.S3,
+                    ConduitTestUtilityNetwork.S2,
+                    ConduitTestUtilityNetwork.S1 });
+
+
+            // Affix 2
+            var cableAfterFirstAffix2 = _conduitTestUtilityNetwork.AffixCableToSingleConduit(ConduitTestUtilityNetwork.N2, sutCable2.Id, ConduitTestUtilityNetwork.Conduit_Single_N3_N7);
+
+
+            // Remove cable 2
+            var removeStructureCmd2 = new RemoveSpanStructureFromSpanEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), cableAfterFirstAffix2.SpanStructures[0].SpanSegments[0].Id);
+
+            var removeStructureCmdResult2 = _commandDispatcher.HandleAsync<RemoveSpanStructureFromSpanEquipment, Result>(removeStructureCmd2).Result;
+
+            removeStructureCmdResult2.IsSuccess.Should().BeTrue();
+
+
+        }
+
 
 
         [Fact, Order(100)]
