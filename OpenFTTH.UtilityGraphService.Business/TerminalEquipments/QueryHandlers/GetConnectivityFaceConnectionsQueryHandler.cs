@@ -141,20 +141,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
         private ConnectivityFaceConnection BuildConnectivityInfoForTerminal(TerminalEquipment terminalEquipment, TerminalStructure terminalStructure, Terminal terminal, GetConnectivityFaceConnections query, RouteNetworkElementRelatedData relatedData)
         {
-            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
-
             var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(terminal.Id);
 
             bool isConnected = CheckIfTerminalIsConnected(terminalTraceResult, query.FaceType);
 
-            string? rackInfo = null;
-
-            if (terminalEquipmentSpecification.IsRackEquipment)
-            {
-                rackInfo = GetRackName(relatedData, terminalEquipment.Id) + " - ";
-            }
-
-            var equipmentName = rackInfo + "Tray " + terminalStructure.Name + " - Søm " + terminal.Name + " (" + terminalEquipmentSpecification.ShortName + ")";
+            var equipmentName = BuildEquipmentName(relatedData, terminal, terminalStructure, terminalEquipment);
 
             return new ConnectivityFaceConnection()
             {
@@ -163,6 +154,28 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 EndInfo = null,
                 IsConnected = isConnected
             };
+        }
+
+        private string BuildEquipmentName(RouteNetworkElementRelatedData relatedData, Terminal terminal, TerminalStructure terminalStructure, TerminalEquipment terminalEquipment)
+        {
+            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+            var terminalStructureSpecification = _terminalStructureSpecifications[terminalStructure.SpecificationId];
+
+            string? rackInfo = null;
+
+            if (terminalEquipmentSpecification.IsRackEquipment)
+            {
+                rackInfo = GetRackName(relatedData, terminalEquipment.Id) + " - ";
+            }
+
+            if (terminalStructureSpecification.Category == "Splitters")
+            {
+                return rackInfo + "Splitter " + terminalStructure.Name + " (" + terminalStructureSpecification.ShortName + ") - " + terminal.Name;
+            }
+            else
+            {
+                return rackInfo + "Tray " + terminalStructure.Name + " - Søm " + terminal.Name + " (" + terminalEquipmentSpecification.ShortName + ")"; 
+            }
         }
 
         private bool CheckIfTerminalIsConnected(UtilityGraphTraceResult traceResult, FaceKindEnum directionType)
@@ -236,9 +249,16 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             if (traceResult.Downstream.Count() > 0)
             {
-                if (traceResult.Downstream.First() is UtilityGraphConnectedSegment connectedSegment)
+                var firstConnection = traceResult.Downstream.First();
+                
+                if (firstConnection is UtilityGraphConnectedSegment connectedSegment)
                 {
                     if (connectedSegment.IsPatch)
+                        return true;
+                }
+
+                if (firstConnection is UtilityGraphTerminalToTerminalConnectivityLink)
+                {
                         return true;
                 }
             }

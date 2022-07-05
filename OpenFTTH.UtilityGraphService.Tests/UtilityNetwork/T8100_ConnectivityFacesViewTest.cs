@@ -63,21 +63,21 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 connectivityFaceQuery
             );
 
+
+            // Check faces
             connectivityQueryResult.IsSuccess.Should().BeTrue();
 
             var connectivityFaces = connectivityQueryResult.Value;
 
             connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment).Should().BeGreaterThan(0);
             connectivityFaces.Count(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.SpanEquipment).Should().BeGreaterThan(0);
-
-            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
-
-            var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentName.StartsWith("K69373563"));
-
-            // Check that address of customer cable is returned
+            
             connectivityFaces.Should().Contain(s => s.FaceName == "Mod Vesterbrogade 7A");
 
-            // Get face connections for terminal equipment
+
+            // Check face connections for terminal equipment
+            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentKind == ConnectivityEquipmentKindEnum.TerminalEquipment);
+
             var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.FaceKind);
 
             var terminalEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
@@ -90,7 +90,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             terminalEquipmentConnections.Count.Should().BeGreaterThan(4);
 
 
-            // Get face connections for span equipment
+            // Check face connections for span equipment
+            var spanEquipmentFace = connectivityFaces.First(f => f.EquipmentName.StartsWith("K69373563"));
+
             var spanEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, spanEquipmentFace.EquipmentId, spanEquipmentFace.FaceKind);
 
             var spanEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
@@ -104,9 +106,50 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentConnections.Count.Should().BeGreaterThan(4);
         }
 
-     
 
 
+        [Fact, Order(2)]
+        public async Task QueryConnectivityFacesInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutRouteNodeId = TestRouteNetwork.CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+
+            // Get faces
+            var connectivityFaceQuery = new GetConnectivityFaces(sutRouteNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityFaceQuery
+            );
+
+
+            // Check faces
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var connectivityFaces = connectivityQueryResult.Value;
+
+
+            // Check splitter holder face
+            var terminalEquipmentFace = connectivityFaces.First(f => f.EquipmentName.StartsWith("Splitter"));
+
+            var terminalEquipmentConnectionsQuery = new GetConnectivityFaceConnections(sutRouteNodeId, terminalEquipmentFace.EquipmentId, terminalEquipmentFace.FaceKind);
+
+            var terminalEquipmentConnectionsQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaceConnections, Result<List<ConnectivityFaceConnection>>>(
+                terminalEquipmentConnectionsQuery
+            );
+            terminalEquipmentConnectionsQueryResult.IsSuccess.Should().BeTrue();
+
+            var terminalEquipmentConnections = terminalEquipmentConnectionsQueryResult.Value;
+
+            // Splitter out 4 (terminal index 4) should not be connected
+            terminalEquipmentConnections[4].IsConnected.Should().BeFalse();
+
+            // Splitter out 5 (terminal index 5) should be connected
+            terminalEquipmentConnections[5].IsConnected.Should().BeTrue();
+
+        }
 
 
     }
