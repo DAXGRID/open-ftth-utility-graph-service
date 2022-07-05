@@ -128,12 +128,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             List<TerminalEquipmentAZConnectivityViewTerminalStructureInfo> terminalStructureInfos = new();
 
-            if (terminalEquipment.TerminalStructures.Count() > 9)
-            {
-
-            }
-
-            foreach (var terminalStructure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted))
+            foreach (var terminalStructure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted).OrderBy(o => o.Position))
             {
                 if (!_terminalStructureSpecifications.TryGetValue(terminalStructure.SpecificationId, out var terminalStructureSpecification))
                     throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipment.SpecificationId} has reference to non-existing terminal structure specification with id: {terminalStructure.SpecificationId}");
