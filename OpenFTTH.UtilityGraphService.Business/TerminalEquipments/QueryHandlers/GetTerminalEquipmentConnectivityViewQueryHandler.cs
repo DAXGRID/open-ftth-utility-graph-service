@@ -128,6 +128,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             List<TerminalEquipmentAZConnectivityViewTerminalStructureInfo> terminalStructureInfos = new();
 
+            if (terminalEquipment.TerminalStructures.Count() > 9)
+            {
+
+            }
+
             foreach (var terminalStructure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted))
             {
                 if (!_terminalStructureSpecifications.TryGetValue(terminalStructure.SpecificationId, out var terminalStructureSpecification))
