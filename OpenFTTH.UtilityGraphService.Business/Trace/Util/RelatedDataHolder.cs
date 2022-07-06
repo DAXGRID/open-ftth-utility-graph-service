@@ -360,6 +360,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             {
                 return GetEquipmentName(terminalEquipment);
             }
+            // Subrack shelf to hold splitter modules
+            else if (terminalStructureSpec.Category == "Splitters" && terminalEquipmentSpecification.StructureTemplates.Count() == 0)
+            {
+                return $"Splitter {terminalStructure.Position}";
+            }
             else
             {
                 string slotType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Bakke" : "Kort";
@@ -379,9 +384,17 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             var terminalStructureSpec = _terminalStructureSpecifications[terminalStructure.SpecificationId];
 
-            string pinType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Søm" : "Port";
 
-            return $"{pinType} {terminal.Name}";
+            if (terminalStructureSpec.Category == "Splitters")
+            {
+                return terminal.Name;
+            }
+            else
+            {
+                string pinType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Søm" : "Port";
+
+                return $"{pinType} {terminal.Name}";
+            }
         }
 
         public string GetSpanEquipmentFullFiberCableString(SpanEquipment spanEquipment, int fiberNo)

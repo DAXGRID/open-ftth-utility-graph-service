@@ -59,6 +59,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             hops.Length.Should().Be(5);
             hops[0].HopSeqNo.Should().Be(1);
             hops[1].HopSeqNo.Should().Be(2);
+
+            // Check 1:32 splitter line
+            hops[1].TerminalStructure.Should().Be("Splitter 1");
+            hops[1].Terminal.Should().Be("ud5");
         }
 
 
