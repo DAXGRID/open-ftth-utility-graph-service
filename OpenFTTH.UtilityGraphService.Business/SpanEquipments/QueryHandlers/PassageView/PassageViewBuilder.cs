@@ -309,7 +309,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers.Pas
         {
             if (segmentTrace.SpanStructureIndex > 0)
             {
-                return $"Subrør {segmentTrace.SpanStructureIndex} ({segmentTrace.SpanStructureSpecification.Color})";
+                return $"{segmentTrace.SpanStructureIndex} ({segmentTrace.SpanStructureSpecification.Color})";
             }
             else
             {
