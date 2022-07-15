@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.Util;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
@@ -29,6 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
         private readonly UtilityNetworkProjection _utilityNetwork;
+        private readonly LookupCollection<SpanEquipmentSpecification> _spanEquipmentSpecifications;
 
         public ConnectSpanSegmentsCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
@@ -37,6 +39,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            _spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
         }
 
         public Task<Result> HandleAsync(ConnectSpanSegmentsAtRouteNode command)
@@ -59,7 +63,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (_utilityNetwork.CheckIfConduitSegmentContainsCables(spanSegmentToConnect))
                     return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_CONTAIN_CABLE, $"The span segment id: {spanSegmentToConnect} contain a cable. Cannot be connected.")));
             }
-
 
             if (spanEquipmentsToConnect.Count == 1)
             {
@@ -369,15 +372,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     return Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.SPAN_SEGMENT_NOT_FOUND, $"Cannot find any span segment in the utility graph with id: {spanSegmentToConnectId}"));
 
                 var spanEquipment = spanSegmentGraphElement.SpanEquipment(_utilityNetwork);
+                var spanEquipmentSpecification = _spanEquipmentSpecifications[spanEquipment.SpecificationId];
                 var spanSegment = spanSegmentGraphElement.SpanSegment(_utilityNetwork);
 
-                // Check that the user tries to connect inner and outer spans
-                // NB: If only one span structure in the span equipment it's a single conduit, and its ok to connect to it
-                if (spanSegmentGraphElement.StructureIndex == 0 && spanEquipment.SpanStructures.Length > 1)
-                    outerSpansFound = true;
+                // Check that the user does not try to connect inner and outer spans
 
                 if (spanSegmentGraphElement.StructureIndex > 0)
                     innerSpansFound = true;
+
+                // Single conduits should also be treated as an inner conduit in this check
+                if (!spanEquipmentSpecification.IsMultiLevel && spanSegmentGraphElement.StructureIndex == 0 && spanEquipment.SpanStructures.Length == 1)
+                    innerSpansFound = true;
+
+                // Outer conduit in a fixed or non-fixed multilevel conduit - i.e. a pre-manufactured multi conduit or an empty outer conduit
+                if (spanEquipmentSpecification.IsMultiLevel && spanSegmentGraphElement.StructureIndex == 0)
+                    outerSpansFound = true;
 
                 if (outerSpansFound && innerSpansFound)
                 {

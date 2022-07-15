@@ -280,7 +280,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(15)]
-        public async Task TestDisconnect5x10ToCustomerConduitAtCC_1_ShouldSucceed()
+        public async Task TestDisconnect5x10FromCustomerConduitAtCC_1_ShouldSucceed()
         {
             MakeSureTestConduitIsCutAtCC_1();
 
@@ -306,6 +306,46 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             disconnectResult.IsSuccess.Should().BeTrue();
         }
+
+        [Fact, Order(16)]
+        public async Task TestConnect5x10OuterConduitToCustomerAtCC_1_ShouldFail()
+        {
+            MakeSureTestConduitIsCutAtCC_1();
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutConnectFromSpanEquipment = TestUtilityNetwork.MultiConduit_6x10_HH_1_to_HH_10;
+            var sutConnectToSpanEquipment = TestUtilityNetwork.CustomerConduit_CC_1_to_SDU_1;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectFromSpanEquipment, out var sutFromSpanEquipment);
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutConnectToSpanEquipment, out var sutToSpanEquipment);
+
+            // Connect inner conduit 3 in 6x10 to customer conduit
+            var connectCmd = new ConnectSpanSegmentsAtRouteNode(Guid.NewGuid(), new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CC_1,
+                spanSegmentsToConnect: new Guid[] {
+                    sutFromSpanEquipment.SpanStructures[0].SpanSegments[1].Id,
+                    sutToSpanEquipment.SpanStructures[0].SpanSegments[0].Id
+                }
+            );
+
+            var connectResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsAtRouteNode, Result>(connectCmd);
+
+            var fromEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+               new GetEquipmentDetails(new EquipmentIdList() { sutConnectFromSpanEquipment })
+            );
+
+            var toEquipmentQueryResult = await _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+              new GetEquipmentDetails(new EquipmentIdList() { sutConnectToSpanEquipment })
+            );
+
+            // Assert
+            connectResult.IsFailed.Should().BeTrue();
+        }
+
+
+
+
 
         [Fact, Order(100)]
         public async Task TestDetachConduitFromContainerInCC1_ShouldFalid()
