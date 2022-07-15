@@ -500,6 +500,37 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
         }
 
+        [Fact, Order(16)]
+        public async Task PlaceWdmInLgxHolderInDataRackInCO1OnPosUsed_ShouldFail()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get LGX holder at position 10
+            var splitterMount = nodeContainerBeforeCommand.Racks[1].SubrackMounts.First(s => s.Position == 10);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var placeEquipmentCmd = new PlaceAdditionalStructuresInTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                structureSpecificationId: TestSpecifications.LGX_WDMType1,
+                position: 1,
+                numberOfStructures: 1
+            );
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
+
+            placeEquipmentCmdResult.IsSuccess.Should().BeFalse();
+        }
+
 
         [Fact, Order(50)]
         public async Task RemoveSplitter3InLISASplitterHolderInODFRackInCO1_ShouldSucceed()

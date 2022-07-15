@@ -139,6 +139,15 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 
             for (int position = startPosition; position < startPosition + numberOfStructures; position++)
             {
+                if (_terminalEquipment != null && _terminalEquipment.TerminalStructures.Any(s => s.Position == position))
+                {
+                    return Result.Fail(new TerminalEquipmentError(
+                        TerminalEquipmentErrorCodes.POSITION_ALREADY_OCCUPIED_BY_TERMINAL_STRUCTURE,
+                        $"Cannot add terminal structure to position: {position} because the slot position is already occupied by another card/tray/module")
+                    );
+                }
+                    //throw new ApplicationException($"A structure already exists at position: {position} in terminal equipment: {_terminalEquipment.Id}");
+
                 additionalStructures.Add(CreateTerminalStructureFromSpecification(terminalStructureSpecification, position));
             }
 
