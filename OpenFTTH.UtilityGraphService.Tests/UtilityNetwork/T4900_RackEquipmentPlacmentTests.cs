@@ -584,6 +584,47 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(51)]
+        public async Task PlaceSplitter3InLISASplitterHolderInODFRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get last mount which should be the splitter placed at the top
+            var splitterMount = nodeContainerBeforeCommand.Racks[0].SubrackMounts.Last();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var placeEquipmentCmd = new PlaceAdditionalStructuresInTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                structureSpecificationId: TestSpecifications.LISA_1_32_Splitter,
+                position: 3,
+                numberOfStructures: 1
+            );
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
+
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(splitterMount.TerminalEquipmentId, out var terminalEquipmentAfterUpdate);
+
+            // 5 because one is in deleted state
+            terminalEquipmentAfterUpdate.TerminalStructures.Length.Should().Be(5);
+
+            utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(terminalEquipmentAfterUpdate.TerminalStructures.First().Terminals.First().Id, out var firstTerminalInGraph);
+
+            firstTerminalInGraph.Should().NotBeNull();
+        }
+
+
     }
 }
 
