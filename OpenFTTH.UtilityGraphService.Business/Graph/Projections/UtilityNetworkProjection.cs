@@ -639,9 +639,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             // Remove terminals from the graph
             foreach (var terminalStructure in existingTerminalEquipment.TerminalStructures)
             {
-                foreach (var terminal in terminalStructure.Terminals)
+                if (!terminalStructure.Deleted)
                 {
-                    _utilityGraph.RemoveGraphElement(terminal.Id);
+                    foreach (var terminal in terminalStructure.Terminals)
+                    {
+                        _utilityGraph.RemoveGraphElement(terminal.Id);
+                    }
                 }
             }
         }

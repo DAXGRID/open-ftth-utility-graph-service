@@ -97,7 +97,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Get node container
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
 
-            // Get equipment on position 1
+            // Get equipment on position 0
             var rackMountedEquipmentIdToBeRemoved = nodeContainer.Racks.First().SubrackMounts.First(s => s.Position == 0).TerminalEquipmentId;
 
             utilityNetwork.TryGetEquipment<TerminalEquipment>(rackMountedEquipmentIdToBeRemoved, out var sutTerminalEquipment);
@@ -127,11 +127,70 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             // Check that subrack mount is removed from node container
             nodeContainerAfterTerminalEquipmentRemoval.Racks.First().SubrackMounts.Any(s => s.TerminalEquipmentId == rackMountedEquipmentIdToBeRemoved);
+        }
 
+        [Fact, Order(3)]
+        public async Task RemoveTerminalStructureThenEquipmentInC1_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get LISA tray equipment on position 10
+            var rackMountedEquipmentIdToBeRemoved = nodeContainer.Racks.First().SubrackMounts.First(s => s.Position == 10).TerminalEquipmentId;
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(rackMountedEquipmentIdToBeRemoved, out var sutTerminalEquipment);
+
+            // First remove tray in LISA equipment
+            var terminalStructureToRemove = sutTerminalEquipment.TerminalStructures[0];
+
+            var removeStructure = new RemoveTerminalStructureFromTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.J_1,
+                terminalEquipmentId: sutTerminalEquipment.Id,
+                terminalStructureId: terminalStructureToRemove.Id
+            );
+
+            // Act
+            var removeStructureResult = await _commandDispatcher.HandleAsync<RemoveTerminalStructureFromTerminalEquipment, Result>(removeStructure);
+
+            removeStructureResult.IsSuccess.Should().BeTrue();
+
+
+            // Remove the LISA equipment
+            var removeCmd = new RemoveTerminalEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutTerminalEquipment.Id);
+
+            var removeResult = await _commandDispatcher.HandleAsync<RemoveTerminalEquipment, Result>(removeCmd);
+
+            // Assert
+            removeResult.IsSuccess.Should().BeTrue();
+
+            // Check that equipment is removed from utility network projection
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(sutTerminalEquipment.Id, out var _).Should().BeFalse();
+
+            // Check that terminals are removed from graph
+            foreach (var terminalStructure in sutTerminalEquipment.TerminalStructures)
+            {
+                foreach (var terminal in terminalStructure.Terminals)
+                {
+                    utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(terminal.Id, out _).Should().BeFalse();
+                }
+            }
+
+            // Get node container after terminal equipment removal
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerAfterTerminalEquipmentRemoval);
+
+            // Check that subrack mount is removed from node container
+            nodeContainerAfterTerminalEquipmentRemoval.Racks.First().SubrackMounts.Any(s => s.TerminalEquipmentId == rackMountedEquipmentIdToBeRemoved);
         }
 
 
-        [Fact, Order(3)]
+        [Fact, Order(4)]
         public async Task RemoveRackInJ1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
