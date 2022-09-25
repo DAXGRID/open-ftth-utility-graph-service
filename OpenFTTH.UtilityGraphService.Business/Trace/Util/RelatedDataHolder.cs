@@ -9,6 +9,7 @@ using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +27,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
         public Dictionary<Guid, RouteNetworkElement> RouteNetworkElementById { get; }
         public Dictionary<Guid, NodeContainer> NodeContainerById  { get; }
         public Dictionary<Guid, string> AddressStringById { get; }
+        public Dictionary<Guid, RouteNetworkInterest> RouteNetworkInterestById { get; }
 
-        public RelatedDataHolder(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds, HashSet<Guid>? addressIds = null)
+        public RelatedDataHolder(IEventStore eventStore, UtilityNetworkProjection utilityNetwork, IQueryDispatcher queryDispatcher, IEnumerable<Guid> nodeOfInterestIds, HashSet<Guid>? addressIds = null, IEnumerable<Guid>? segmentWalkOfInterestIds = null)
         {
             _eventStore = eventStore;
             _queryDispatcher = queryDispatcher;
@@ -41,6 +43,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             NodeContainerById = GatcherNodeContainerInformation(RouteNetworkElementById.Values.ToList());
 
             AddressStringById = GatherAddressInformation(addressIds);
+
+            // Now fetch span segment interests and related route network elements
+            if (segmentWalkOfInterestIds != null)
+            {
+                var segmentWoiIds = new InterestIdList();
+                segmentWoiIds.AddRange(segmentWalkOfInterestIds);
+
+                QueryHelper.GetInterestsAndRouteNetworkElementsByInterestIds(_queryDispatcher, segmentWoiIds, out var routeNetworkInterests, out var routeNetworkElements);
+                RouteNetworkInterestById = routeNetworkInterests.ToDictionary(x => x.Id);
+
+                foreach (var routeNetworkElement in routeNetworkElements)
+                {
+                    if (!RouteNetworkElementById.ContainsKey(routeNetworkElement.Id))
+                    {
+                        RouteNetworkElementById.Add(routeNetworkElement.Id, routeNetworkElement);
+                    }
+                }
+            }
         }
 
         private Dictionary<Guid, RouteNetworkElement> GatherRouteNetworkElementInformation(IEnumerable<Guid> nodeOfInterestIds)
@@ -71,6 +91,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             return routeNetworkQueryResult.Value.RouteNetworkElements.ToDictionary(x => x.Id);
         }
 
+  
         private Dictionary<Guid, NodeContainer> GatcherNodeContainerInformation(List<RouteNetworkElement> routeNetworkElements)
         {
             Dictionary<Guid, NodeContainer> result = new();

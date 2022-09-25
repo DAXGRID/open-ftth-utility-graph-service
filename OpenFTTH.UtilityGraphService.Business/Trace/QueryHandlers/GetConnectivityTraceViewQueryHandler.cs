@@ -1,5 +1,7 @@
 ﻿using DAX.ObjectVersioning.Graph;
 using FluentResults;
+using NetTopologySuite.Geometries;
+using Newtonsoft.Json.Linq;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
@@ -65,7 +67,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
             var addressIds = GetAddressIdsFromTraceResult(traceResult);
 
-            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds);
+            var routeNodeIds = traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray();
+            var routeSegmentInterestIds = traceElements.OfType<IUtilityGraphSegmentRef>().Select(s => s.SpanEquipment(_utilityNetwork).WalkOfInterestId).ToArray();
+
+            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, routeNodeIds, addressIds, routeSegmentInterestIds);
 
             var terminalEquipment = sourceTerminalRef.TerminalEquipment(_utilityNetwork);
 
@@ -75,6 +80,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
             int hopSeqNo = 1;
 
+            double totalLength = 0;
+
             for (int graphElementIndex = 0; graphElementIndex < traceElements.Count; graphElementIndex++)
             {
                 var currentGraphElement = traceElements[graphElementIndex];
@@ -82,6 +89,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                 if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
                 {
                     string connectionInfo = GetConnectionInfo(relatedData, traceElements, graphElementIndex);
+
+                    var routeSegmentGeometries = GetSegmentGeometries(relatedData, traceElements, graphElementIndex);
+
+                    var routeSegmentIds = GetRouteSegmentIds(relatedData, traceElements, graphElementIndex);
+
+                    var hopLength = GetLineStringsLength(routeSegmentGeometries);
+
+                    hopLength += GetTerminalToTerminalLength(relatedData, traceElements, graphElementIndex);
+
+                    totalLength += hopLength;
 
                     hops.Add(
                         new ConnectivityTraceViewHopInfo(
@@ -94,9 +111,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
                             terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
                             connectionInfo: connectionInfo,
-                            totalLength: 2,
-                            routeSegmentGeometries: Array.Empty<string>(),
-                            routeSegmentIds: Array.Empty<Guid>()
+                            totalLength: totalLength,
+                            routeSegmentGeometries: routeSegmentGeometries,
+                            routeSegmentIds: routeSegmentIds
                         )
                     );
 
@@ -107,6 +124,116 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return Result.Ok(new ConnectivityTraceView("FK000000", hops.ToArray()));
 
         }
+
+        private double GetTerminalToTerminalLength(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
+        {
+            double result = 0;
+
+            // If segment follow terminal, then get geometries
+            if (graphElementIndex < (traceElements.Count - 1))
+            {
+                var graphElement = traceElements[graphElementIndex + 1];
+
+                if (graphElement is UtilityGraphTerminalToTerminalConnectivityLink link)
+                {
+                    result += (link.FiberCoordLength / 100);
+                }
+            }
+
+            return result;
+        }
+        
+
+        private string[] GetSegmentGeometries(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
+        {
+            List<string> result = new();
+
+            // If segment follow terminal, then get geometries
+            if (graphElementIndex < (traceElements.Count - 1))
+            {
+                var graphElement = traceElements[graphElementIndex + 1];
+
+                if (graphElement is UtilityGraphConnectedSegment connectedSegment)
+                {
+                    var spanEquipment = connectedSegment.SpanEquipment(_utilityNetwork);
+
+                    if (relatedData.RouteNetworkInterestById.ContainsKey(spanEquipment.WalkOfInterestId))
+                    {
+                        var woi = relatedData.RouteNetworkInterestById[spanEquipment.WalkOfInterestId];
+                        foreach (var routeSegmentId in woi.RouteNetworkElementRefs)
+                        {
+                            if (relatedData.RouteNetworkElementById.ContainsKey(routeSegmentId))
+                            {
+                                var routeNetworkElement = relatedData.RouteNetworkElementById[routeSegmentId];
+
+                                if (routeNetworkElement.Kind == RouteNetworkElementKindEnum.RouteSegment)
+                                {
+                                    if (routeNetworkElement.Coordinates != null)
+                                        result.Add(routeNetworkElement.Coordinates);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result.ToArray();
+        }
+
+        private Guid[] GetRouteSegmentIds(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
+        {
+            List<Guid> result = new();
+
+            // If segment follow terminal, then get geometries
+            if (graphElementIndex < (traceElements.Count - 1))
+            {
+                var graphElement = traceElements[graphElementIndex + 1];
+
+                if (graphElement is UtilityGraphConnectedSegment connectedSegment)
+                {
+                    var spanEquipment = connectedSegment.SpanEquipment(_utilityNetwork);
+
+                    if (relatedData.RouteNetworkInterestById.ContainsKey(spanEquipment.WalkOfInterestId))
+                    {
+                        var woi = relatedData.RouteNetworkInterestById[spanEquipment.WalkOfInterestId];
+                        foreach (var routeSegmentId in woi.RouteNetworkElementRefs)
+                        {
+
+                            result.Add(routeSegmentId);
+                        }
+                    }
+                }
+            }
+
+            return result.ToArray();
+        }
+
+        protected static double GetLineStringsLength(IEnumerable<string> lineStringJsons)
+        {
+            double length = 0;
+
+            foreach (var line in lineStringJsons)
+            {
+                length += GetLineStringLength(line);
+            }
+
+            return length;
+        }
+
+        protected static double GetLineStringLength(string lineStringJson)
+        {
+            List<Coordinate> coordinates = new();
+
+            var coordPairs = JArray.Parse(lineStringJson);
+            foreach (var coordPair in coordPairs)
+            {
+                coordinates.Add(new Coordinate(((JArray)coordPair)[0].Value<double>(), ((JArray)coordPair)[1].Value<double>()));
+            }
+
+            return new LineString(coordinates.ToArray()).Length;
+        }
+
+
 
         private Result<ConnectivityTraceView> BuildTraceViewFromSegment(Guid spanSegmentId, IUtilityGraphSegmentRef utilityGraphSegmentRef)
         {
@@ -115,14 +242,18 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             List<IGraphObject> traceElements = traceResult.All;
 
             var addressIds = GetAddressIdsFromTraceResult(traceResult);
+            var routeSegmentInterestIds = traceElements.OfType<IUtilityGraphSegmentRef>().Select(s => s.SpanEquipment(_utilityNetwork).WalkOfInterestId).ToArray();
 
-            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds);
+
+            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds, routeSegmentInterestIds);
 
             ReverseIfNeeded(traceElements, relatedData.RouteNetworkElementById);
 
             List<ConnectivityTraceViewHopInfo> hops = new();
 
             int hopSeqNo = 1;
+
+            double totalLength = 0;
 
             for (int graphElementIndex = 0; graphElementIndex < traceElements.Count; graphElementIndex++)
             {
@@ -131,6 +262,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                 if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
                 {
                     string connectionInfo = GetConnectionInfo(relatedData, traceElements, graphElementIndex);
+
+                    var routeSegmentGeometries = GetSegmentGeometries(relatedData, traceElements, graphElementIndex);
+
+                    var routeSegmentIds = GetRouteSegmentIds(relatedData, traceElements, graphElementIndex);
+
+                    var hopLength = GetLineStringsLength(routeSegmentGeometries);
+
+                    hopLength += GetTerminalToTerminalLength(relatedData, traceElements, graphElementIndex);
+
+                    totalLength += hopLength;
 
                     hops.Add(
                         new ConnectivityTraceViewHopInfo(
@@ -143,9 +284,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
                             terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
                             connectionInfo: connectionInfo,
-                            totalLength: 2,
-                            routeSegmentGeometries: Array.Empty<string>(),
-                            routeSegmentIds: Array.Empty<Guid>()
+                            totalLength: totalLength,
+                            routeSegmentGeometries: routeSegmentGeometries,
+                            routeSegmentIds: routeSegmentIds
                         )
                     );
 
@@ -156,6 +297,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return Result.Ok(new ConnectivityTraceView("FK000000", hops.ToArray()));
 
         }
+
+      
 
         private string GetConnectionInfo(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
         {
