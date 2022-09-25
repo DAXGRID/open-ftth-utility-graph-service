@@ -160,11 +160,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                     if (relatedData.RouteNetworkInterestById.ContainsKey(spanEquipment.WalkOfInterestId))
                     {
                         var woi = relatedData.RouteNetworkInterestById[spanEquipment.WalkOfInterestId];
-                        foreach (var routeSegmentId in woi.RouteNetworkElementRefs)
+                        foreach (var routeNetworkElementId in woi.RouteNetworkElementRefs)
                         {
-                            if (relatedData.RouteNetworkElementById.ContainsKey(routeSegmentId))
+                            if (relatedData.RouteNetworkElementById.ContainsKey(routeNetworkElementId))
                             {
-                                var routeNetworkElement = relatedData.RouteNetworkElementById[routeSegmentId];
+                                var routeNetworkElement = relatedData.RouteNetworkElementById[routeNetworkElementId];
 
                                 if (routeNetworkElement.Kind == RouteNetworkElementKindEnum.RouteSegment)
                                 {
@@ -196,10 +196,19 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                     if (relatedData.RouteNetworkInterestById.ContainsKey(spanEquipment.WalkOfInterestId))
                     {
                         var woi = relatedData.RouteNetworkInterestById[spanEquipment.WalkOfInterestId];
-                        foreach (var routeSegmentId in woi.RouteNetworkElementRefs)
+                        
+                        foreach (var routeNetworkElementId in woi.RouteNetworkElementRefs)
                         {
+                            if (relatedData.RouteNetworkElementById.ContainsKey(routeNetworkElementId))
+                            {
+                                var routeNetworkElement = relatedData.RouteNetworkElementById[routeNetworkElementId];
 
-                            result.Add(routeSegmentId);
+                                if (routeNetworkElement.Kind == RouteNetworkElementKindEnum.RouteSegment)
+                                {
+                                    if (routeNetworkElement.Coordinates != null)
+                                        result.Add(routeNetworkElementId);
+                                }
+                            }
                         }
                     }
                 }
