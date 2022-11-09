@@ -596,8 +596,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             {
                 if (newUtilityHopIndex < routeHop.SequenceNumber)
                 {
-                    newHopAdded = true;
-                    result.Add(newUtilityNetworkHop);
+                    if (!newHopAdded)
+                    {
+                        result.Add(newUtilityNetworkHop);
+
+                        newHopAdded = true;
+                    }
                 }
 
                 result.Add(routeHop.UtilityNetworkHop);
