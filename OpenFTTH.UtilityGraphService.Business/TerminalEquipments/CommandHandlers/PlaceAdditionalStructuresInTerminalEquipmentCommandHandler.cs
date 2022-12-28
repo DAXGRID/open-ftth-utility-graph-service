@@ -1,29 +1,23 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
-using OpenFTTH.UtilityGraphService.Business.NodeContainers;
-using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class PlaceAdditionalStructuresInTerminalEquipmentCommandHandler : ICommandHandler<PlaceAdditionalStructuresInTerminalEquipment, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly UtilityNetworkProjection _utilityNetwork;
         private readonly IExternalEventProducer _externalEventProducer;
@@ -61,16 +55,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
 
             _eventStore.Aggregates.Store(terminalEquipmentAR);
-                
+
             NotifyExternalServicesAboutChange(command.RouteNodeId, command.TerminalEquipmentId);
 
             return Task.FromResult(Result.Ok());
         }
 
-   
         private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid terminalEquipmentId)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("TerminalEquipment", ChangeTypeEnum.Addition, new Guid[] {terminalEquipmentId })
             };
@@ -87,9 +80,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

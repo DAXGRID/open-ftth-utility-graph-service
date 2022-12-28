@@ -1,12 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
-using OpenFTTH.RouteNetwork.API.Commands;
-using OpenFTTH.RouteNetwork.API.Model;
-using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
@@ -21,9 +18,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class ConnectSpanSegmentsByIndexCommandHandler : ICommandHandler<ConnectSpanSegmentsByIndexAtRouteNode, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -48,7 +42,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_TO_SPAN_EQUIPMENT_ID_CANNOT_BE_EMPTY, "Must provide a from and to span equipment id")));
 
             if (command.NumberOfUnits < 1)
-                return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_NUMBER_OF_UNITS_MUST_BE_GREATER_THAN_ZERO, "Number of units must be greather than zero"))) ;
+                return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.INVALID_NUMBER_OF_UNITS_MUST_BE_GREATER_THAN_ZERO, "Number of units must be greather than zero")));
 
             if (command.FromSpanEquipmentId == command.ToSpanEquipmentId)
                 return Task.FromResult(Result.Fail(new ConnectSpanSegmentsAtRouteNodeError(ConnectSpanSegmentsAtRouteNodeErrorCodes.EXPECTED_SPAN_SEGMENTS_FROM_TWO_SPAN_EQUIPMENT, "Two different span equipments must be provided in fromSpanEquipment and toSpanEquipment")));
@@ -95,9 +89,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
         }
 
-     
 
-     
+
+
         private Result ConnectSpanSegmentsFromTwoSpanEquipment(CommandContext cmdContext, Guid routeNodeId, SpanEquipmentWithConnectsHolder firstSpanEquipment, SpanEquipmentWithConnectsHolder secondSpanEquipment)
         {
             var spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
@@ -261,7 +255,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             outgoingSegment = null;
             return false;
         }
-        
+
         private async void NotifyExternalServicesAboutConnectivityChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId, string category)
         {
             List<IdChangeSet> idChangeSets = new List<IdChangeSet>
@@ -281,7 +275,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
 
 
@@ -309,5 +305,3 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         }
     }
 }
-
-  

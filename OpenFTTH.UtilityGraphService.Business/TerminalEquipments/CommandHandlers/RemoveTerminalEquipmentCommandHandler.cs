@@ -1,17 +1,15 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
-using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers;
-using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +19,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
 {
     public class RemoveTerminalEquipmentCommandHandler : ICommandHandler<RemoveTerminalEquipment, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -78,7 +73,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
             }
 
             return Task.FromResult(removeEquipmentReferenceResult);
- 
+
         }
 
         private List<SpanEquipment> GetRelatedSpanEquipments(Guid routeNodeId)
@@ -119,7 +114,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
 
         private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid terminalEquipmentId)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("TerminalEquipment", ChangeTypeEnum.Deletion, new Guid[] { terminalEquipmentId })
             };
@@ -136,9 +131,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

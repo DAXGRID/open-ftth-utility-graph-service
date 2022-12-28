@@ -1,9 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
@@ -15,9 +15,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class PlaceSpanEquipmentInRouteNetworkCommandHandler : ICommandHandler<PlaceSpanEquipmentInRouteNetwork, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly IExternalEventProducer _externalEventProducer;
 
@@ -38,8 +35,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var placeSpanEquipmentResult = spanEquipmentAR.PlaceSpanEquipmentInRouteNetwork(
                 cmdContext: commandContext,
-                spanEquipments, 
-                spanEquipmentSpecifications, 
+                spanEquipments,
+                spanEquipmentSpecifications,
                 command.SpanEquipmentId,
                 command.SpanEquipmentSpecificationId,
                 command.Interest,
@@ -61,7 +58,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private async void NotifyExternalServicesAboutChange(PlaceSpanEquipmentInRouteNetwork spanEquipmentCommand)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Addition, new Guid[] { spanEquipmentCommand.SpanEquipmentId })
             };
@@ -78,10 +75,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: spanEquipmentCommand.Interest.RouteNetworkElementRefs.ToArray()
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
-
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

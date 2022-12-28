@@ -1,11 +1,10 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
@@ -17,9 +16,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
 {
     public class UpdateRackPropertiesCommandHandler : ICommandHandler<UpdateRackProperties, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
@@ -41,7 +37,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
                 return Task.FromResult(Result.Fail(getNodeContainerResult.Errors.First()));
 
             var nodeContainer = getNodeContainerResult.Value;
-         
+
             if (nodeContainer.Racks == null || !nodeContainer.Racks.Any(r => r.Id == command.RackId))
                 return Task.FromResult(Result.Fail(new UpdateNodeContainerPropertiesError(UpdateNodeContainerPropertiesErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {command.RackId} in node container with id: {nodeContainer.Id}")));
 
@@ -124,7 +120,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
 
         private async void NotifyExternalServicesAboutNodeContainerChange(Guid nodeContainerId, Guid interestId)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("NodeContainer", ChangeTypeEnum.Modification, new Guid[] { nodeContainerId })
             };
@@ -141,9 +137,9 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { interestId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

@@ -1,9 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -21,9 +21,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class PlaceSpanEquipmentInUtilityNetworkCommandHandler : ICommandHandler<PlaceSpanEquipmentInUtilityNetwork, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -65,8 +62,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var placeSpanEquipmentResult = spanEquipmentAR.PlaceSpanEquipmentInUtilityNetwork(
                 cmdContext: commandContext,
-                spanEquipments, 
-                spanEquipmentSpecifications, 
+                spanEquipments,
+                spanEquipmentSpecifications,
                 command.SpanEquipmentId,
                 command.SpanEquipmentSpecificationId,
                 walkOfInterestId,
@@ -353,7 +350,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private async void NotifyExternalServicesAboutChange(Guid spanEquipmentId, Guid[] affectedRouteNetworkElementIds)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Addition, new Guid[] { spanEquipmentId })
             };
@@ -370,10 +367,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: affectedRouteNetworkElementIds
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
-
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
-
 
         class ProcessRoutingHopsResult
         {
@@ -420,7 +417,5 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
     }
 
-    
-}
 
-  
+}
