@@ -63,7 +63,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentQueryResult.Value.NodeContainers[sutNodeContainerId].VertialContentAlignmemt.Should().Be(NodeContainerVerticalContentAlignmentEnum.Top);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the node container we just changed
-            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic(nameof(RouteNetworkElementContainedEquipmentUpdated)).OfType<RouteNetworkElementContainedEquipmentUpdated>();
             var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.Category == "EquipmentModification" && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == sutNodeContainerId)));
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
         }
