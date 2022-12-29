@@ -1,13 +1,12 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using System;
 using System.Collections.Generic;
@@ -18,9 +17,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class CutSpanSegmentsCommandHandler : ICommandHandler<CutSpanSegmentsAtRouteNode, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
@@ -53,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
 
 
-                var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
+            var spanEquipment = spanSegmentGraphElement.SpanEquipment(utilityNetwork);
             var firstSpanSegment = spanSegmentGraphElement.SpanSegment(utilityNetwork);
 
             // Get walk of interest of the span equipment
@@ -65,7 +61,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Task.FromResult(Result.Fail(new CutSpanSegmentsAtRouteNodeError(CutSpanSegmentsAtRouteNodeErrorCodes.FAILED_TO_GET_SPAN_EQUIPMENT_WALK_OF_INTEREST_INFORMATION, $"Got error trying to query interest information belonging to span equipment with id: {spanEquipment.Id} Error Message: {interestQueryResult.Errors.First().Message}")));
 
             if (interestQueryResult.Value is null || interestQueryResult.Value.Interests is null)
-                throw new ApplicationException($"Got nothing back trying to query interest information belonging to span equipment with id: { spanEquipment.Id } Null was returned.");
+                throw new ApplicationException($"Got nothing back trying to query interest information belonging to span equipment with id: {spanEquipment.Id} Null was returned.");
 
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
@@ -74,7 +70,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var cuteSpanEquipmentsResult = spanEquipmentAR.CutSpanSegments(
                 cmdContext: commandContext,
                 spanEquipmentWalkOfInterest: interestQueryResult.Value.Interests.First(),
-                routeNodeId: command.RouteNodeId, 
+                routeNodeId: command.RouteNodeId,
                 spanSegmentsToCut: command.SpanSegmentsToCut
             );
 
@@ -106,9 +102,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

@@ -1,10 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
-using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -21,9 +20,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class ConnectSpanSegmentsWithTerminalsAtRouteNodeCommandHandler : ICommandHandler<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -102,7 +98,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
                     if (terminal.Direction == TerminalDirectionEnum.BI && terminalConnectionCount == 2)
                         return Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_ALREADY_CONNECTED, $"Bi directional terminal with id: {connect.TerminalId} is already connected to {terminalConnectionCount} segment(s)"));
-                    
+
                     if (terminal.Direction != TerminalDirectionEnum.BI && terminalConnectionCount == 1)
                         return Result.Fail(new ConnectSpanEquipmentAndTerminalEquipmentError(ConnectSpanEquipmentAndTerminalEquipmentErrorCodes.TERMINAL_ALREADY_CONNECTED, $"Non-bi-directional terminal with id: {connect.TerminalId} is already connected to {terminalConnectionCount} segment(s)"));
                 }
@@ -154,10 +150,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             return new ValidatedRouteNetworkWalk(routeNetworkInterest.RouteNetworkElementRefs);
         }
-   
+
         private async void NotifyExternalServicesAboutConnectivityChange(Guid spanEquipmentId, Guid[] routeNodeIds, string category)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId })
             };
@@ -174,9 +170,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: routeNodeIds
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
-
 
         private class SpanEquipmentWithConnectsHolder
         {
@@ -202,5 +199,3 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         }
     }
 }
-
-  

@@ -7,6 +7,7 @@ using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
+using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
@@ -16,15 +17,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using OpenFTTH.Util;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class ConnectSpanSegmentsCommandHandler : ICommandHandler<ConnectSpanSegmentsAtRouteNode, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -516,7 +513,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private async void NotifyExternalServicesAboutConnectivityChange(Guid firstSpanEquipmentId, Guid secondSpanEquipmentId, Guid routeNodeId, string category)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { firstSpanEquipmentId, secondSpanEquipmentId })
             };
@@ -533,12 +530,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
 
         private async void NotifyExternalServicesAboutConnectivityChange(Guid spanEquipmentId, Guid routeNodeId, string category)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Modification, new Guid[] { spanEquipmentId })
             };
@@ -555,12 +554,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
 
         private async void NotifyExternalServicesAboutMerge(Guid spanEquipmentId, Guid[] affectedRouteNetworkElements)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("SpanEquipment", ChangeTypeEnum.Addition, new Guid[] { spanEquipmentId })
             };
@@ -577,10 +578,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: affectedRouteNetworkElements
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
-
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
-
 
         private class SpanEquipmentWithConnectsHolder
         {

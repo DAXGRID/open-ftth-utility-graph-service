@@ -1,9 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Commands;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
@@ -22,9 +22,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class AffixSpanEquipmentToParentCommandHandler : ICommandHandler<AffixSpanEquipmentToParent, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -59,8 +56,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 if (_utilityNetwork.TryGetEquipment<SpanEquipment>(command.ChildSpanSegmentId, out var spanEquipment))
                 {
-                    if(!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipment.SpanStructures[0].SpanSegments[0].Id, out spanSegment1GraphElement))
-                         return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
+                    if (!_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipment.SpanStructures[0].SpanSegments[0].Id, out spanSegment1GraphElement))
+                        return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
                 }
                 else
                     return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.INVALID_SPAN_SEGMENT_ID_NOT_FOUND, $"Cannot find any span segment with id: {command.ChildSpanSegmentId}")));
@@ -102,7 +99,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             if (!conduitSpec.IsMultiLevel && _utilityNetwork.CheckIfConduitSegmentContainsCables(conduitSpanSegmentId))
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.NON_MULTI_LEVEL_CONDUIT_CANNOT_CONTAIN_MORE_THAN_ONE_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit and conduit is not a multi level conduit")));
-              
+
             if (conduitSpanStructureIndex > 0 && _utilityNetwork.CheckIfConduitSegmentContainsCables(conduitSpanSegmentId))
                 return Task.FromResult(Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.CONDUIT_SEGMENT_ALREADY_CONTAIN_CABLE, $"The cable with id {cableSpanEquipment.Id} cannot be affixed to conduit with id: {conduitSpanEquipment.Id} because cable already affixed to conduit segment: {conduitSpanSegmentId}")));
 
@@ -215,7 +212,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             {
                 return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected utility network trace result"));
             }
-                       
+
 
             var walk = new RouteNetworkElementIdList();
             walk.AddRange(traceInfo.RouteNetworkWalk);
@@ -266,7 +263,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: affectedRouteNetworkElementIds
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
 
         }
 
@@ -286,5 +285,3 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
         }
     }
 }
-
-  

@@ -15,9 +15,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
 {
     public class RemoveTerminalStructureFromTerminalEquipmentCommandHandler : ICommandHandler<RemoveTerminalStructureFromTerminalEquipment, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
@@ -65,7 +62,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
 
         private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid terminalEquipmentId)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("TerminalEquipment", ChangeTypeEnum.Modification, new Guid[] { terminalEquipmentId })
             };
@@ -82,9 +79,9 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

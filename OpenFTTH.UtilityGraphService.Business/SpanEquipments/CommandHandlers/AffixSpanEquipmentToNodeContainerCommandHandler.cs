@@ -2,9 +2,9 @@
 using FluentResults;
 using Newtonsoft.Json;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.UtilityGraphService.API.Commands;
@@ -19,9 +19,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class AffixSpanEquipmentToNodeContainerCommandHandler : ICommandHandler<AffixSpanEquipmentToNodeContainer, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
@@ -43,7 +40,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             var _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
-          
+
             // Find span equipment
             if (!_utilityNetwork.TryGetEquipment<SpanEquipment>(command.SpanEquipmentOrSegmentId, out SpanEquipment spanEquipment))
             {
@@ -83,7 +80,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 nodeContainers: nodeContainers,
                 spanEquipmentInterest: interestQueryResult.Value.Interests[spanEquipment.WalkOfInterestId],
                 nodeContainerRouteNodeId: interestQueryResult.Value.Interests[nodeContainer.InterestId].RouteNetworkElementRefs[0],
-                nodeContainerId : command.NodeContainerId,
+                nodeContainerId: command.NodeContainerId,
                 spanSegmentId: command.SpanEquipmentOrSegmentId,
                 nodeContainerIngoingSide: command.NodeContainerIngoingSide
             );
@@ -118,10 +115,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: affectedRouteNetworkElementIds
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
-
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

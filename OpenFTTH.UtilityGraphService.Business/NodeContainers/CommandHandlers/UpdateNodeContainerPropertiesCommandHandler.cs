@@ -1,9 +1,9 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
@@ -16,9 +16,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
 {
     public class UpdateNodeContainerPropertiesCommandHandler : ICommandHandler<UpdateNodeContainerProperties, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly IExternalEventProducer _externalEventProducer;
 
@@ -100,7 +97,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
 
         private async void NotifyExternalServicesAboutNodeContainerChange(Guid nodeContainerId, Guid interestId)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("NodeContainer", ChangeTypeEnum.Modification, new Guid[] { nodeContainerId })
             };
@@ -117,9 +114,9 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { interestId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  

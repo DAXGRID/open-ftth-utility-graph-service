@@ -1,15 +1,14 @@
 ﻿using DAX.EventProcessing;
 using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Events.Changes;
 using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers;
-using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
 using System;
@@ -21,9 +20,6 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class PlaceTerminalEquipmentInNodeContainerCommandHandler : ICommandHandler<PlaceTerminalEquipmentInNodeContainer, Result>
     {
-        // TODO: move into config
-        private readonly string _topicName = "notification.utility-network";
-
         private readonly IEventStore _eventStore;
         private readonly UtilityNetworkProjection _utilityNetwork;
         private readonly IExternalEventProducer _externalEventProducer;
@@ -70,7 +66,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
             // Place all terminal equipments
             List<TerminalEquipmentAR> terminalEquipmentARs = new();
-        
+
             var placeTerminalEquipmentsResult = PlaceTerminalEquipments(command, _terminalEquipmentSpecifications, _terminalStructureSpecifications, commandContext, out terminalEquipmentARs);
 
             if (placeTerminalEquipmentsResult.IsFailed)
@@ -100,11 +96,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (command.SubrackPlacementInfo != null)
             {
                 var addTerminalEquipmentToRackResult = nodeContainerAR.AddTerminalEquipmentsToRack(
-                    commandContext, 
-                    terminalEquipmentIds.ToArray(), 
-                    _terminalEquipmentSpecifications[command.TerminalEquipmentSpecificationId], 
-                    command.SubrackPlacementInfo.RackId, 
-                    command.SubrackPlacementInfo.StartUnitPosition, 
+                    commandContext,
+                    terminalEquipmentIds.ToArray(),
+                    _terminalEquipmentSpecifications[command.TerminalEquipmentSpecificationId],
+                    command.SubrackPlacementInfo.RackId,
+                    command.SubrackPlacementInfo.StartUnitPosition,
                     command.SubrackPlacementInfo.PlacementMethod
                  );
 
@@ -120,7 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
 
             _eventStore.Aggregates.Store(nodeContainerAR);
-                
+
             NotifyExternalServicesAboutChange(nodeContainer.RouteNodeId, terminalEquipmentIds.ToArray());
 
             return Task.FromResult(Result.Ok());
@@ -165,7 +161,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 
         private async void NotifyExternalServicesAboutChange(Guid routeNodeId, Guid[] terminalEquipmentIds)
         {
-            List<IdChangeSet> idChangeSets = new List<IdChangeSet>
+            var idChangeSets = new List<IdChangeSet>
             {
                 new IdChangeSet("TerminalEquipment", ChangeTypeEnum.Addition, terminalEquipmentIds)
             };
@@ -182,9 +178,9 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     affectedRouteNetworkElementIds: new Guid[] { routeNodeId }
                 );
 
-            await _externalEventProducer.Produce(_topicName, updatedEvent);
+            await _externalEventProducer.Produce(
+                nameof(RouteNetworkElementContainedEquipmentUpdated),
+                updatedEvent);
         }
     }
 }
-
-  
