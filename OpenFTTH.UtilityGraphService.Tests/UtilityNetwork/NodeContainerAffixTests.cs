@@ -65,7 +65,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.First(n => n.NodeContainerId == nodeContainerId).NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.West);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
-            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic(nameof(RouteNetworkElementContainedEquipmentUpdated)).OfType<RouteNetworkElementContainedEquipmentUpdated>();
             var utilityNetworkUpdatedEvent = utilityNetworkNotifications.First(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == nodeContainerId) && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification));
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.HH_2);
 
@@ -101,7 +101,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentAfterDetach.NodeContainerAffixes.Any(n => n.RouteNodeId == TestRouteNetwork.HH_2).Should().BeFalse();
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
-            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic(nameof(RouteNetworkElementContainedEquipmentUpdated)).OfType<RouteNetworkElementContainedEquipmentUpdated>();
             utilityNetworkNotifications.Count(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == nodeContainerId) && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification)).Should().Be(2);
 
         }
@@ -115,7 +115,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             var testConduit = _eventStore.Projections.Get<UtilityNetworkProjection>().SpanEquipmentsByEquipmentId[testConduitId];
 
-            var utilityNetworkNotificationsBeforeAct = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkNotificationsBeforeAct = _externalEventProducer.GetMessagesByTopic(nameof(RouteNetworkElementContainedEquipmentUpdated)).OfType<RouteNetworkElementContainedEquipmentUpdated>();
             var nodeContainerId = utilityNetworkNotificationsBeforeAct.First(n => n.AffectedRouteNetworkElementIds.Contains(TestRouteNetwork.HH_2) && n.IdChangeSets != null && n.IdChangeSets.Any(i => i.ObjectType == "NodeContainer" && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification)).IdChangeSets.First(c => c.ObjectType == "NodeContainer").IdList[0];
 
             var affixConduitToContainerCommand = new AffixSpanEquipmentToNodeContainer(Guid.NewGuid(), new UserContext("test", Guid.Empty),
@@ -135,7 +135,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             equipmentQueryResult.Value.SpanEquipment[testConduitId].NodeContainerAffixes.First(n => n.NodeContainerId == nodeContainerId).NodeContainerIngoingSide.Should().Be(NodeContainerSideEnum.West);
 
             // Check if an event is published to the notification.utility-network topic having an idlist containing the span equipment id we just created
-            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic("notification.utility-network").OfType<RouteNetworkElementContainedEquipmentUpdated>();
+            var utilityNetworkNotifications = _externalEventProducer.GetMessagesByTopic(nameof(RouteNetworkElementContainedEquipmentUpdated)).OfType<RouteNetworkElementContainedEquipmentUpdated>();
             utilityNetworkNotifications.Count(n => n.IdChangeSets != null && n.IdChangeSets.Any(i => i.IdList.Any(i => i == nodeContainerId) && i.ChangeType == Events.Changes.ChangeTypeEnum.Modification)).Should().Be(3);
         }
 
