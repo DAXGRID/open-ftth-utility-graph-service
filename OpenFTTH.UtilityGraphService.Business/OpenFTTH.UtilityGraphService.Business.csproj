@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DAX.EventProcessing.Dispatcher" Version="2.5.1" />
+    <PackageReference Include="DAX.EventProcessing.Dispatcher" Version="2.6.0" />
     <PackageReference Include="DAX.ObjectVersioning.Graph" Version="2.0.0" />
     <PackageReference Include="FluentResults" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
