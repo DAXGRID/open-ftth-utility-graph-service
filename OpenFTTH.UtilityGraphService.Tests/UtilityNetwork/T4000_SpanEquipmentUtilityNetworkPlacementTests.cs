@@ -1,27 +1,22 @@
-﻿using OpenFTTH.CQRS;
-using Xunit;
+﻿using DAX.EventProcessing;
 using FluentAssertions;
 using FluentResults;
-using OpenFTTH.RouteNetwork.API.Model;
-using System;
-using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.Tests.TestData;
-using OpenFTTH.UtilityGraphService.API.Queries;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.Events.Core.Infos;
-using DAX.EventProcessing;
-using System.Linq;
-using OpenFTTH.Events.UtilityNetwork;
-using OpenFTTH.RouteNetwork.API.Commands;
-using OpenFTTH.TestData;
-using Xunit.Extensions.Ordering;
+using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
-using OpenFTTH.UtilityGraphService.Business.Graph;
+using OpenFTTH.Events.Core.Infos;
+using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.RouteNetwork.API.Queries;
+using OpenFTTH.TestData;
 using OpenFTTH.Tests.Util;
-using OpenFTTH.Schematic.Business.IO;
-using OpenFTTH.Schematic.API.Queries;
+using OpenFTTH.UtilityGraphService.API.Commands;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.API.Queries;
+using OpenFTTH.UtilityGraphService.Business.Graph;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Xunit;
+using Xunit.Extensions.Ordering;
 
 #nullable disable
 
@@ -134,7 +129,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Check that trace only include outer jacket of cable
             traceQueryResult.Value.RouteNetworkTraces.Count().Should().Be(1);
 
-    
+
         }
 
 
@@ -198,7 +193,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             walkOfInterest.RouteNetworkElementRefs.Count(e => e == TestRouteNetwork.CC_1).Should().Be(2);
             walkOfInterest.RouteNetworkElementRefs.Count(e => e == TestRouteNetwork.S13).Should().Be(2);
 
-            
+
             placedSpanEquipment.UtilityNetworkHops.Should().NotBeNull();
             placedSpanEquipment.UtilityNetworkHops.Count().Should().Be(3);
 
@@ -399,7 +394,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.TryGetEquipment<SpanEquipment>(placeSpanEquipmentCommand.SpanEquipmentId, out var placedSpanEquipment);
 
 
-            var affixtCommand = new AffixSpanEquipmentToParent(Guid.NewGuid(), new UserContext("test", Guid.Empty),TestRouteNetwork.CC_1, placedSpanEquipment.SpanStructures[0].SpanSegments[0].Id, routeThoughSpanEquipment1.SpanStructures[5].SpanSegments[0].Id);
+            var affixtCommand = new AffixSpanEquipmentToParent(Guid.NewGuid(), new UserContext("test", Guid.Empty), TestRouteNetwork.CC_1, placedSpanEquipment.SpanStructures[0].SpanSegments[0].Id, routeThoughSpanEquipment1.SpanStructures[5].SpanSegments[0].Id);
 
             var affixCommandResult = await _commandDispatcher.HandleAsync<AffixSpanEquipmentToParent, Result>(affixtCommand);
 
@@ -635,7 +630,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Check walk of interest
             var walkOfInterest = routeNetworkQueryResult.Value.Interests[placedSpanEquipment.WalkOfInterestId];
 
-            walkOfInterest.RouteNetworkElementRefs.Count.Should().Be(7);    
+            walkOfInterest.RouteNetworkElementRefs.Count.Should().Be(7);
             walkOfInterest.RouteNetworkElementRefs[0].Should().Be(TestRouteNetwork.HH_10);
             walkOfInterest.RouteNetworkElementRefs[1].Should().Be(TestRouteNetwork.S13);
             walkOfInterest.RouteNetworkElementRefs[2].Should().Be(TestRouteNetwork.CC_1);

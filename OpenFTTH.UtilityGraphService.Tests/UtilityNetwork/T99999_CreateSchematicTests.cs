@@ -1,21 +1,7 @@
 ﻿using DAX.EventProcessing;
-using FluentAssertions;
-using FluentResults;
 using OpenFTTH.CQRS;
-using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
-using OpenFTTH.RouteNetwork.API.Model;
-using OpenFTTH.RouteNetwork.API.Queries;
-using OpenFTTH.Schematic.API.Queries;
-using OpenFTTH.Schematic.Business.IO;
 using OpenFTTH.TestData;
-using OpenFTTH.UtilityGraphService.API.Commands;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Queries;
-using OpenFTTH.UtilityGraphService.Business.Graph;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions.Ordering;
 
