@@ -1,14 +1,16 @@
 ﻿using DAX.EventProcessing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using OpenFTTH.Address.Business;
 using OpenFTTH.Address.Business.Repository;
 using OpenFTTH.CQRS;
 using OpenFTTH.EventSourcing;
 using OpenFTTH.EventSourcing.InMem;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
+using OpenFTTH.RouteNetwork.Business.RouteElements.Projection;
 using OpenFTTH.RouteNetwork.Business.RouteElements.StateHandling;
 using OpenFTTH.TestData;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace OpenFTTH.UtilityGraphService.Tests
@@ -34,12 +36,17 @@ namespace OpenFTTH.UtilityGraphService.Tests
                 AppDomain.CurrentDomain.Load("OpenFTTH.RouteNetwork.Business"),
                 AppDomain.CurrentDomain.Load("OpenFTTH.UtilityGraphService.Business"),
                 AppDomain.CurrentDomain.Load("OpenFTTH.Address.Business"),
-                AppDomain.CurrentDomain.Load("OpenFTTH.Schematic.Business")
             };
 
             services.AddCQRS(businessAssemblies);
-
             services.AddProjections(businessAssemblies);
+
+            var routeNetworkProjectionImpl = services
+                .First(descriptor =>
+                       descriptor.ImplementationType == typeof(RouteNetworkProjection));
+
+            // We remove this because it times out doing testing.
+            services.Remove(routeNetworkProjectionImpl);
 
             // In-mem address service for testing
             services.AddSingleton<IAddressRepository>(x =>
