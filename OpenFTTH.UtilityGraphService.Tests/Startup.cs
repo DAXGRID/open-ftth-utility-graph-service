@@ -41,13 +41,6 @@ namespace OpenFTTH.UtilityGraphService.Tests
             services.AddCQRS(businessAssemblies);
             services.AddProjections(businessAssemblies);
 
-            var routeNetworkProjectionImpl = services
-                .First(descriptor =>
-                       descriptor.ImplementationType == typeof(RouteNetworkProjection));
-
-            // We remove this because it times out doing testing.
-            services.Remove(routeNetworkProjectionImpl);
-
             // In-mem address service for testing
             services.AddSingleton<IAddressRepository>(x =>
                 new InMemAddressRepository(TestAddressData.AccessAddresses)
