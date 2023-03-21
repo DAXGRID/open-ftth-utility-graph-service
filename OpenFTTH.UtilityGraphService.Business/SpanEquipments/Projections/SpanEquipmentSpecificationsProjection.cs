@@ -2,6 +2,7 @@
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
 {
@@ -13,11 +14,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
 
         public SpanEquipmentSpecificationsProjection()
         {
-            ProjectEvent<SpanEquipmentSpecificationAdded>(Project);
-            ProjectEvent<SpanEquipmentSpecificationDeprecated>(Project);
+            ProjectEventAsync<SpanEquipmentSpecificationAdded>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentSpecificationDeprecated>(ProjectAsync);
         }
 
-        private void Project(IEventEnvelope eventEnvelope)
+        private Task ProjectAsync(IEventEnvelope eventEnvelope)
         {
             switch (eventEnvelope.Data)
             {
@@ -29,6 +30,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
                     _spanEquipmentSpecifications[@event.SpanEquipmentSpecificationId] = _spanEquipmentSpecifications[@event.SpanEquipmentSpecificationId] with { Deprecated = true };
                     break;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

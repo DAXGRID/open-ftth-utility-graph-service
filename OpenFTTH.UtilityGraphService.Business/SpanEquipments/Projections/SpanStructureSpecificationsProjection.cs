@@ -1,4 +1,5 @@
-﻿using OpenFTTH.EventSourcing;
+﻿using System.Threading.Tasks;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
@@ -13,11 +14,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
 
         public SpanStructureSpecificationsProjection()
         {
-            ProjectEvent<SpanStructureSpecificationAdded>(Project);
-            ProjectEvent<SpanStructureSpecificationDeprecated>(Project);
+            ProjectEventAsync<SpanStructureSpecificationAdded>(ProjectAsync);
+            ProjectEventAsync<SpanStructureSpecificationDeprecated>(ProjectAsync);
         }
 
-        private void Project(IEventEnvelope eventEnvelope)
+        private Task ProjectAsync(IEventEnvelope eventEnvelope)
         {
             switch (eventEnvelope.Data)
             {
@@ -29,6 +30,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections
                     _spanStructureSpecifications[@event.SpanStructureSpecificationId] = _spanStructureSpecifications[@event.SpanStructureSpecificationId] with { Deprecated = true };
                     break;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

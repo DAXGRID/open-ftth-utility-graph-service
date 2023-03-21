@@ -2,6 +2,7 @@
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
+using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections
 {
@@ -13,10 +14,10 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections
 
         public RackSpecificationsProjection()
         {
-            ProjectEvent<RackSpecificationAdded>(Project);
+            ProjectEventAsync<RackSpecificationAdded>(ProjectAsync);
         }
 
-        private void Project(IEventEnvelope eventEnvelope)
+        private Task ProjectAsync(IEventEnvelope eventEnvelope)
         {
             switch (eventEnvelope.Data)
             {
@@ -24,6 +25,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections
                     _rackSpecifications.Add(@event.Specification);
                     break;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

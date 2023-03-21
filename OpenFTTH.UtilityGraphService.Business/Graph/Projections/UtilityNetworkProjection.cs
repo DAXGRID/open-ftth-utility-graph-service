@@ -1,6 +1,4 @@
-﻿using DAX.EventProcessing;
-using OpenFTTH.EventSourcing;
-using OpenFTTH.Util;
+﻿using OpenFTTH.EventSourcing;
 using OpenFTTH.UtilityGraphService.API.Model;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
@@ -11,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
@@ -45,54 +44,53 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             _utilityGraph = new(this);
 
             // Span equipment
-            ProjectEvent<SpanEquipmentPlacedInRouteNetwork>(Project);
-            ProjectEvent<SpanEquipmentAffixedToContainer>(Project);
-            ProjectEvent<SpanEquipmentAffixSideChanged>(Project);
-            ProjectEvent<SpanEquipmentDetachedFromContainer>(Project);
-            ProjectEvent<SpanSegmentsCut>(Project);
-            ProjectEvent<SpanEquipmentCutReverted>(Project);
-            ProjectEvent<SpanSegmentsConnectedToSimpleTerminals>(Project);
-            ProjectEvent<SpanSegmentDisconnectedFromTerminal>(Project);
-            ProjectEvent<SpanSegmentsDisconnectedFromTerminals>(Project);
-            ProjectEvent<AdditionalStructuresAddedToSpanEquipment>(Project);
-            ProjectEvent<SpanStructureRemoved>(Project);
-            ProjectEvent<SpanEquipmentRemoved>(Project);
-            ProjectEvent<SpanEquipmentMoved>(Project);
-            ProjectEvent<SpanEquipmentMerged>(Project);
-            ProjectEvent<SpanEquipmentMarkingInfoChanged>(Project);
-            ProjectEvent<SpanEquipmentAddressInfoChanged>(Project);
-            ProjectEvent<SpanEquipmentManufacturerChanged>(Project);
-            ProjectEvent<SpanEquipmentSpecificationChanged>(Project);
-            ProjectEvent<SpanEquipmentAffixedToParent>(Project);
-            ProjectEvent<SpanEquipmentDetachedFromParent>(Project);
+            ProjectEventAsync<SpanEquipmentPlacedInRouteNetwork>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentAffixedToContainer>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentAffixSideChanged>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentDetachedFromContainer>(ProjectAsync);
+            ProjectEventAsync<SpanSegmentsCut>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentCutReverted>(ProjectAsync);
+            ProjectEventAsync<SpanSegmentsConnectedToSimpleTerminals>(ProjectAsync);
+            ProjectEventAsync<SpanSegmentDisconnectedFromTerminal>(ProjectAsync);
+            ProjectEventAsync<SpanSegmentsDisconnectedFromTerminals>(ProjectAsync);
+            ProjectEventAsync<AdditionalStructuresAddedToSpanEquipment>(ProjectAsync);
+            ProjectEventAsync<SpanStructureRemoved>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentRemoved>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentMoved>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentMerged>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentMarkingInfoChanged>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentAddressInfoChanged>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentManufacturerChanged>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentSpecificationChanged>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentAffixedToParent>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentDetachedFromParent>(ProjectAsync);
 
             // Terminal equipment
-            ProjectEvent<TerminalEquipmentPlacedInNodeContainer>(Project);
-            ProjectEvent<TerminalEquipmentNamingInfoChanged>(Project);
-            ProjectEvent<TerminalEquipmentAddressInfoChanged>(Project);
-            ProjectEvent<TerminalEquipmentManufacturerChanged>(Project);
-            ProjectEvent<TerminalEquipmentSpecificationChanged>(Project);
-            ProjectEvent<TerminalEquipmentRemoved>(Project);
-            ProjectEvent<AdditionalStructuresAddedToTerminalEquipment>(Project);
-            ProjectEvent<TerminalStructureRemoved>(Project);
-
+            ProjectEventAsync<TerminalEquipmentPlacedInNodeContainer>(ProjectAsync);
+            ProjectEventAsync<TerminalEquipmentNamingInfoChanged>(ProjectAsync);
+            ProjectEventAsync<TerminalEquipmentAddressInfoChanged>(ProjectAsync);
+            ProjectEventAsync<TerminalEquipmentManufacturerChanged>(ProjectAsync);
+            ProjectEventAsync<TerminalEquipmentSpecificationChanged>(ProjectAsync);
+            ProjectEventAsync<TerminalEquipmentRemoved>(ProjectAsync);
+            ProjectEventAsync<AdditionalStructuresAddedToTerminalEquipment>(ProjectAsync);
+            ProjectEventAsync<TerminalStructureRemoved>(ProjectAsync);
 
             // Node container
-            ProjectEvent<NodeContainerPlacedInRouteNetwork>(Project);
-            ProjectEvent<NodeContainerRemovedFromRouteNetwork>(Project);
-            ProjectEvent<NodeContainerManufacturerChanged>(Project);
-            ProjectEvent<NodeContainerSpecificationChanged>(Project);
-            ProjectEvent<NodeContainerVerticalAlignmentReversed>(Project);
-            ProjectEvent<NodeContainerRackAdded>(Project);
-            ProjectEvent<NodeContainerRackRemoved>(Project);
-            ProjectEvent<NodeContainerRackSpecificationChanged>(Project);
-            ProjectEvent<NodeContainerRackNameChanged>(Project);
-            ProjectEvent<NodeContainerRackHeightInUnitsChanged>(Project);
-            ProjectEvent<NodeContainerTerminalEquipmentAdded>(Project);
-            ProjectEvent<NodeContainerTerminalEquipmentsAddedToRack>(Project);
-            ProjectEvent<NodeContainerTerminalEquipmentReferenceRemoved>(Project);
-            ProjectEvent<NodeContainerTerminalsConnected>(Project);
-            ProjectEvent<NodeContainerTerminalsDisconnected>(Project);
+            ProjectEventAsync<NodeContainerPlacedInRouteNetwork>(ProjectAsync);
+            ProjectEventAsync<NodeContainerRemovedFromRouteNetwork>(ProjectAsync);
+            ProjectEventAsync<NodeContainerManufacturerChanged>(ProjectAsync);
+            ProjectEventAsync<NodeContainerSpecificationChanged>(ProjectAsync);
+            ProjectEventAsync<NodeContainerVerticalAlignmentReversed>(ProjectAsync);
+            ProjectEventAsync<NodeContainerRackAdded>(ProjectAsync);
+            ProjectEventAsync<NodeContainerRackRemoved>(ProjectAsync);
+            ProjectEventAsync<NodeContainerRackSpecificationChanged>(ProjectAsync);
+            ProjectEventAsync<NodeContainerRackNameChanged>(ProjectAsync);
+            ProjectEventAsync<NodeContainerRackHeightInUnitsChanged>(ProjectAsync);
+            ProjectEventAsync<NodeContainerTerminalEquipmentAdded>(ProjectAsync);
+            ProjectEventAsync<NodeContainerTerminalEquipmentsAddedToRack>(ProjectAsync);
+            ProjectEventAsync<NodeContainerTerminalEquipmentReferenceRemoved>(ProjectAsync);
+            ProjectEventAsync<NodeContainerTerminalsConnected>(ProjectAsync);
+            ProjectEventAsync<NodeContainerTerminalsDisconnected>(ProjectAsync);
         }
 
         public bool TryGetEquipment<T>(Guid equipmentOrInterestId, out T equipment) where T: IEquipment
@@ -162,7 +160,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         }
         
 
-        private void Project(IEventEnvelope eventEnvelope)
+        private Task ProjectAsync(IEventEnvelope eventEnvelope)
         {
             switch (eventEnvelope.Data)
             {
@@ -344,6 +342,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessTerminalsDisconnected(@event);
                     break;
             }
+
+            return Task.CompletedTask;
         }
 
 
