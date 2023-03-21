@@ -1,4 +1,5 @@
-﻿using OpenFTTH.EventSourcing;
+﻿using System.Threading.Tasks;
+using OpenFTTH.EventSourcing;
 using OpenFTTH.Util;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
@@ -13,10 +14,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections
 
         public TerminalEquipmentSpecificationsProjection()
         {
-            ProjectEvent<TerminalEquipmentSpecificationAdded>(Project);
+            ProjectEventAsync<TerminalEquipmentSpecificationAdded>(ProjectAsync);
         }
 
-        private void Project(IEventEnvelope eventEnvelope)
+        private Task ProjectAsync(IEventEnvelope eventEnvelope)
         {
             switch (eventEnvelope.Data)
             {
@@ -24,6 +25,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections
                     _terminalEquipmentSpecifications.Add(@event.Specification);
                     break;
             }
+
+            return Task.CompletedTask;
         }
     }
 }
