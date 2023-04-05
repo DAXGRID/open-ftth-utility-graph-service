@@ -90,7 +90,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             return routeNetworkQueryResult.Value.RouteNetworkElements.ToDictionary(x => x.Id);
         }
-
   
         private Dictionary<Guid, NodeContainer> GatcherNodeContainerInformation(List<RouteNetworkElement> routeNetworkElements)
         {
@@ -352,7 +351,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             string? terminalStructurePosition = null;
 
-            if (terminalEquipment.TerminalStructures.Length > 1)
+            // Show card position on all patch equipment and splice equipment with more than one card
+            if (!terminal.IsSplice || (terminalEquipment.TerminalStructures.Length > 1))
             {
                 terminalStructurePosition = $"-{terminalStructure.Position}";
             }
@@ -463,8 +463,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
                 return true;
             else
                 return false;
-
-
         }
     }
 }
