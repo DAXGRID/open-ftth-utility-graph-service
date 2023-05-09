@@ -187,13 +187,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
 
         private bool IsConnected(TraceEndInfo? oppositeTraceEnd)
         {
-            if (oppositeTraceEnd == null)
-                return false;
-
-            if (oppositeTraceEnd.EndTerminal.IsDummyEnd)
-                return false;
-
-            return true;
+            return oppositeTraceEnd != null;
         }
 
         private TraceEndInfo? GetTerminalEquipmentEnd(RelevantEquipmentData equipmentData, TraceInfo? traceInfo, Guid routeNodeId)
