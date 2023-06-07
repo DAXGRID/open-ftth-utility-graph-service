@@ -33,7 +33,27 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
 
         public Task<Result<GetEquipmentDetailsResult>> HandleAsync(GetEquipmentDetails query)
         {
-            if (query.EquipmentIdsToQuery.Count > 0 || query.InterestIdsToQuery.Count > 0)
+            if (query.EquipmentNameToQuery != null)
+            {
+                if (_utilityNetwork.TerminalEquipmentIdByName.TryGetValue(query.EquipmentNameToQuery, out var terminalEquipmentIdList))
+                {
+                    var result = GetResultFromTerminalEquipmentIdList(terminalEquipmentIdList);
+
+                    return Task.FromResult(Result.Ok(result));
+                }
+                else
+                {
+                    var result = new GetEquipmentDetailsResult()
+                    {
+                        TerminalEquipment = new LookupCollection<TerminalEquipment>(),
+                        SpanEquipment = new LookupCollection<SpanEquipmentWithRelatedInfo>(),
+                        NodeContainers = new LookupCollection<NodeContainer>()
+                    };
+
+                    return Task.FromResult(Result.Ok(result));
+                }
+            }
+            else if (query.EquipmentIdsToQuery.Count > 0 || query.InterestIdsToQuery.Count > 0)
             {
                 return QueryByEquipmentOrInterestIds(query);
             }
@@ -44,6 +64,24 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandlers
                 else
                     throw new ApplicationException("Unexpected combination of query arguments in GetEquipmentDetails query:\r\n" + JsonConvert.SerializeObject(query));
             }
+        }
+
+        private GetEquipmentDetailsResult GetResultFromTerminalEquipmentIdList(HashSet<Guid> terminalEquipmentIdList)
+        {
+            var terminalEquipments = new List<TerminalEquipment>();
+
+            foreach (var terminalEquipmentId in terminalEquipmentIdList)
+            {
+                terminalEquipments.Add(_utilityNetwork.TerminalEquipmentByEquipmentId[terminalEquipmentId]);
+            }
+
+            var result = new GetEquipmentDetailsResult()
+            {
+                TerminalEquipment = new LookupCollection<TerminalEquipment>(terminalEquipments),
+                SpanEquipment = new LookupCollection<SpanEquipmentWithRelatedInfo>(),
+                NodeContainers = new LookupCollection<NodeContainer>()
+            };
+            return result;
         }
 
         private Task<Result<GetEquipmentDetailsResult>> QueryByEquipmentOrInterestIds(GetEquipmentDetails query)

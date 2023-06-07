@@ -12,6 +12,8 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
 
         public EquipmentIdList EquipmentIdsToQuery { get; }
 
+        public string EquipmentNameToQuery { get; }
+
         #region Equipment Details Filter Options
         private EquipmentDetailsFilterOptions _equipmentDetailsFilterOptions =
             new EquipmentDetailsFilterOptions()
@@ -24,6 +26,7 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
             get { return _equipmentDetailsFilterOptions; }
             init { _equipmentDetailsFilterOptions = value; }
         }
+
         #endregion
 
 
@@ -54,6 +57,21 @@ namespace OpenFTTH.UtilityGraphService.API.Queries
             this.EquipmentIdsToQuery = new EquipmentIdList();
 
             this.InterestIdsToQuery = interestIds;
+        }
+
+        /// <summary>
+        /// Use this contructor, if you want to query by equipment name
+        /// Only non-null and non-black equipments can be searched for
+        /// </summary>
+        /// <param name="name"></param>
+        public GetEquipmentDetails(string name)
+        {
+            if (String.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException($"Search string cannot be null or empty");
+            }
+
+            this.EquipmentNameToQuery =name;
         }
     }
 }

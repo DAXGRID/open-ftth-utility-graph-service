@@ -17,6 +17,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
     {
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByEquipmentId = new();
         private readonly ConcurrentDictionary<Guid, TerminalEquipment> _terminalEquipmentByEquipmentId = new();
+        private readonly ConcurrentDictionary<string, HashSet<Guid>> _terminalEquipmentIdByName = new();
         private readonly ConcurrentDictionary<Guid, SpanEquipment> _spanEquipmentByInterestId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByEquipmentId = new();
         private readonly ConcurrentDictionary<Guid, NodeContainer> _nodeContainerByInterestId = new();
@@ -35,6 +36,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         public IReadOnlyDictionary<Guid, SpanEquipment> SpanEquipmentsByInterestId => _spanEquipmentByInterestId;
 
         public IReadOnlyDictionary<Guid, TerminalEquipment> TerminalEquipmentByEquipmentId => _terminalEquipmentByEquipmentId;
+
+        public IReadOnlyDictionary<string, HashSet<Guid>> TerminalEquipmentIdByName => _terminalEquipmentIdByName;
 
         public IReadOnlyDictionary<Guid, List<Guid>> RelatedCablesByConduitSegmentId => _relatedCablesByConduitSegmentId;
 
@@ -252,7 +255,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (TerminalEquipmentNamingInfoChanged @event):
-                    TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
+                    var oldEquipmentState = _terminalEquipmentByEquipmentId[@event.TerminalEquipmentId];
+
+                    RemoveTerminalEquipmentFromNameIndex(oldEquipmentState);
+
+                    var newEquipmentState = TerminalEquipmentProjectionFunctions.Apply(oldEquipmentState, @event);
+
+                    TryUpdate(newEquipmentState);
+
+                    AddTerminalEquipmentToNameIndex(newEquipmentState);
                     break;
 
                 case (TerminalEquipmentAddressInfoChanged @event):
@@ -487,8 +498,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         private void StoreAndIndexVirginTerminalEquipment(TerminalEquipment terminalEquipment)
         {
-            // Store the new terminal equipment in memory
+            // Store the new terminal equipment in memory by id
             _terminalEquipmentByEquipmentId.TryAdd(terminalEquipment.Id, terminalEquipment);
+
+            AddTerminalEquipmentToNameIndex(terminalEquipment);
 
             var nodeContainer = _nodeContainerByEquipmentId[terminalEquipment.NodeContainerId];
 
@@ -636,6 +649,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             TryRemoveTerminalEquipment(@event.TerminalEquipmentId);
 
+            RemoveTerminalEquipmentFromNameIndex(existingTerminalEquipment);
+
             // Remove terminals from the graph
             foreach (var terminalStructure in existingTerminalEquipment.TerminalStructures)
             {
@@ -722,6 +737,35 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             if (!_nodeContainerByInterestId.TryRemove(nodeContainerInterestId, out _))
                 throw new ApplicationException($"Concurrency issue removing node container from interest dictionary. Span equipment id: {nodeContainertId} Please make sure that events are applied in sequence to the projection.");
+        }
+
+        private void AddTerminalEquipmentToNameIndex(TerminalEquipment terminalEquipment)
+        {
+            if (terminalEquipment.NamingInfo != null && !String.IsNullOrEmpty(terminalEquipment.NamingInfo.Name))
+            {
+                if (_terminalEquipmentIdByName.TryGetValue(terminalEquipment.NamingInfo.Name.ToLower(), out var existingIndexEntry))
+                {
+                     existingIndexEntry.Add(terminalEquipment.Id);
+                }
+                else
+                {
+                    _terminalEquipmentIdByName[terminalEquipment.NamingInfo.Name.ToLower()] = new HashSet<Guid> { terminalEquipment.Id };
+                }
+            }
+        }
+
+        private void RemoveTerminalEquipmentFromNameIndex(TerminalEquipment terminalEquipment)
+        {
+            if (terminalEquipment.NamingInfo != null && !String.IsNullOrEmpty(terminalEquipment.NamingInfo.Name))
+            {
+                if (_terminalEquipmentIdByName.TryGetValue(terminalEquipment.NamingInfo.Name.ToLower(), out var existingIndexEntry))
+                {
+                    existingIndexEntry.Remove(terminalEquipment.Id);
+
+                    if (existingIndexEntry.Count == 0)
+                        _terminalEquipmentIdByName.Remove(terminalEquipment.NamingInfo.Name.ToLower(), out var _);
+                }
+            }
         }
     }
 }
