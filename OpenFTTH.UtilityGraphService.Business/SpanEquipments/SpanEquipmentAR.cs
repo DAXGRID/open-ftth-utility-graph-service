@@ -2060,12 +2060,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         }
 
-        public Result<ValidatedRouteNetworkWalk> MoveWithParent(CommandContext cmdContext, ValidatedRouteNetworkWalk existingWalk, SpanEquipment parentMoved, ValidatedRouteNetworkWalk newParentWalk, ValidatedRouteNetworkWalk previousParentWalk, UtilityNetworkHopQueryHelper hopQueryHelper)
+        public Result<ValidatedRouteNetworkWalk> MoveWithParent(CommandContext cmdContext, ValidatedRouteNetworkWalk existingChildWalk, SpanEquipment parentMoved, ValidatedRouteNetworkWalk newParentWalk, ValidatedRouteNetworkWalk previousParentWalk, UtilityNetworkHopQueryHelper hopQueryHelper)
         {
             if (_spanEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
-            var newWalkResult = CalculateNewWalkFollowingNewParentWalk(existingWalk, parentMoved, newParentWalk, hopQueryHelper);
+            var newWalkResult = CalculateNewWalkFollowingNewParentWalk(existingChildWalk, parentMoved, newParentWalk, previousParentWalk, hopQueryHelper);
 
             if (newWalkResult.IsFailed)
                 return Result.Fail(newWalkResult.Errors.First());
@@ -2073,7 +2073,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             var newWalk = newWalkResult.Value.Item1;
 
             // If both ends are moved, there cannot be any cuts/breakouts.
-            if (newWalk.FromNodeId != existingWalk.FromNodeId && newWalk.ToNodeId != existingWalk.ToNodeId && _spanEquipment.NodesOfInterestIds.Length > 2)
+            if (newWalk.FromNodeId != existingChildWalk.FromNodeId && newWalk.ToNodeId != existingChildWalk.ToNodeId && _spanEquipment.NodesOfInterestIds.Length > 2)
             {
                 return Result.Fail(new MoveSpanEquipmentError(
                    MoveSpanEquipmentErrorCodes.CANNOT_MOVE_BOTH_ENDS_AT_THE_SAME_TIME_IF_SPAN_SEGMENT_HAS_CUTS,
@@ -2084,16 +2084,16 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             bool endsMoved = false;
 
             // If from end is moved
-            if (newWalk.FromNodeId != existingWalk.FromNodeId)
+            if (newWalk.FromNodeId != existingChildWalk.FromNodeId)
             {
                 endsMoved = true;
 
                 // There cannot be any connection in the node moved away from
-                if (IsAnySpanSegmentsConnectedInNode(existingWalk.FromNodeId))
+                if (IsAnySpanSegmentsConnectedInNode(existingChildWalk.FromNodeId))
                 {
                     return Result.Fail(new MoveSpanEquipmentError(
                        MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE,
-                       $"Cannot move from end from: {existingWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that has connections to other equipment in that node.")
+                       $"Cannot move from end from: {existingChildWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that has connections to other equipment in that node.")
                    );
                 }
 
@@ -2102,22 +2102,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 {
                     return Result.Fail(new MoveSpanEquipmentError(
                        MoveSpanEquipmentErrorCodes.CANNOT_MOVE_FROM_END_TO_NODE_WHERE_SEGMENTS_ARE_CUT,
-                       $"Cannot move from end from: {existingWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that are cut in that node.")
+                       $"Cannot move from end from: {existingChildWalk.FromNodeId} to: {newWalk.FromNodeId} because segments exists that are cut in that node.")
                    );
                 }
             }
 
             // If to end is moved
-            if (newWalk.ToNodeId != existingWalk.ToNodeId)
+            if (newWalk.ToNodeId != existingChildWalk.ToNodeId)
             {
                 endsMoved = true;
 
                 // There cannot be any connection in the node moved away from
-                if (IsAnySpanSegmentsConnectedInNode(existingWalk.ToNodeId))
+                if (IsAnySpanSegmentsConnectedInNode(existingChildWalk.ToNodeId))
                 {
                     return Result.Fail(new MoveSpanEquipmentError(
                        MoveSpanEquipmentErrorCodes.CANNOT_MOVE_TO_END_BECAUSE_SEGMENTS_ARE_CONNECTED_THERE,
-                       $"Cannot move to end from: {existingWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that has connections to other equipment in that node.")
+                       $"Cannot move to end from: {existingChildWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that has connections to other equipment in that node.")
                    );
                 }
 
@@ -2126,7 +2126,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 {
                     return Result.Fail(new MoveSpanEquipmentError(
                        MoveSpanEquipmentErrorCodes.CANNOT_MOVE_TO_END_TO_NODE_WHERE_SEGMENTS_ARE_CUT,
-                       $"Cannot move to end from: {existingWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that are cut in that node.")
+                       $"Cannot move to end from: {existingChildWalk.ToNodeId} to: {newWalk.ToNodeId} because segments exists that are cut in that node.")
                    );
                 }
             }
@@ -2208,25 +2208,65 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         }
 
-        private Result<(ValidatedRouteNetworkWalk, Dictionary<int, UtilityNetworkHop>)> CalculateNewWalkFollowingNewParentWalk(ValidatedRouteNetworkWalk existingWalkOfInterest, SpanEquipment parentMoved, ValidatedRouteNetworkWalk newParentWalk, UtilityNetworkHopQueryHelper hopQueryHelper)
+        private Result<(ValidatedRouteNetworkWalk, Dictionary<int, UtilityNetworkHop>)> CalculateNewWalkFollowingNewParentWalk(ValidatedRouteNetworkWalk existingChildWalkOfInterest, SpanEquipment parentMoved, ValidatedRouteNetworkWalk newParentWalk, ValidatedRouteNetworkWalk previousParentWalk, UtilityNetworkHopQueryHelper hopQueryHelper)
         {
             HashSet<Guid> walkIds = newParentWalk.NodeIds.ToHashSet<Guid>();
 
-            //var impactedUtilityNetworkHops = FindUtilityNetworkHopsReferencingSpanEquipment(parentMoved);
+            var impactedChildHops = FindUtilityNetworkHopSegmentsReferencingSpanEquipment(parentMoved);
 
-            var impactedUtilityNetworkHops = FindUtilityNetworkHopSegmentsReferencingSpanEquipment(parentMoved);
+            var childNetworkHops = FindRouteNetworkHops(existingChildWalkOfInterest);
 
-            var networkHops = FindRouteNetworkHops(existingWalkOfInterest);
+            // Check if child (this span segment) has to be moved at all
+            bool allImpactedChildSegmentsIsCoveredByNewParentWalk = true;
 
+            foreach (var childNetworkHop in childNetworkHops.Where(n => n.IsUtilityHop))
+            {
+                if (impactedChildHops.ContainsKey(childNetworkHop.UtilityNetworkHop))
+                {
+                    var subWalks = hopQueryHelper.GetSubwalks(childNetworkHop.UtilityNetworkHop);
+
+                    foreach (var subWalk in subWalks)
+                    {
+                        foreach (var routeSegmentId in subWalk.Walk.SegmentIds)
+                        {
+                            if (!newParentWalk.SegmentIds.Contains(routeSegmentId))
+                                allImpactedChildSegmentsIsCoveredByNewParentWalk = false;
+                        }
+                    }
+                }
+            }
+
+            bool childEndHasBeenDragged = false;
+
+            // If parent from node has changed, and child has start or end in same node, then the child has to be "dragged"
+            if (newParentWalk.FromNodeId != previousParentWalk.FromNodeId && (existingChildWalkOfInterest.FromNodeId == previousParentWalk.FromNodeId || existingChildWalkOfInterest.ToNodeId == previousParentWalk.FromNodeId))
+            {
+                childEndHasBeenDragged = true;
+            }
+
+            // If parent to node has changed, and child has start or end in same node, then the child has to be "dragged"
+            if (newParentWalk.ToNodeId != previousParentWalk.ToNodeId && (existingChildWalkOfInterest.FromNodeId == previousParentWalk.ToNodeId || existingChildWalkOfInterest.ToNodeId == previousParentWalk.ToNodeId))
+            {
+                childEndHasBeenDragged = true;
+            }
+
+            // If child has not been dragged and impacted section is within new parent walk, then child walk is the same
+            if (!childEndHasBeenDragged && allImpactedChildSegmentsIsCoveredByNewParentWalk)
+            {
+                return Result.Ok((existingChildWalkOfInterest, new Dictionary<int, UtilityNetworkHop>() { } ));
+            }
+
+
+            // Calculate new walk for the child (this segment)
             Dictionary<int, UtilityNetworkHop> utilityNetworkHopsToUpdateByIndex = new(); 
 
-            foreach (var networkHop in networkHops.Where(n => n.IsUtilityHop))
+            foreach (var networkHop in childNetworkHops.Where(n => n.IsUtilityHop))
             {
-                if (impactedUtilityNetworkHops.ContainsKey(networkHop.UtilityNetworkHop))
+                if (impactedChildHops.ContainsKey(networkHop.UtilityNetworkHop))
                 {
-                    var spanSegmentsMoved = impactedUtilityNetworkHops[networkHop.UtilityNetworkHop];
+                    var childSpanSegmentsImpacted = impactedChildHops[networkHop.UtilityNetworkHop];
 
-                    var subWalks = hopQueryHelper.GetSubwalks(networkHop.UtilityNetworkHop);
+                    var childSubWalks = hopQueryHelper.GetSubwalks(networkHop.UtilityNetworkHop);
 
                     List<Guid> newNetworkHopWalkIds = new();
 
@@ -2234,48 +2274,48 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                     bool firstSubWalk = true;
                     bool lastSubWalk = false;
 
-                    foreach (var subWalk in subWalks)
+                    foreach (var childSubWalk in childSubWalks)
                     {
-                        if (subWalk == subWalks.Last())
+                        if (childSubWalk == childSubWalks.Last())
                             lastSubWalk = true; 
 
-                        if (spanSegmentsMoved.Contains(subWalk.ParentSegementId))
+                        if (childSpanSegmentsImpacted.Contains(childSubWalk.ParentSegementId))
                         {
                             // Walk start and end is not changed
-                            if (subWalk.Walk.FromNodeId == newParentWalk.FromNodeId && subWalk.Walk.ToNodeId == newParentWalk.ToNodeId)
+                            if (childSubWalk.Walk.FromNodeId == newParentWalk.FromNodeId && childSubWalk.Walk.ToNodeId == newParentWalk.ToNodeId)
                             {
                                 moved = true;
                                 newNetworkHopWalkIds.AddRange(firstSubWalk ? newParentWalk.RouteNetworkElementRefs : GetElementsExceptFirst(newParentWalk.RouteNetworkElementRefs));
                             }
                             // Walk start and end is not changed (reversed)
-                            else if (subWalk.Walk.ToNodeId == newParentWalk.FromNodeId && subWalk.Walk.FromNodeId == newParentWalk.ToNodeId)
+                            else if (childSubWalk.Walk.ToNodeId == newParentWalk.FromNodeId && childSubWalk.Walk.FromNodeId == newParentWalk.ToNodeId)
                             {
                                 moved = true;
                                 newNetworkHopWalkIds.AddRange(firstSubWalk ? GetReversedIds(newParentWalk.RouteNetworkElementRefs) : GetElementsExceptFirst(GetReversedIds(newParentWalk.RouteNetworkElementRefs)));
                             }
                             // Subwalk is first and new walk is extended/shrinked 
-                            else if (firstSubWalk && networkHop.IsFirst && subWalk.Walk.ToNodeId == newParentWalk.ToNodeId)
+                            else if (firstSubWalk && networkHop.IsFirst && childSubWalk.Walk.ToNodeId == newParentWalk.ToNodeId)
                             {
                                 moved = true;
                                 newNetworkHopWalkIds.AddRange(newParentWalk.RouteNetworkElementRefs);
                                 utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(newParentWalk.FromNodeId, networkHop.Walk.ToNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
                             }
                             // Subwalk is first and new parent is exteded right (reversed)
-                            else if (firstSubWalk && networkHop.IsFirst && subWalk.Walk.ToNodeId == newParentWalk.FromNodeId)
+                            else if (firstSubWalk && networkHop.IsFirst && childSubWalk.Walk.ToNodeId == newParentWalk.FromNodeId)
                             {
                                 moved = true;
                                 newNetworkHopWalkIds.AddRange(GetReversedIds(newParentWalk.RouteNetworkElementRefs));
                                 utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(newParentWalk.ToNodeId, networkHop.Walk.ToNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
                             }
                             // Subwalk is last and new parent is exteded right (reversed)
-                            else if (lastSubWalk && networkHop.IsLast && subWalk.Walk.FromNodeId == newParentWalk.FromNodeId)
+                            else if (lastSubWalk && networkHop.IsLast && childSubWalk.Walk.FromNodeId == newParentWalk.FromNodeId)
                             {
                                 moved = true;
                                 newNetworkHopWalkIds.AddRange(firstSubWalk ? newParentWalk.RouteNetworkElementRefs : GetElementsExceptFirst(newParentWalk.RouteNetworkElementRefs));
                                 utilityNetworkHopsToUpdateByIndex.Add(Array.IndexOf(_spanEquipment.UtilityNetworkHops, networkHop.UtilityNetworkHop), new UtilityNetworkHop(networkHop.Walk.FromNodeId, newParentWalk.ToNodeId, networkHop.UtilityNetworkHop.ParentAffixes));
                             }
                             // Subwalk is last and new parent is exteded right (reversed)
-                            else if (lastSubWalk && networkHop.IsLast && subWalk.Walk.FromNodeId == newParentWalk.ToNodeId)
+                            else if (lastSubWalk && networkHop.IsLast && childSubWalk.Walk.FromNodeId == newParentWalk.ToNodeId)
                             {
                                 moved = true;
                                 newNetworkHopWalkIds.AddRange(firstSubWalk ? GetReversedIds(newParentWalk.RouteNetworkElementRefs) : GetElementsExceptFirst(GetReversedIds(newParentWalk.RouteNetworkElementRefs)));
@@ -2285,7 +2325,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                         }
                         else
                         {
-                            newNetworkHopWalkIds.AddRange(firstSubWalk ? subWalk.Walk.RouteNetworkElementRefs : GetElementsExceptFirst(subWalk.Walk.RouteNetworkElementRefs));
+                            newNetworkHopWalkIds.AddRange(firstSubWalk ? childSubWalk.Walk.RouteNetworkElementRefs : GetElementsExceptFirst(childSubWalk.Walk.RouteNetworkElementRefs));
                         }
 
                         firstSubWalk = false;
@@ -2348,7 +2388,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
                 }
             }
 
-            var newWalkOfInterest = CreateNewWalkOfInterest(networkHops);
+            var newWalkOfInterest = CreateNewWalkOfInterest(childNetworkHops);
 
             return Result.Ok((newWalkOfInterest, utilityNetworkHopsToUpdateByIndex));
         }
