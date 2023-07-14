@@ -123,7 +123,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
 
                 foreach (var terminal in terminalStructure.Terminals)
                 {
-                    if (terminal.InternalConnectivityNodeId != null && terminal.InternalConnectivityNodeId != Guid.Empty+)
+                    if (terminal.InternalConnectivityNodeId != null && terminal.InternalConnectivityNodeId != Guid.Empty)
                     {
                         Guid internalConnectivityNodeId = terminal.InternalConnectivityNodeId.Value;
 
