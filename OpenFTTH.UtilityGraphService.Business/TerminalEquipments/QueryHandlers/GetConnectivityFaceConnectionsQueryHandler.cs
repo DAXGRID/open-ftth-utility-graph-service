@@ -284,7 +284,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
         {
             if (traceResult.Downstream.Count() > 0)
             {
-                if (traceResult.Upstream.First() is UtilityGraphConnectedSegment connectedSegment)
+                if (traceResult.Downstream.First() is UtilityGraphConnectedSegment connectedSegment)
                 {
                     if (!connectedSegment.IsPatch)
                         return true;
