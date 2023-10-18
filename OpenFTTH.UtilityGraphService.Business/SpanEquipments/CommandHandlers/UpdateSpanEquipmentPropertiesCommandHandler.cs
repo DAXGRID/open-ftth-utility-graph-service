@@ -21,13 +21,11 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
     {
         private readonly IEventStore _eventStore;
         private readonly IExternalEventProducer _externalEventProducer;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
 
-        public UpdateSpanEquipmentPropertiesCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public UpdateSpanEquipmentPropertiesCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
         }

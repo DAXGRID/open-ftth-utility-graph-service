@@ -17,24 +17,26 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.RouteNetwork.Business.Interest;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
+using OpenFTTH.RouteNetwork.Business.RouteElements.StateHandling;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class AffixSpanEquipmentToParentCommandHandler : ICommandHandler<AffixSpanEquipmentToParent, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
         private readonly UtilityNetworkProjection _utilityNetwork;
-
-        public AffixSpanEquipmentToParentCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        private readonly IRouteNetworkRepository _routeNetworkRepository;
+        public AffixSpanEquipmentToParentCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer, IRouteNetworkRepository routeNodeRepository)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+            _routeNetworkRepository = routeNodeRepository;
         }
 
         public Task<Result> HandleAsync(AffixSpanEquipmentToParent command)
@@ -134,12 +136,22 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (moveSpanEquipmentResult.IsFailed)
                     return Task.FromResult(Result.Fail(moveSpanEquipmentResult.Errors.First()));
 
-                var updateWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, cableSpanEquipment.WalkOfInterestId, newWalkOfInterest.RouteNetworkElementRefs);
+                // If we got to here, then the span equipment move was validated fine, so we can update the walk of interest
+                var interestProjection = _eventStore.Projections.Get<InterestsProjection>();
 
-                var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
+                // Move the parent
+                var spanEquipmentInterestAR = _eventStore.Aggregates.Load<InterestAR>(cableSpanEquipment.WalkOfInterestId);
 
-                if (updateWalkOfInterestCommandResult.IsFailed)
-                    return Task.FromResult(Result.Fail(updateWalkOfInterestCommandResult.Errors.First()));
+                OpenFTTH.RouteNetwork.Business.CommandContext routeNetworkCommandContext = new RouteNetwork.Business.CommandContext(commandContext.CorrelationId, commandContext.CmdId, commandContext.UserContext);
+
+                var walkOfInterest = new RouteNetworkInterest(cableSpanEquipment.WalkOfInterestId, RouteNetworkInterestKindEnum.WalkOfInterest, newWalkOfInterest.RouteNetworkElementRefs);
+
+                var updateInterestResult = spanEquipmentInterestAR.UpdateRouteNetworkElements(routeNetworkCommandContext, walkOfInterest, interestProjection, new WalkValidator(_routeNetworkRepository));
+
+                if (updateInterestResult.IsFailed)
+                    return Task.FromResult(Result.Fail(updateInterestResult.Errors.First()));
+
+                _eventStore.Aggregates.Store(spanEquipmentInterestAR);
             }
 
             _eventStore.Aggregates.Store(spanEquipmentAR);
@@ -213,10 +225,10 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 return Result.Fail(new AffixSpanEquipmentToParentError(AffixSpanEquipmentToParentErrorCodes.ERROR_TRACING_SPAN_SEGMENT, $"Error tracing span segment with id: {spanSegmentIdToTrace} in span equipment with id: {spanEquipment.Id}. Expected utility network trace result"));
             }
 
-
             var walk = new RouteNetworkElementIdList();
             walk.AddRange(traceInfo.RouteNetworkWalk);
 
+            /*
             var validateInterestCommand = new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("PlaceSpanEquipmentInRouteNetwork", Guid.Empty), walk);
 
             var validateInterestResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(validateInterestCommand).Result;
@@ -224,8 +236,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (validateInterestResult.IsFailed)
                 return Result.Fail(validateInterestResult.Errors.First());
 
+            */
+
+            var walkValidator = new WalkValidator(_routeNetworkRepository);
+
+            var validateInterestResult = walkValidator.ValidateWalk(walk);
+
+
             return Result.Ok(
-                new ProcessedHopResult(spanSegmentIdToTrace, validateInterestResult.Value, traceInfo.UtilityNetworkTrace)
+                new ProcessedHopResult(spanSegmentIdToTrace, new ValidatedRouteNetworkWalk(validateInterestResult.Value), traceInfo.UtilityNetworkTrace)
             );
         }
 

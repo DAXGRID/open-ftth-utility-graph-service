@@ -16,24 +16,28 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.RouteNetwork.Business.Interest;
+using OpenFTTH.RouteNetwork.Business.RouteElements.StateHandling;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class PlaceSpanEquipmentInUtilityNetworkCommandHandler : ICommandHandler<PlaceSpanEquipmentInUtilityNetwork, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
         private readonly UtilityNetworkProjection _utilityNetwork;
+        private readonly IRouteNetworkRepository _routeNetworkRepository;
 
-        public PlaceSpanEquipmentInUtilityNetworkCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public PlaceSpanEquipmentInUtilityNetworkCommandHandler(IEventStore eventStore,IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer, IRouteNetworkRepository routeNodeRepository)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+            _routeNetworkRepository = routeNodeRepository;
+
         }
 
         public Task<Result> HandleAsync(PlaceSpanEquipmentInUtilityNetwork command)
@@ -79,15 +83,21 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (placeSpanEquipmentResult.IsFailed)
                 return Task.FromResult(Result.Fail(placeSpanEquipmentResult.Errors.First()));
 
-            // If we got to here, then the span equipment placement was validated fine, so we can register the walk of interest
-            var registerWalkOfInterestCommand = new RegisterWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, walkOfInterestId, traceRoutingHopsResult.Value.ValidatedRouteNetworkWalk.RouteNetworkElementRefs);
+            var interestAR = new InterestAR();
 
-            var registerWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<RegisterWalkOfInterest, Result<RouteNetworkInterest>>(registerWalkOfInterestCommand).Result;
+            var interestProjection = _eventStore.Projections.Get<InterestsProjection>();
 
-            if (registerWalkOfInterestCommandResult.IsFailed)
-                return Task.FromResult(Result.Fail(registerWalkOfInterestCommandResult.Errors.First()));
+            OpenFTTH.RouteNetwork.Business.CommandContext routeNetworkCommandContext = new RouteNetwork.Business.CommandContext(commandContext.CorrelationId, commandContext.CmdId, commandContext.UserContext);
+
+            var walkOfInterest = new RouteNetworkInterest(walkOfInterestId, RouteNetworkInterestKindEnum.WalkOfInterest, traceRoutingHopsResult.Value.ValidatedRouteNetworkWalk.RouteNetworkElementRefs);
+
+            var registerWalkOfInterestResult = interestAR.RegisterWalkOfInterest(routeNetworkCommandContext, walkOfInterest, interestProjection, new WalkValidator(_routeNetworkRepository));
+
+            if (registerWalkOfInterestResult.IsFailed)
+                throw new ApplicationException($"Failed to register walk of interest of span equipment: {command.SpanEquipmentId} in PlaceSpanEquipmentInUtilityNetworkCommandHandler Error: {registerWalkOfInterestResult.Errors.First().Message}");
 
             _eventStore.Aggregates.Store(spanEquipmentAR);
+            _eventStore.Aggregates.Store(interestAR);
 
             NotifyExternalServicesAboutChange(command.SpanEquipmentId, traceRoutingHopsResult.Value.ValidatedRouteNetworkWalk.RouteNetworkElementRefs.ToArray());
 
@@ -272,14 +282,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     var walk = new RouteNetworkElementIdList();
                     walk.AddRange(routingHop.WalkOfinterest);
 
-                    var validateInterestCommand = new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("PlaceSpanEquipmentInUtilityNetwork", Guid.Empty), walk);
 
-                    var validateInterestResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(validateInterestCommand).Result;
+                    var walkValidator = new WalkValidator(_routeNetworkRepository);
+
+                    var validateInterestResult = walkValidator.ValidateWalk(walk);
 
                     if (validateInterestResult.IsFailed)
                         return Result.Fail(validateInterestResult.Errors.First());
 
-                    processedHopsResult.Add(new ProcessedHopResult(null, validateInterestResult.Value, null));
+                    if (validateInterestResult.IsFailed)
+                        return Result.Fail(validateInterestResult.Errors.First());
+
+                    processedHopsResult.Add(new ProcessedHopResult(null, new ValidatedRouteNetworkWalk(validateInterestResult.Value), null));
                 }
             }
 
@@ -336,15 +350,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var walk = new RouteNetworkElementIdList();
             walk.AddRange(traceInfo.RouteNetworkWalk);
 
-            var validateInterestCommand = new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("PlaceSpanEquipmentInRouteNetwork", Guid.Empty), walk);
+            var walkValidator = new WalkValidator(_routeNetworkRepository);
 
-            var validateInterestResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(validateInterestCommand).Result;
+            var validateInterestResult = walkValidator.ValidateWalk(walk);
 
             if (validateInterestResult.IsFailed)
                 return Result.Fail(validateInterestResult.Errors.First());
 
             return Result.Ok(
-                new ProcessedHopResult(spanSegmentIdToTrace, validateInterestResult.Value, traceInfo.UtilityNetworkTrace)
+                new ProcessedHopResult(spanSegmentIdToTrace, new ValidatedRouteNetworkWalk(validateInterestResult.Value), traceInfo.UtilityNetworkTrace)
             );
         }
 

@@ -20,13 +20,11 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
     {
         private readonly IEventStore _eventStore;
         private readonly IExternalEventProducer _externalEventProducer;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
 
-        public UpdateTerminalEquipmentPropertiesCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public UpdateTerminalEquipmentPropertiesCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
         }

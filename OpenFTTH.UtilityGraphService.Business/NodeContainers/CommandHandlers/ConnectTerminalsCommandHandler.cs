@@ -18,16 +18,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
     public class ConnectTerminalsCommandHandler : ICommandHandler<ConnectTerminalsAtRouteNode, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
 
         private readonly UtilityNetworkProjection _utilityNetwork;
 
-        public ConnectTerminalsCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public ConnectTerminalsCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
 

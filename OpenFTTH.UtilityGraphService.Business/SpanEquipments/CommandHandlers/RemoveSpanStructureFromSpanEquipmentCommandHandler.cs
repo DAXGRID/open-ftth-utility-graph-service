@@ -15,20 +15,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
+using OpenFTTH.RouteNetwork.Business.Interest;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class RemoveSpanStructureFromSpanEquipmentCommandHandler : ICommandHandler<RemoveSpanStructureFromSpanEquipment, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
 
-        public RemoveSpanStructureFromSpanEquipmentCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public RemoveSpanStructureFromSpanEquipmentCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
         }
@@ -75,13 +75,18 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 if (removeSpanEquipment.IsSuccess)
                 {
                     // Remember to remove the walk of interest as well
-                    var unregisterInterestCmd = new UnregisterInterest(commandContext.CorrelationId, commandContext.UserContext, spanEquipment.WalkOfInterestId);
+                    var interestProjection = _eventStore.Projections.Get<InterestsProjection>();
 
-                    var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
+                    var interestAR = _eventStore.Aggregates.Load<InterestAR>(spanEquipment.WalkOfInterestId);
 
-                    if (unregisterInterestCmdResult.IsFailed)
-                        throw new ApplicationException($"Failed to unregister interest: {spanEquipment.WalkOfInterestId} of span equipment: {spanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
+                    OpenFTTH.RouteNetwork.Business.CommandContext routeNetworkCommandContext = new RouteNetwork.Business.CommandContext(commandContext.CorrelationId, commandContext.CmdId, commandContext.UserContext);
 
+                    var unregisterInterestResult = interestAR.UnregisterInterest(routeNetworkCommandContext, interestProjection, spanEquipment.WalkOfInterestId);
+
+                    if (unregisterInterestResult.IsFailed)
+                        throw new ApplicationException($"Failed to unregister interest: {spanEquipment.WalkOfInterestId} of span equipment: {spanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {unregisterInterestResult.Errors.First().Message}");
+
+                    _eventStore.Aggregates.Store(interestAR);
                     _eventStore.Aggregates.Store(spanEquipmentAR);
 
                     NotifyExternalServicesAboutSpanEquipmentDeletion(spanEquipment.Id, interestQueryResult.Value.Interests[spanEquipment.WalkOfInterestId].RouteNetworkElementRefs);

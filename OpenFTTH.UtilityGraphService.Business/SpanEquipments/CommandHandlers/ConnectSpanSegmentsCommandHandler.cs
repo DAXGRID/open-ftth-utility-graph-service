@@ -17,27 +17,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.RouteNetwork.Business.Interest;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
+using OpenFTTH.RouteNetwork.Business.RouteElements.StateHandling;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class ConnectSpanSegmentsCommandHandler : ICommandHandler<ConnectSpanSegmentsAtRouteNode, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
         private readonly UtilityNetworkProjection _utilityNetwork;
         private readonly LookupCollection<SpanEquipmentSpecification> _spanEquipmentSpecifications;
+        private readonly IRouteNetworkRepository _routeNetworkRepository;
 
-        public ConnectSpanSegmentsCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public ConnectSpanSegmentsCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer, IRouteNetworkRepository routeNodeRepository)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             _spanEquipmentSpecifications = _eventStore.Projections.Get<SpanEquipmentSpecificationsProjection>().Specifications;
+            _routeNetworkRepository = routeNodeRepository;
+
         }
 
         public Task<Result> HandleAsync(ConnectSpanSegmentsAtRouteNode command)
@@ -145,31 +149,44 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Update interest of the first span equipment to cover both span equipments
             var newSegmentIds = MergeWalks(firstSpanEquipmentWalk, secondSpanEquipmentWalk);
 
-            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), firstSpanEquipment.SpanEquipment.WalkOfInterestId, newSegmentIds);
-            var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
+            var interestProjection = _eventStore.Projections.Get<InterestsProjection>();
 
-            if (updateWalkOfInterestCommandResult.IsFailed)
-                return updateWalkOfInterestCommandResult;
+            var firstSpanEquipmentInterestAR = _eventStore.Aggregates.Load<InterestAR>(firstSpanEquipment.SpanEquipment.WalkOfInterestId);
+
+            OpenFTTH.RouteNetwork.Business.CommandContext routeNetworkCommandContext = new RouteNetwork.Business.CommandContext(cmdContext.CorrelationId, cmdContext.CmdId, cmdContext.UserContext);
+
+            var walkOfInterest = new RouteNetworkInterest(firstSpanEquipment.SpanEquipment.WalkOfInterestId, RouteNetworkInterestKindEnum.WalkOfInterest, newSegmentIds);
+
+            var updateInterestResult = firstSpanEquipmentInterestAR.UpdateRouteNetworkElements(routeNetworkCommandContext, walkOfInterest, interestProjection, new WalkValidator(_routeNetworkRepository));
+
+            if (updateInterestResult.IsFailed)
+                throw new ApplicationException($"Failed to update interest: {firstSpanEquipment.SpanEquipment.WalkOfInterestId} of span equipment: {firstSpanEquipment.SpanEquipment.Id} in ConnectSpanSegmentsCommandHandler Error: {updateInterestResult.Errors.First().Message}");
+
 
             // Remove the second span equipment
             var secondSpanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(secondSpanEquipment.SpanEquipment.Id);
-            var removeSpanEquipment = secondSpanEquipmentAR.Remove(cmdContext);
+            var removeSpanEquipmentResult = secondSpanEquipmentAR.Remove(cmdContext);
 
-            if (removeSpanEquipment.IsSuccess)
-            {
-                // Remember to remove the walk of interest as well
-                var unregisterInterestCmd = new UnregisterInterest(cmdContext.CorrelationId, cmdContext.UserContext, secondSpanEquipment.SpanEquipment.WalkOfInterestId);
+            if (removeSpanEquipmentResult.IsFailed)
+                return removeSpanEquipmentResult;
 
-                var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
 
-                if (unregisterInterestCmdResult.IsFailed)
-                    throw new ApplicationException($"Failed to unregister interest: {secondSpanEquipment.SpanEquipment.WalkOfInterestId} of span equipment: {secondSpanEquipment.SpanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
-            }
+            // Remember to remove the walk of interest of second span equipment as well
+            var secondSpanEquipmentInterestAR = _eventStore.Aggregates.Load<InterestAR>(secondSpanEquipment.SpanEquipment.WalkOfInterestId);
 
+            var unregisterInterestResult = secondSpanEquipmentInterestAR.UnregisterInterest(routeNetworkCommandContext, interestProjection, secondSpanEquipment.SpanEquipment.WalkOfInterestId);
+
+            if (unregisterInterestResult.IsFailed)
+                throw new ApplicationException($"Failed to unregister interest: {secondSpanEquipment.SpanEquipment.WalkOfInterestId} of span equipment: {secondSpanEquipment.SpanEquipment.Id} in ConnectSpanSegmentsCommandHandler Error: {unregisterInterestResult.Errors.First().Message}");
+
+            // Store everything
+            _eventStore.Aggregates.Store(firstSpanEquipmentInterestAR);
             _eventStore.Aggregates.Store(firstSpanEquipmentAR);
+
+            _eventStore.Aggregates.Store(secondSpanEquipmentInterestAR);
             _eventStore.Aggregates.Store(secondSpanEquipmentAR);
 
-            NotifyExternalServicesAboutMerge(firstSpanEquipment.SpanEquipment.Id, updateWalkOfInterestCommandResult.Value.RouteNetworkElementRefs.ToArray());
+            NotifyExternalServicesAboutMerge(firstSpanEquipment.SpanEquipment.Id, updateInterestResult.Value.RouteNetworkElementRefs.ToArray());
 
             return Result.Ok();
         }

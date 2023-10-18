@@ -16,24 +16,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
+using OpenFTTH.RouteNetwork.Business.Interest;
+using OpenFTTH.RouteNetwork.Business.RouteElements.StateHandling;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class MoveSpanEquipmentCommandHandler : ICommandHandler<MoveSpanEquipment, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
         private readonly UtilityNetworkProjection _utilityNetwork;
+        private readonly IRouteNetworkRepository _routeNetworkRepository;
 
-        public MoveSpanEquipmentCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public MoveSpanEquipmentCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer, IRouteNetworkRepository routeNodeRepository)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
             _utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+            _routeNetworkRepository = routeNodeRepository;
         }
 
         public Task<Result> HandleAsync(MoveSpanEquipment command)
@@ -46,13 +49,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             var existingWalk = GetInterestInformation(spanEquipment);
 
             // Validate the new walk
-            var newWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), command.NewWalkIds)).Result;
+            var walkValidator = new WalkValidator(_routeNetworkRepository);
+
+            var newWalkValidationResult = walkValidator.ValidateWalk(command.NewWalkIds);
 
             // If the new walk fails to validate, return the error to the client
             if (newWalkValidationResult.IsFailed)
                 return Task.FromResult(Result.Fail(newWalkValidationResult.Errors.First()));
 
-            var newWalk = newWalkValidationResult.Value;
+            var newWalk = new ValidatedRouteNetworkWalk(newWalkValidationResult.Value);
 
             // If the walk has not changed return error as well
             if (existingWalk.Equals(newWalk))
@@ -63,6 +68,8 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                 newWalk = newWalk.Reverse();
 
             // Try to do the move of the span equipment
+            List<AggregateBase> parentARsToStore = new();
+
             var spanEquipmentAR = _eventStore.Aggregates.Load<SpanEquipmentAR>(spanEquipment.Id);
 
             var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
@@ -72,19 +79,15 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (moveSpanEquipmentResult.IsFailed)
                 return Task.FromResult(Result.Fail(moveSpanEquipmentResult.Errors.First()));
 
+            parentARsToStore.Add(spanEquipmentAR);
 
             // If span equipment contains cable, move these as well
             Dictionary<Guid, ValidatedRouteNetworkWalk> childWalkOfInterestsToUpdate = new();
-            List<SpanEquipmentAR> childARsToStore = new();
+
+            List<AggregateBase> childARsToStore = new();
 
             if (HasAnyChildSpanEquipments(spanEquipment))
             {
-                // Check if end points are moved, which is not allowed when cables are running through conduit
-                /*
-                if (existingWalk.FromNodeId != newWalk.FromNodeId || existingWalk.ToNodeId != newWalk.ToNodeId)
-                    return Task.FromResult(Result.Fail(new MoveSpanEquipmentError(MoveSpanEquipmentErrorCodes.ENDS_CANNOT_BE_MOVED_BECAUSE_OF_CHILD_SPAN_EQUIPMENTS, $"The ends of the walk of span equipment with id: { spanEquipment.Id } cannot be modified because of child equipments related to the span equipment")));
-                */
-
                 var children = GetChildSpanEquipments(spanEquipment);
 
                 foreach (var child in children)
@@ -105,7 +108,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     if (!existingChildWalk.Equals(newChildWalk))
                     {
                         // Validate the new child walk
-                        var newChildWalkValidationResult = _commandDispatcher.HandleAsync<ValidateWalkOfInterest, Result<ValidatedRouteNetworkWalk>>(new ValidateWalkOfInterest(Guid.NewGuid(), new UserContext("test", Guid.Empty), childMoveResult.Value.RouteNetworkElementRefs)).Result;
+                        var newChildWalkValidationResult = walkValidator.ValidateWalk(childMoveResult.Value.RouteNetworkElementRefs);
 
                         // If the new walk fails to validate, return the error to the client
                         if (newChildWalkValidationResult.IsFailed)
@@ -119,25 +122,39 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             }
 
             // If we got to here, then the span equipment move was validated fine, so we can update the walk of interest
+            var interestProjection = _eventStore.Projections.Get<InterestsProjection>();
+
+            // Move the parent
+            var spanEquipmentInterestAR = _eventStore.Aggregates.Load<InterestAR>(spanEquipment.WalkOfInterestId);
+
+            OpenFTTH.RouteNetwork.Business.CommandContext routeNetworkCommandContext = new RouteNetwork.Business.CommandContext(commandContext.CorrelationId, commandContext.CmdId, commandContext.UserContext);
+
             var newSegmentIds = new RouteNetworkElementIdList();
+
             newSegmentIds.AddRange(newWalk.SegmentIds);
 
-            var updateWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, spanEquipment.WalkOfInterestId, newSegmentIds);
+            var walkOfInterest = new RouteNetworkInterest(spanEquipment.WalkOfInterestId, RouteNetworkInterestKindEnum.WalkOfInterest, newSegmentIds);
 
-            var updateWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateWalkOfInterestCommand).Result;
+            var updateInterestResult = spanEquipmentInterestAR.UpdateRouteNetworkElements(routeNetworkCommandContext, walkOfInterest, interestProjection, new WalkValidator(_routeNetworkRepository));
 
-            if (updateWalkOfInterestCommandResult.IsFailed)
-                throw new ApplicationException($"Got unexpected error result: {updateWalkOfInterestCommandResult.Errors.First().Message} trying to update walk of interest belonging to span equipment with id: {spanEquipment.Id} while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
+            if (updateInterestResult.IsFailed)
+                throw new ApplicationException($"Failed to update interest: {spanEquipment.WalkOfInterestId} of span equipment: {spanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {updateInterestResult.Errors.First().Message}");
+
+            parentARsToStore.Add(spanEquipmentInterestAR);
 
             // Update eventually child walk of interests
             foreach (var childWalkOfInterestToUpdate in childWalkOfInterestsToUpdate)
             {
-                var updateChildWalkOfInterestCommand = new UpdateWalkOfInterest(commandContext.CorrelationId, commandContext.UserContext, childWalkOfInterestToUpdate.Key, childWalkOfInterestToUpdate.Value.RouteNetworkElementRefs);
+                var childEquipmentInterestAR = _eventStore.Aggregates.Load<InterestAR>(childWalkOfInterestToUpdate.Key);
 
-                var updateChildWalkOfInterestCommandResult = _commandDispatcher.HandleAsync<UpdateWalkOfInterest, Result<RouteNetworkInterest>>(updateChildWalkOfInterestCommand).Result;
+                var childWalkOfInterest = new RouteNetworkInterest(spanEquipment.WalkOfInterestId, RouteNetworkInterestKindEnum.WalkOfInterest, childWalkOfInterestToUpdate.Value.RouteNetworkElementRefs);
 
-                if (updateChildWalkOfInterestCommandResult.IsFailed)
-                    throw new ApplicationException($"Got unexpected error result: {updateWalkOfInterestCommandResult.Errors.First().Message} trying to update child walk of interest: {childWalkOfInterestToUpdate.Key} while processing the MoveSpanEquipment command: " + JsonConvert.SerializeObject(command));
+                var childUpdateInterestResult = childEquipmentInterestAR.UpdateRouteNetworkElements(routeNetworkCommandContext, childWalkOfInterest, interestProjection, walkValidator);
+
+                if (childUpdateInterestResult.IsFailed)
+                    throw new ApplicationException($"Failed to update interest: {spanEquipment.WalkOfInterestId} of child span equipment: {spanEquipment.Id} in RemoveSpanStructureFromSpanEquipmentCommandHandler Error: {childUpdateInterestResult.Errors.First().Message}");
+
+                childARsToStore.Add(childEquipmentInterestAR);
             }
 
             // Store child aggregates
@@ -147,11 +164,14 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
                     _eventStore.Aggregates.Store(childAR);
             }
 
-
-            // Store the parent aggregate
-            if (spanEquipmentAR.GetUncommittedEvents().Count() > 0)
-                _eventStore.Aggregates.Store(spanEquipmentAR);
-
+            // Store parent aggregate
+            foreach (var parentAR in parentARsToStore)
+            {
+                if (parentAR.GetUncommittedEvents().Count() > 0)
+                    _eventStore.Aggregates.Store(parentAR);
+            }
+         
+                   
             NotifyExternalServicesAboutSpanEquipmentChange(spanEquipment.Id, existingWalk, newWalk);
 
             return Task.FromResult(moveSpanEquipmentResult);

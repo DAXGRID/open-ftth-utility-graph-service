@@ -22,14 +22,12 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
     public class RemoveRackFromNodeContainerCommandHandler : ICommandHandler<RemoveRackFromNodeContainer, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
 
-        public RemoveRackFromNodeContainerCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public RemoveRackFromNodeContainerCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
         }

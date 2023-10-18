@@ -15,20 +15,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.RouteNetwork.Business.Interest.Projections;
+using OpenFTTH.RouteNetwork.Business.Interest;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
     public class RemoveNodeContainerFromRouteNetworkCommandHandler : ICommandHandler<RemoveNodeContainerFromRouteNetwork, Result>
     {
         private readonly IEventStore _eventStore;
-        private readonly ICommandDispatcher _commandDispatcher;
         private readonly IQueryDispatcher _queryDispatcher;
         private readonly IExternalEventProducer _externalEventProducer;
 
-        public RemoveNodeContainerFromRouteNetworkCommandHandler(IEventStore eventStore, ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
+        public RemoveNodeContainerFromRouteNetworkCommandHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher, IExternalEventProducer externalEventProducer)
         {
             _eventStore = eventStore;
-            _commandDispatcher = commandDispatcher;
             _queryDispatcher = queryDispatcher;
             _externalEventProducer = externalEventProducer;
         }
@@ -53,14 +53,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             if (removeNodeContainerResult.IsSuccess)
             {
                 // Remember to remove the walk of interest as well
-                var unregisterInterestCmd = new UnregisterInterest(commandContext.CorrelationId, commandContext.UserContext, nodeContainer.InterestId);
+                var interestProjection = _eventStore.Projections.Get<InterestsProjection>();
 
-                var unregisterInterestCmdResult = _commandDispatcher.HandleAsync<UnregisterInterest, Result>(unregisterInterestCmd).Result;
+                var interestAR = _eventStore.Aggregates.Load<InterestAR>(nodeContainer.InterestId);
 
-                if (unregisterInterestCmdResult.IsFailed)
-                    throw new ApplicationException($"Failed to unregister interest: {nodeContainer.InterestId} of node container: {nodeContainer.Id} in RemoveNodeContainerFromRouteNetworkCommandHandler Error: {unregisterInterestCmdResult.Errors.First().Message}");
+                OpenFTTH.RouteNetwork.Business.CommandContext routeNetworkCommandContext = new RouteNetwork.Business.CommandContext(commandContext.CorrelationId, commandContext.CmdId, commandContext.UserContext);
+              
+                var unregisterInterestResult = interestAR.UnregisterInterest(routeNetworkCommandContext, interestProjection, nodeContainer.InterestId);
 
+                if (unregisterInterestResult.IsFailed)
+                    throw new ApplicationException($"Failed to unregister interest: {nodeContainer.InterestId} of node container: {nodeContainer.Id} in RemoveNodeContainerFromRouteNetworkCommandHandler Error: {unregisterInterestResult.Errors.First().Message}");
+
+                _eventStore.Aggregates.Store(interestAR);
                 _eventStore.Aggregates.Store(nodeContainerAR);
+
                 NotifyExternalServicesAboutChange(nodeContainer);
             }
 
