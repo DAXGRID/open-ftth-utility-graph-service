@@ -436,7 +436,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
         public string GetSpanStructureConduitString(SpanEquipment spanEquipment, int conduitNo, SpanStructureSpecification spanStructureSpecification)
         {
-            return spanStructureSpecification.Color.Replace("_", " ");
+            return spanStructureSpecification.Name.Replace("_", " ");
         }
 
         private Guid? GetTerminalEquipmentMostAccurateAddressId(TerminalEquipment terminalEquipment)
