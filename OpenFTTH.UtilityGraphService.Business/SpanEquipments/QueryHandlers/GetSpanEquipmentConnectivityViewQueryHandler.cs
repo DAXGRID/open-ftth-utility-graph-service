@@ -49,7 +49,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             {
                 if (_utilityNetwork.TryGetEquipment<SpanEquipment>(spanEquipmentOrSegmentId, out var spanEquipment))
                 {
-                    spanEquipmentViewInfos.Add(BuildSpanEquipmentView(query, spanEquipment));
+                    spanEquipmentViewInfos.Add(BuildSpanEquipmentView(query, spanEquipment, _spanEquipmentSpecifications, _spanStructureSpecifications));
                 }
                 else
                 {
@@ -66,7 +66,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
                   );
         }
 
-        private SpanEquipmentAZConnectivityViewEquipmentInfo BuildSpanEquipmentView(GetSpanEquipmentConnectivityView query, SpanEquipment spanEquipment)
+        private SpanEquipmentAZConnectivityViewEquipmentInfo BuildSpanEquipmentView(GetSpanEquipmentConnectivityView query, SpanEquipment spanEquipment, LookupCollection<SpanEquipmentSpecification> _spanEquipmentSpecifications, LookupCollection<SpanStructureSpecification> _spanStructureSpecifications)
         {
             if (!_spanEquipmentSpecifications.TryGetValue(spanEquipment.SpecificationId, out var spanEquipmentSpecification))
                 throw new ApplicationException($"Invalid/corrupted span equipment instance: {spanEquipment.Id} Has reference to non-existing span equipment specification with id: {spanEquipment.SpecificationId}");
@@ -83,15 +83,30 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.QueryHandling
             {
                 var spanStructure = spanEquipment.SpanStructures[spanStructureIndex];
 
+                var spanStructureSpecification = _spanStructureSpecifications[spanStructure.SpecificationId];
+
                 var spanSegmentToTrace = GetSpanSegmentToTrace(query.RouteNetworkElementId, spanEquipment, spanStructure);
 
-                lineInfos.Add(
-                    new SpanEquipmentAZConnectivityViewLineInfo(seqNo, equipmentData.GetSpanEquipmentTubeFiberString(spanEquipment, spanStructureIndex), spanSegmentToTrace.Id)
-                    {
-                        A = GetAEndInfo(equipmentData, spanEquipment, spanSegmentToTrace),
-                        Z = GetZEndInfo(equipmentData, spanEquipment, spanSegmentToTrace)
-                    }
-                );
+                if (spanEquipment.IsCable)
+                {
+                    lineInfos.Add(
+                        new SpanEquipmentAZConnectivityViewLineInfo(seqNo, equipmentData.GetSpanEquipmentTubeFiberString(spanEquipment, spanStructureIndex), spanSegmentToTrace.Id)
+                        {
+                            A = GetAEndInfo(equipmentData, spanEquipment, spanSegmentToTrace),
+                            Z = GetZEndInfo(equipmentData, spanEquipment, spanSegmentToTrace)
+                        }
+                    );
+                }
+                else
+                {
+                    lineInfos.Add(
+                        new SpanEquipmentAZConnectivityViewLineInfo(seqNo, equipmentData.GetSpanStructureConduitString(spanEquipment, spanStructureIndex, spanStructureSpecification), spanSegmentToTrace.Id)
+                        {
+                            A = GetAEndInfo(equipmentData, spanEquipment, spanSegmentToTrace),
+                            Z = GetZEndInfo(equipmentData, spanEquipment, spanSegmentToTrace)
+                        }
+                    );
+                }
 
                 seqNo++;
             }

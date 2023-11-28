@@ -434,6 +434,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             return $"Tube {tube} Fiber {fiber}";
         }
 
+        public string GetSpanStructureConduitString(SpanEquipment spanEquipment, int conduitNo, SpanStructureSpecification spanStructureSpecification)
+        {
+            return spanStructureSpecification.Color.Replace("_", " ");
+        }
+
         private Guid? GetTerminalEquipmentMostAccurateAddressId(TerminalEquipment terminalEquipment)
         {
             if (terminalEquipment.AddressInfo != null && terminalEquipment.AddressInfo.UnitAddressId != null)
