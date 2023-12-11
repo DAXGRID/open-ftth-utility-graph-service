@@ -111,21 +111,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                 somethingChanged = true;
             }
 
-            // Check if rack information is present and has changed
-            if (command.RackId != null && command.StartUnitPosition != null && CheckIfRackInfoHasChanged(command, nodeContainer, terminalEquipment))
-            {
-                var nodeContainerAR = _eventStore.Aggregates.Load<NodeContainerAR>(nodeContainer.Id);
-
-                var terminalEquipmentSpecification = terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
-
-                var updateSubrackMountResult = nodeContainerAR.ChangeSubrackMount(commandContext, terminalEquipment.Id, terminalEquipmentSpecification.HeightInRackUnits, command.RackId.Value, command.StartUnitPosition.Value);
-
-                if (updateSubrackMountResult.IsFailed)
-                    return Task.FromResult(Result.Fail(updateSubrackMountResult.Errors.First()));
-
-                somethingChanged = true;
-            }
-
 
             if (somethingChanged)
             {
@@ -142,42 +127,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.CommandHandle
                       $"Will not update terminal equipment, because no difference found in provided arguments compared to the current values of the terminal equipment.")
                   ));
             }
-        }
-
-        private bool CheckIfRackInfoHasChanged(UpdateTerminalEquipmentProperties command, NodeContainer nodeContainer, TerminalEquipment terminalEquipment)
-        {
-            if (command.RackId == null || command.RackId.Value == Guid.Empty)
-                return false;
-
-            if (nodeContainer.Racks == null)
-                return false;
-
-            // Find current rack id and position
-            Guid currentRackId = Guid.Empty;
-            int currentPosition = -1;
-
-            foreach (var rack in nodeContainer.Racks)
-            {
-                foreach (var subrackMount in rack.SubrackMounts)
-                {
-                    if (subrackMount.TerminalEquipmentId == terminalEquipment.Id)
-                    {
-                        currentRackId = rack.Id;
-                        currentPosition = subrackMount.Position;
-                    }
-                }
-            }
-
-            if (currentRackId == Guid.Empty)
-                throw new ApplicationException($"Cannot find any rack with id: {command.RackId} in node container with id: {nodeContainer.Id}");
-
-            if (command.RackId != currentRackId)
-                return true;
-
-            if (command.StartUnitPosition != currentPosition)
-                return true;
-
-            return false;
         }
 
         private async void NotifyExternalServicesAboutSpanEquipmentChange(Guid spanEquipmentId, Guid routeNodeId)

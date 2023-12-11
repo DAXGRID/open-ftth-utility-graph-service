@@ -89,7 +89,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
         }
 
-
         private static void ProcessAddedSpanSegments(SpanEquipment spanEquipmentBefore, SpanEquipment spanEquipmentAfter, UtilityGraph graph, ITransaction trans)
         {
             // Iterate all structures in before span equipment state, and check if segments have been added in the after equipment state
@@ -161,7 +160,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
         }
 
-
         private static void AddSegment(SpanEquipment spanEquipment, UInt16 structureIndex, UInt16 segmentIndex, UtilityGraph graph, ITransaction transaction)
         {
             var spanSegment = spanEquipment.SpanStructures[structureIndex].SpanSegments[segmentIndex];
@@ -190,7 +188,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                 graph.AddToIndex(spanSegment.Id, newSegmentGraphElement);
             }
         }
-
 
         private static void UpdateSegment(SpanEquipment spanEquipment, UInt16 structureIndex, UInt16 segmentIndex, UtilityGraph graph, ITransaction transaction)
         {
@@ -234,7 +231,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
         }
 
-
         private static void RemoveSegmentIfExists(Guid segmentId, UtilityGraph graph, ITransaction transaction)
         {
             // Get rid of segment if exists
@@ -248,8 +244,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
                     transaction.Delete(segmentId);
             }
         }
-
-        
+                
         private static IUtilityGraphTerminalRef FindOrCreateSimpleTerminal(Guid terminalId, Guid terminalNodeOfInterestId, UtilityGraph graph, ITransaction transaction)
         {
             // Try find terminal in graph

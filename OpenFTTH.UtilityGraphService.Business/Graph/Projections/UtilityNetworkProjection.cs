@@ -92,6 +92,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEventAsync<NodeContainerTerminalEquipmentAdded>(ProjectAsync);
             ProjectEventAsync<NodeContainerTerminalEquipmentsAddedToRack>(ProjectAsync);
             ProjectEventAsync<NodeContainerTerminalEquipmentReferenceRemoved>(ProjectAsync);
+            ProjectEventAsync<NodeContainerTerminalEquipmentMovedToRack>(ProjectAsync);
             ProjectEventAsync<NodeContainerTerminalsConnected>(ProjectAsync);
             ProjectEventAsync<NodeContainerTerminalsDisconnected>(ProjectAsync);
         }
@@ -342,6 +343,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     break;
 
                 case (NodeContainerTerminalEquipmentReferenceRemoved @event):
+                    TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
+                    break;
+
+                case (NodeContainerTerminalEquipmentMovedToRack @event):
                     TryUpdate(NodeContainerProjectionFunctions.Apply(_nodeContainerByEquipmentId[@event.NodeContainerId], @event));
                     break;
 

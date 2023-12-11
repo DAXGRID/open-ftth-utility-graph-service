@@ -303,6 +303,96 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
             }
         }
 
+        public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalEquipmentMovedToRack @event)
+        {
+
+            // If equipment is moved to another rack
+            if (@event.OldRackId != @event.NewRackId)
+            {
+                // Built new list of subracks in rack from where equipment is move away from
+                List<SubrackMount> newMoveFromRackSubrackList = new();
+
+                foreach (var subRack in existingEquipment.Racks.First(r => r.Id == @event.OldRackId).SubrackMounts)
+                {
+                    if (subRack.TerminalEquipmentId != @event.TerminalEquipmentId)
+                        newMoveFromRackSubrackList.Add(subRack);
+                }
+
+                // Built new list of subracks in rack from where equipment is move to
+                List<SubrackMount> newMoveToRackSubrackList = new();
+
+                newMoveToRackSubrackList.AddRange(existingEquipment.Racks.First(r => r.Id == @event.NewRackId).SubrackMounts);
+
+                newMoveToRackSubrackList.Add(
+                    new SubrackMount(
+                        @event.TerminalEquipmentId,
+                        @event.StartUnitPosition,
+                        @event.TerminalEquipmentHeightInUnits
+                    )
+                );
+
+                List<Rack> newRackList = new List<Rack>();
+
+                foreach (var rack in existingEquipment.Racks)
+                {
+                    if (rack.Id == @event.OldRackId)
+                    {
+                        newRackList.Add(rack with { SubrackMounts = newMoveFromRackSubrackList.ToArray() });
+                    }
+                    else if (rack.Id == @event.NewRackId)
+                    {
+                        newRackList.Add(rack with { SubrackMounts = newMoveToRackSubrackList.ToArray() });
+                    }
+                    else
+                    {
+                        newRackList.Add(rack);
+                    }
+                }
+
+                return existingEquipment with
+                {
+                    Racks = newRackList.ToArray()
+                };
+            }
+            else
+            {
+                // Built new list of subracks in rack from where equipment is move away from
+                List<SubrackMount> newSubrackList = new();
+
+                foreach (var subRack in existingEquipment.Racks.First(r => r.Id == @event.OldRackId).SubrackMounts)
+                {
+                    if (subRack.TerminalEquipmentId == @event.TerminalEquipmentId)
+                    {
+                        newSubrackList.Add(subRack with { Position = @event.StartUnitPosition });
+                    }
+                    else
+                    {
+                        newSubrackList.Add(subRack);
+                    }
+                }
+
+                List<Rack> newRackList = new List<Rack>();
+
+                foreach (var rack in existingEquipment.Racks)
+                {
+                    if (rack.Id == @event.OldRackId)
+                    {
+                        newRackList.Add(rack with { SubrackMounts = newSubrackList.ToArray() });
+                    }
+                    else
+                    {
+                        newRackList.Add(rack);
+                    }
+                }
+
+                return existingEquipment with
+                {
+                    Racks = newRackList.ToArray()
+                };
+            }
+        }
+
+
         public static NodeContainer Apply(NodeContainer existingEquipment, NodeContainerTerminalsConnected @event)
         {
             List<TerminalToTerminalConnection> newTerminalConnectionsList = new();

@@ -288,7 +288,6 @@ namespace OpenFTTH.TestData
 
             return cableAfterAffix;
         }
-
     }
 }
 

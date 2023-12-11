@@ -94,7 +94,6 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
 
             return Result.Ok();
         }
-      
 
         private void Apply(NodeContainerPlacedInRouteNetwork obj)
         {
@@ -498,6 +497,235 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             return startUnitPosition;
         }
 
+        #endregion
+
+        #region Move Rack Equipment
+        public Result MoveRackEquipment(CommandContext cmdContext, Guid terminalEquipmentId, TerminalEquipmentSpecification terminalEquipmentSpecification, Guid moveToRackId, int moveToRackPosition)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == moveToRackId))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {moveToRackId} in node container with id: {this.Id}"));
+
+            if (!TerminalEquipmentExistInRack(terminalEquipmentId))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_NOT_FOUND_IN_ANY_RACK, $"Cannot find terminal equipment with id {terminalEquipmentId} in any rack within node container with id: {this.Id}"));
+
+            // Check that there is space where the equipment is moved to
+            if (!TerminalEquipmentFitsInRack(moveToRackId, moveToRackPosition, terminalEquipmentSpecification.HeightInRackUnits))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_DOES_NOT_FIT_IN_RACK, $"The terminal equipment with id {terminalEquipmentId} cannot be moved to rack: {moveToRackId} position: {moveToRackPosition} because there's no free space in rack."));
+
+            var e = new NodeContainerTerminalEquipmentMovedToRack(
+                  nodeContainerId: this.Id,
+                  oldRackId: GetCurrentRack(terminalEquipmentId).Id,
+                  newRackId: moveToRackId,
+                  startUnitPosition: moveToRackPosition,
+                  terminalEquipmentId: terminalEquipmentId,
+                  terminalEquipmentHeightInUnits: terminalEquipmentSpecification.HeightInRackUnits
+              )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(e);
+
+            return Result.Ok();
+        }
+
+        private bool TerminalEquipmentFitsInRack(Guid rackId, int rackPosition, int heightInRackUnits)
+        {
+            var rack = _container.Racks.First(r => r.Id == rackId);
+
+            HashSet<int> usedPositions = new();
+
+            foreach (var subRack in rack.SubrackMounts)
+            {
+                for (int usedPosition = subRack.Position; usedPosition < (subRack.Position + subRack.HeightInUnits); usedPosition++)
+                {
+                    usedPositions.Add(usedPosition);
+                }
+            }
+
+            for (int position = rackPosition; position < (rackPosition + heightInRackUnits); position++)
+            {
+                if (usedPositions.Contains(position))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool TerminalEquipmentCanBeMovedDown(Guid terminalEquipmentId, int moveDownUnits)
+        {
+            var rack = GetCurrentRack(terminalEquipmentId);
+
+            var subrack = rack.SubrackMounts.First(s => s.TerminalEquipmentId == terminalEquipmentId);
+
+            HashSet<int> usedPositions = new();
+
+            foreach (var subRack in rack.SubrackMounts)
+            {
+                for (int usedPosition = subRack.Position; usedPosition < (subRack.Position + subRack.HeightInUnits); usedPosition++)
+                {
+                    usedPositions.Add(usedPosition);
+                }
+            }
+
+            for (int position = subrack.Position - 1; position <= subrack.Position - moveDownUnits; position++)
+            {
+                if (usedPositions.Contains(position))
+                    return false;
+
+                if (position < 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void Apply(NodeContainerTerminalEquipmentMovedToRack @event)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            _container = NodeContainerProjectionFunctions.Apply(_container, @event);
+        }
+
+        private bool CheckIfMovedToNewRack(Guid equipmentId, Guid possibleNewRackId)
+        {
+            var currentRackId = GetCurrentRack(equipmentId).Id;
+
+            if (currentRackId != possibleNewRackId)
+                return true;
+            else
+                return false;
+        }
+
+        private bool TerminalEquipmentExistInRack(Guid terminalEquipmentId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null)
+                return false;
+
+            foreach (var rack in _container.Racks)
+            {
+                foreach (var subrackMount in rack.SubrackMounts)
+                {
+                    if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private Rack GetCurrentRack(Guid terminalEquipmentId)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (_container.Racks == null)
+                throw new ApplicationException($"No racks in node equipment with id: {_container.Id}");
+
+            foreach (var rack in _container.Racks)
+            {
+                foreach (var subrackMount in rack.SubrackMounts)
+                {
+                    if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
+                    {
+                        return rack;
+                    }
+                }
+            }
+
+            throw new ApplicationException($"Can't find terminal equipment with id: {terminalEquipmentId} in any racks.");
+        }
+
+        #endregion
+
+        #region Arrange Rack Equipment
+        internal Result ArrangeRackEquipment(CommandContext cmdContext, Guid terminalEquipmentId, RackEquipmentArrangeMethodEnum arrangeMethod, int numberOfRackPositions)
+        {
+            if (_container == null)
+                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
+
+            if (!TerminalEquipmentExistInRack(terminalEquipmentId))
+                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_NOT_FOUND_IN_ANY_RACK, $"Cannot find terminal equipment with id {terminalEquipmentId} in any rack within node container with id: {this.Id}"));
+
+            var rack = GetCurrentRack(terminalEquipmentId);
+
+            var terminalEquipmentRackMount = rack.SubrackMounts.First(s => s.TerminalEquipmentId == terminalEquipmentId);
+
+            // Move up has no rule, everything is just moved up
+            if (arrangeMethod == RackEquipmentArrangeMethodEnum.MoveUp)
+            {
+                foreach (var subrack in rack.SubrackMounts)
+                {
+                    if (subrack.TerminalEquipmentId == terminalEquipmentId || subrack.Position > terminalEquipmentRackMount.Position)
+                    {
+                        var e = new NodeContainerTerminalEquipmentMovedToRack(
+                               nodeContainerId: this.Id,
+                               oldRackId: rack.Id,
+                               newRackId: rack.Id,
+                               startUnitPosition: subrack.Position + numberOfRackPositions,
+                               terminalEquipmentId: subrack.TerminalEquipmentId,
+                               terminalEquipmentHeightInUnits: subrack.HeightInUnits
+                           )
+                        {
+                            CorrelationId = cmdContext.CorrelationId,
+                            IncitingCmdId = cmdContext.CmdId,
+                            UserName = cmdContext.UserContext?.UserName,
+                            WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                        };
+
+                        RaiseEvent(e);
+                    }
+
+                }
+
+            }
+            else
+            {
+                // Check that there is space where the equipment is moved to
+                if (!TerminalEquipmentCanBeMovedDown(terminalEquipmentId, numberOfRackPositions))
+                    return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_CANNOT_BE_MOVED_DOWN_DUE_TO_LACK_OF_FREE_SPACE, $"The terminal equipment with id {terminalEquipmentId} cannot be moved down {numberOfRackPositions}, because there's no free space in rack."));
+
+                // Move everything down
+                foreach (var subrack in rack.SubrackMounts)
+                {
+                    if (subrack.TerminalEquipmentId == terminalEquipmentId || subrack.Position > terminalEquipmentRackMount.Position)
+                    {
+                        var e = new NodeContainerTerminalEquipmentMovedToRack(
+                               nodeContainerId: this.Id,
+                               oldRackId: rack.Id,
+                               newRackId: rack.Id,
+                               startUnitPosition: subrack.Position - numberOfRackPositions,
+                               terminalEquipmentId: subrack.TerminalEquipmentId,
+                               terminalEquipmentHeightInUnits: subrack.HeightInUnits
+                           )
+                        {
+                            CorrelationId = cmdContext.CorrelationId,
+                            IncitingCmdId = cmdContext.CmdId,
+                            UserName = cmdContext.UserContext?.UserName,
+                            WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                        };
+
+                        RaiseEvent(e);
+                    }
+
+                }
+            }
+
+            return Result.Ok();
+
+        }
         #endregion
 
         #region Connect Terminals
@@ -920,112 +1148,10 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         }
 
         #endregion
+              
 
-        #region Change subrack Mount
+      
 
-        public Result ChangeSubrackMount(CommandContext cmdContext, Guid terminalEquipmentId, int terminalEquipmentHeightInUnits, Guid rackId, int startUnitPosition)
-        {
-            if (_container == null)
-                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
-
-            if (_container.Racks == null || !_container.Racks.Any(r => r.Id == rackId))
-                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.RACK_NOT_FOUND, $"Cannot find rack with id: {rackId} in node container with id: {this.Id}"));
-
-            if (!TerminalEquipmentExistInRack(terminalEquipmentId))
-                return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_NOT_FOUND_IN_ANY_RACK, $"Cannot find terminal equipment with id {terminalEquipmentId} in any rack within node container with id: {this.Id}"));
-
-            if (CheckIfMovedToNewRack(terminalEquipmentId, rackId))
-            {
-                var newRack = _container.Racks.First(r => r.Id == rackId);
-
-                var oldRack = GetCurrentRack(terminalEquipmentId);
-
-                var revisedStartPoistion = ReviseStartPosition(newRack, startUnitPosition);
-
-
-                var e = new NodeContainerTerminalEquipmentMovedToRack(
-                    nodeContainerId: this.Id,
-                    oldRackId: oldRack.Id,
-                    newRackId: newRack.Id,
-                    startUnitPosition: revisedStartPoistion,
-                    terminalEquipmentId: terminalEquipmentId,
-                    terminalEquipmentHeightInUnits: terminalEquipmentHeightInUnits
-                )
-                {
-                    CorrelationId = cmdContext.CorrelationId,
-                    IncitingCmdId = cmdContext.CmdId,
-                    UserName = cmdContext.UserContext?.UserName,
-                    WorkTaskId = cmdContext.UserContext?.WorkTaskId
-                };
-
-                RaiseEvent(e);
-
-                return Result.Ok();
-            }
-
-            return Result.Ok();
-        }
-
-        private void Apply(NodeContainerTerminalEquipmentMovedToRack @event)
-        {
-            if (_container == null)
-                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
-        }
-
-        private bool CheckIfMovedToNewRack(Guid equipmentId, Guid possibleNewRackId)
-        {
-            var currentRackId = GetCurrentRack(equipmentId).Id;
-
-            if (currentRackId != possibleNewRackId)
-                return true;
-            else
-                return false;
-        }
-
-        private bool TerminalEquipmentExistInRack(Guid terminalEquipmentId)
-        {
-            if (_container == null)
-                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
-
-            if (_container.Racks == null)
-                return false;
-
-            foreach (var rack in _container.Racks)
-            {
-                foreach (var subrackMount in rack.SubrackMounts)
-                {
-                    if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private Rack GetCurrentRack(Guid terminalEquipmentId)
-        {
-            if (_container == null)
-                throw new ApplicationException($"Invalid internal state. Node container property cannot be null. Seems that node container has never been created. Please check command handler logic.");
-
-            if (_container.Racks == null)
-                throw new ApplicationException($"No racks in node equipment with id: {_container.Id}");
-
-            foreach (var rack in _container.Racks)
-            {
-                foreach (var subrackMount in rack.SubrackMounts)
-                {
-                    if (subrackMount.TerminalEquipmentId == terminalEquipmentId)
-                    {
-                        return rack;
-                    }
-                }
-            }
-
-            throw new ApplicationException($"Can't find terminal equipment with id: {terminalEquipmentId} in any racks.");
-        }
-
-        #endregion
+        
     }
 }
