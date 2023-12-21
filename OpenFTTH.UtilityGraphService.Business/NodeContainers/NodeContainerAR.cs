@@ -512,7 +512,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_NOT_FOUND_IN_ANY_RACK, $"Cannot find terminal equipment with id {terminalEquipmentId} in any rack within node container with id: {this.Id}"));
 
             // Check that there is space where the equipment is moved to
-            if (!TerminalEquipmentFitsInRack(moveToRackId, moveToRackPosition, terminalEquipmentSpecification.HeightInRackUnits))
+            if (!TerminalEquipmentFitsInRack(moveToRackId, terminalEquipmentId, moveToRackPosition, terminalEquipmentSpecification.HeightInRackUnits))
                 return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_DOES_NOT_FIT_IN_RACK, $"The terminal equipment with id {terminalEquipmentId} cannot be moved to rack: {moveToRackId} position: {moveToRackPosition} because there's no free space in rack."));
 
             var e = new NodeContainerTerminalEquipmentMovedToRack(
@@ -535,7 +535,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             return Result.Ok();
         }
 
-        private bool TerminalEquipmentFitsInRack(Guid rackId, int rackPosition, int heightInRackUnits)
+        private bool TerminalEquipmentFitsInRack(Guid rackId, Guid terminalEquipmentId, int rackPosition, int heightInRackUnits)
         {
             var rack = _container.Racks.First(r => r.Id == rackId);
 
@@ -545,7 +545,8 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             {
                 for (int usedPosition = subRack.Position; usedPosition < (subRack.Position + subRack.HeightInUnits); usedPosition++)
                 {
-                    usedPositions.Add(usedPosition);
+                    if (subRack.TerminalEquipmentId != terminalEquipmentId)
+                        usedPositions.Add(usedPosition);
                 }
             }
 
@@ -562,7 +563,7 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
         {
             var rack = GetCurrentRack(terminalEquipmentId);
 
-            var subrack = rack.SubrackMounts.First(s => s.TerminalEquipmentId == terminalEquipmentId);
+            var subrackToMove = rack.SubrackMounts.First(s => s.TerminalEquipmentId == terminalEquipmentId);
 
             HashSet<int> usedPositions = new();
 
@@ -570,11 +571,12 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
             {
                 for (int usedPosition = subRack.Position; usedPosition < (subRack.Position + subRack.HeightInUnits); usedPosition++)
                 {
-                    usedPositions.Add(usedPosition);
+                    if (subRack.TerminalEquipmentId != terminalEquipmentId)
+                        usedPositions.Add(usedPosition);
                 }
             }
 
-            for (int position = subrack.Position - 1; position <= subrack.Position - moveDownUnits; position++)
+            for (int position = subrackToMove.Position - moveDownUnits; position <= (subrackToMove.Position - moveDownUnits) + subrackToMove.HeightInUnits; position++)
             {
                 if (usedPositions.Contains(position))
                     return false;

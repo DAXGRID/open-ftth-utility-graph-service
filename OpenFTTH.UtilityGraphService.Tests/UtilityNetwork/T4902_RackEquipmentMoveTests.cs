@@ -145,7 +145,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
         [Fact, Order(3)]
-        public async Task MoveOLTRackDownToPosition14ShouldSucceed()
+        public async Task MoveOLTRackDownOnePositionShouldSucceed()
         {
             // Setup
             var sutNodeId = TestRouteNetwork.CO_1;
@@ -160,6 +160,45 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Get data rack
             var dataRack = nodeContainer.Racks.First(r => r.Name == "DATA");
             var olt = dataRack.SubrackMounts.First(s => s.Position == 30);
+
+
+            var moveCmd = new MoveRackEquipmentInNodeContainer(
+                Guid.NewGuid(),
+                new UserContext("test", Guid.Empty),
+                sutNodeContainerId,
+                olt.TerminalEquipmentId,
+                dataRack.Id,
+                29
+            );
+
+            var moveCmdResult = await _commandDispatcher.HandleAsync<MoveRackEquipmentInNodeContainer, Result>(moveCmd);
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerAfterUpdate);
+
+            // Assert
+            moveCmdResult.IsSuccess.Should().BeTrue();
+
+            // Check that OLT is still sitting at pos 29
+            nodeContainerAfterUpdate.Racks.First(r => r.Name == "DATA").SubrackMounts.Any(m => m.TerminalEquipmentId == olt.TerminalEquipmentId && m.Position == 29).Should().BeTrue();
+        }
+
+        [Fact, Order(4)]
+        public async Task MoveOLTRackDownToPosition14ShouldSucceed()
+        {
+            // Setup
+            var sutNodeId = TestRouteNetwork.CO_1;
+
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+
+            // Get data rack
+            var dataRack = nodeContainer.Racks.First(r => r.Name == "DATA");
+            var olt = dataRack.SubrackMounts.First(s => s.Position == 29);
 
 
             var moveCmd = new MoveRackEquipmentInNodeContainer(
@@ -188,7 +227,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(sutNodeId);
         }
 
-        [Fact, Order(4)]
+      
+
+        [Fact, Order(5)]
         public async Task MoveOLTRackDownToPosition13ShouldFail()
         {
             // Setup
@@ -212,7 +253,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 sutNodeContainerId,
                 olt.TerminalEquipmentId,
                 dataRack.Id,
-                14
+                13
             );
 
             var moveCmdResult = await _commandDispatcher.HandleAsync<MoveRackEquipmentInNodeContainer, Result>(moveCmd);
@@ -227,7 +268,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainerAfterUpdate.Racks.First(r => r.Name == "DATA").SubrackMounts.Any(m => m.TerminalEquipmentId == olt.TerminalEquipmentId && olt.Position == 14).Should().BeTrue();
         }
 
-        [Fact, Order(5)]
+       
+
+        [Fact, Order(6)]
         public async Task MoveOLTBackToPosition30ShouldSucceed()
         {
             // Setup

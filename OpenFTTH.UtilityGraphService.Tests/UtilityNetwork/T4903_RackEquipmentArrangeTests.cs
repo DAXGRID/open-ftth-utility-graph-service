@@ -129,10 +129,10 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             moveCmdResult.IsSuccess.Should().BeTrue();
 
-            // Check if OLT has been moved up 2
+            // Check if OLT has been moved down 2
             nodeContainerAfterUpdate.Racks.First(r => r.Name == "DATA").SubrackMounts.Any(m => m.TerminalEquipmentId != lgx.TerminalEquipmentId && m.Position == 30).Should().BeTrue();
 
-            // Check if LGX has been moved up 2
+            // Check if LGX has been moved down 2
             nodeContainerAfterUpdate.Racks.First(r => r.Name == "DATA").SubrackMounts.Any(m => m.TerminalEquipmentId == lgx.TerminalEquipmentId && m.Position == 10).Should().BeTrue();
 
 
@@ -143,6 +143,42 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
         }
 
 
+        [Fact, Order(3)]
+        public async Task MoveLGXHolderInDataRackTwoDownShouldFail()
+        {
+            // Setup
+            var sutNodeId = TestRouteNetwork.CO_1;
+
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get data rack
+            var dataRack = nodeContainer.Racks.First(r => r.Name == "DATA");
+
+            // Get olt on pos 30
+            var olt = dataRack.SubrackMounts.First(s => s.Position == 30);
+
+
+            var moveCmd = new ArrangeRackEquipmentInNodeContainer(
+                Guid.NewGuid(),
+                new UserContext("test", Guid.Empty),
+                sutNodeContainerId,
+                olt.TerminalEquipmentId,
+                RackEquipmentArrangeMethodEnum.MoveDown,
+                17
+            );
+
+            var moveCmdResult = await _commandDispatcher.HandleAsync<ArrangeRackEquipmentInNodeContainer, Result>(moveCmd);
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainerAfterUpdate);
+
+            // Assert
+            moveCmdResult.IsSuccess.Should().BeFalse();
+        }
 
     }
 }
