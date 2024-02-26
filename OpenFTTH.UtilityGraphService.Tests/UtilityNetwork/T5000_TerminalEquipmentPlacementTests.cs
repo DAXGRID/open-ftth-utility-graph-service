@@ -166,7 +166,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 namingInfo: null
             )
             {
-                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 0, SubrackPlacmentMethod.BottomUp)
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 4, SubrackPlacmentMethod.BottomUp)
             };
 
 
@@ -199,14 +199,14 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             nodeContainer.TerminalEquipmentReferences.Should().BeNull();
             nodeContainer.Racks[0].SubrackMounts.Count().Should().Be(2);
 
-            firstMount.Position.Should().Be(0);
+            firstMount.Position.Should().Be(4);
             firstMount.HeightInUnits.Should().Be(1);
 
             firstEquipment.Name.Should().Be("1");
             firstEquipment.SpecificationId.Should().Be(placeEquipmentCmd.TerminalEquipmentSpecificationId);
             firstEquipment.NodeContainerId.Should().Be(placeEquipmentCmd.NodeContainerId);
 
-            secondMount.Position.Should().Be(1);
+            secondMount.Position.Should().Be(5);
             secondMount.HeightInUnits.Should().Be(1);
 
             secondEquipment.Name.Should().Be("2");
@@ -256,13 +256,13 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 new GetEquipmentDetails(new EquipmentIdList(nodeContainer.Racks[0].SubrackMounts.Select(s => s.TerminalEquipmentId)))
             );
 
-            var firstMount = nodeContainer.Racks[0].SubrackMounts[0];
+            var firstMount = nodeContainer.Racks[0].SubrackMounts[2];
             var firstEquipment = equipmentQueryResult.Value.TerminalEquipment[firstMount.TerminalEquipmentId];
 
-            var secondMount = nodeContainer.Racks[0].SubrackMounts[1];
+            var secondMount = nodeContainer.Racks[0].SubrackMounts[0];
             var secondEquipment = equipmentQueryResult.Value.TerminalEquipment[secondMount.TerminalEquipmentId];
 
-            var thirdMount = nodeContainer.Racks[0].SubrackMounts[2];
+            var thirdMount = nodeContainer.Racks[0].SubrackMounts[1];
             var thirdEquipment = equipmentQueryResult.Value.TerminalEquipment[thirdMount.TerminalEquipmentId];
 
 
@@ -373,7 +373,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
 
-            var firstEquipmentInRack1Id = nodeContainerBeforeCommand.Racks[0].SubrackMounts[0].TerminalEquipmentId;
+            var firstEquipmentInRack1Id = nodeContainerBeforeCommand.Racks[0].SubrackMounts[2].TerminalEquipmentId;
 
             var connectivityQuery = new GetTerminalEquipmentConnectivityView(sutRouteNodeId, firstEquipmentInRack1Id);
 

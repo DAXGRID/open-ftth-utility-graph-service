@@ -9,6 +9,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph;
 using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -444,6 +445,20 @@ namespace OpenFTTH.UtilityGraphService.Business.NodeContainers
                 return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.INVALID_RACK_UNIT_START_POSITION, $"Invalid rack unit must be greater or equal to zero"));
 
             var rack = _container.Racks.First(r => r.Id == rackId);
+
+            // Check that there is space where the equipment(s) are inserted
+            var nEquipment = 0;
+
+            foreach (var equipmentIdToInsert in terminalEquipmentIds)
+            {
+                var position = startUnitPosition + (nEquipment * terminalEquipmentSpecification.HeightInRackUnits);
+
+                if (!TerminalEquipmentFitsInRack(rackId, equipmentIdToInsert, position, terminalEquipmentSpecification.HeightInRackUnits))
+                    return Result.Fail(new TerminalEquipmentError(TerminalEquipmentErrorCodes.TERMINAL_EQUIPMENT_DOES_NOT_FIT_IN_RACK, $"The terminal equipment with id {equipmentIdToInsert} cannot be inserted in rack: {rackId} position: {position} because there's no free space in rack."));
+
+                nEquipment++;
+            }
+
 
             var revisedStartPoistion = ReviseStartPosition(rack, startUnitPosition);
 

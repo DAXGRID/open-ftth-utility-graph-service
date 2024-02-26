@@ -428,8 +428,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var lisaTray1Pin2 = lisaTray.TerminalStructures.First().Terminals[1].Id;
 
 
-            // Get 1:2 splitter at pos 40
-            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 40).TerminalEquipmentId, out var split1_2);
+            // Get 1:2 splitter at pos 100
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 100).TerminalEquipmentId, out var split1_2);
 
             var split_1_2_out1 = split1_2.TerminalStructures.First().Terminals[1].Id;
 

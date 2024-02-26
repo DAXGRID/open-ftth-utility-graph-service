@@ -214,7 +214,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 namingInfo: new Events.Core.Infos.NamingInfo() { Name = "1:2 Split"}
             )
             {
-                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 40, SubrackPlacmentMethod.BottomUp)
+                SubrackPlacementInfo = new SubrackPlacementInfo(nodeContainerBeforeCommand.Racks[0].Id, 100, SubrackPlacmentMethod.BottomUp)
             };
 
 
