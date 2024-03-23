@@ -1,6 +1,7 @@
 ﻿using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -13,6 +14,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph.Projections
     /// </summary>
     public static class SpanEquipmentProjectionFunctions
     {
+        public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanEquipmentNamingInfoChanged @event)
+        {
+            return existingSpanEquipment with
+            {
+                NamingInfo = @event.NamingInfo
+            };
+        }
+
         public static SpanEquipment Apply(SpanEquipment existingSpanEquipment, SpanSegmentsCut spanSegmentsCutEvent)
         {
             // Cut them segments

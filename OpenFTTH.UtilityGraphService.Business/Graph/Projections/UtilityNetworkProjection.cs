@@ -48,6 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             // Span equipment
             ProjectEventAsync<SpanEquipmentPlacedInRouteNetwork>(ProjectAsync);
+            ProjectEventAsync<SpanEquipmentNamingInfoChanged>(ProjectAsync);
             ProjectEventAsync<SpanEquipmentAffixedToContainer>(ProjectAsync);
             ProjectEventAsync<SpanEquipmentAffixSideChanged>(ProjectAsync);
             ProjectEventAsync<SpanEquipmentDetachedFromContainer>(ProjectAsync);
@@ -171,6 +172,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 // Span equipment events
                 case (SpanEquipmentPlacedInRouteNetwork @event):
                     StoreAndIndexVirginSpanEquipment(@event.Equipment);
+                    break;
+
+
+                case (SpanEquipmentNamingInfoChanged @event):
+                    var oldSpanEquipmentState = _spanEquipmentByEquipmentId[@event.SpanEquipmentId];
+
+                    var newSpanEquipmentState = SpanEquipmentProjectionFunctions.Apply(oldSpanEquipmentState, @event);
+
+                    TryUpdate(newSpanEquipmentState);
+
                     break;
 
                 case (AdditionalStructuresAddedToSpanEquipment @event):

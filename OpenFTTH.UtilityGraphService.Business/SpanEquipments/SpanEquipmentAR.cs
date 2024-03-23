@@ -8,6 +8,7 @@ using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using OpenFTTH.UtilityGraphService.Business.Graph.Projections;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Events;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Events;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Events;
 using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             Register<SpanEquipmentManufacturerChanged>(Apply);
             Register<SpanEquipmentSpecificationChanged>(Apply);
             Register<SpanEquipmentAffixedToParent>(Apply);
+            Register<SpanEquipmentNamingInfoChanged>(Apply);
         }
 
         #region Place Span Equipment
@@ -2657,6 +2659,46 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
 
         #endregion
 
+        #region Change Naming Info
+        public Result ChangeNamingInfo(CommandContext cmdContext, NamingInfo? namingInfo)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that equipment has never been placed. Please check command handler logic.");
+
+            if ((_spanEquipment.NamingInfo == null && namingInfo == null) || (_spanEquipment.NamingInfo != null && _spanEquipment.NamingInfo.Equals(namingInfo)))
+            {
+                return Result.Fail(new UpdateEquipmentPropertiesError(
+                       UpdateEquipmentPropertiesErrorCodes.NO_CHANGE_TO_NAMING_INFO,
+                       $"Will not update naming info, because the provided value is equal the existing value.")
+                   );
+            }
+
+            var @event = new SpanEquipmentNamingInfoChanged(
+              spanEquipmentId: this.Id,
+              namingInfo: namingInfo
+            )
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(@event);
+
+            return Result.Ok();
+        }
+
+        private void Apply(SpanEquipmentNamingInfoChanged @event)
+        {
+            if (_spanEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Span equipment property cannot be null. Seems that equipment has never been placed. Please check command handler logic.");
+
+            _spanEquipment = SpanEquipmentProjectionFunctions.Apply(_spanEquipment, @event);
+        }
+
+        #endregion
+
         #region Change Marking Info
         public Result ChangeMarkingInfo(CommandContext cmdContext, MarkingInfo? markingInfo)
         {
@@ -3057,6 +3099,7 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments
             return result;
         }
 
+     
         private class ExistingRouteHop
         {
             public int SequenceNumber { get; set; }

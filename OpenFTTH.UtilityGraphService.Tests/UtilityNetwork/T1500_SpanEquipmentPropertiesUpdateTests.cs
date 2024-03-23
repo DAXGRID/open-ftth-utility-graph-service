@@ -177,6 +177,31 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetworkUpdatedEvent.AffectedRouteNetworkElementIds.Should().Contain(TestRouteNetwork.J_1);
         }
 
+        [Fact, Order(6)]
+        public async Task UpdateNamingInfo_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutSpanEquipmentId = TestUtilityNetwork.MultiConduit_3x10_SDU_1_to_SDU_2;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentBeforeUpdate);
+
+            var updateCmd = new UpdateSpanEquipmentProperties(Guid.NewGuid(), new UserContext("test", Guid.Empty), spanEquipmentOrSegmentId: sutSpanEquipmentId)
+            {
+                NamingInfo = new NamingInfo() { Name = "Jesper", Description = "Ladegaard" }
+            };
+
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateSpanEquipmentProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(sutSpanEquipmentId, out var spanEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            spanEquipmentAfterUpdate.Name.Should().Be("Jesper");
+            spanEquipmentAfterUpdate.Description.Should().Be("Ladegaard");
+        }
+
         [Fact, Order(10)]
         public async Task TestCutInnerConduit1In3x10_ShouldSucceed()
         {

@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenFTTH.UtilityGraphService.Business.TerminalEquipments;
 
 namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
 {
@@ -47,6 +48,20 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             bool somethingChanged = false;
 
             var commandContext = new CommandContext(command.CorrelationId, command.CmdId, command.UserContext);
+
+            // Check if naming info has been updated
+            if (command.NamingInfo != null && !command.NamingInfo.Equals(spanEquipment.NamingInfo))
+            {
+                var updateNamingInfoResult = spanEquipmentAR.ChangeNamingInfo(
+                    cmdContext: commandContext,
+                    command.NamingInfo
+                );
+
+                if (updateNamingInfoResult.IsFailed)
+                    return Task.FromResult(Result.Fail(updateNamingInfoResult.Errors.First()));
+
+                somethingChanged = true;
+            }
 
             // Check if marking info has been updated
             if (command.MarkingInfo != null && !command.MarkingInfo.Equals(spanEquipment.MarkingInfo))
