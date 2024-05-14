@@ -19,6 +19,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public bool IsAddressable { get; init; }
         public bool IsCustomerTermination { get; init; }
         public bool IsLineTermination { get; init; }
+        public bool IsCustomerSplitter { get; init; }
 
 
         public TerminalEquipmentSpecification(Guid id, string category, string name, string shortName, bool isRackEquipment, int heightInRackUnits, TerminalStructureTemplate[] structureTemplates)

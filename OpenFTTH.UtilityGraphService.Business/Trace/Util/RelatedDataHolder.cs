@@ -394,6 +394,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             }
         }
 
+        public bool IsCustomerSplitter(IUtilityGraphTerminalRef terminalRef)
+        {
+            var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
+
+            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+
+            return terminalEquipmentSpecification.IsCustomerSplitter;
+        }
+
+        public bool IsLineTermination(IUtilityGraphTerminalRef terminalRef)
+        {
+            var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
+
+            var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+
+            return terminalEquipmentSpecification.IsLineTermination;
+        }
+
+
         public string GetEquipmentTerminalInfoString(IUtilityGraphTerminalRef terminalRef)
         {
             if (terminalRef.IsDummyEnd)

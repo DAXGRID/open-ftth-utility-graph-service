@@ -113,7 +113,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             connectionInfo: connectionInfo,
                             totalLength: totalLength,
                             routeSegmentGeometries: routeSegmentGeometries,
-                            routeSegmentIds: routeSegmentIds
+                            routeSegmentIds: routeSegmentIds,
+                            isCustomerSplitter: relatedData.IsCustomerSplitter(terminalRef),
+                            isLineTermination: relatedData.IsLineTermination(terminalRef)
                         )
                     );
 
@@ -295,7 +297,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                             connectionInfo: connectionInfo,
                             totalLength: totalLength,
                             routeSegmentGeometries: routeSegmentGeometries,
-                            routeSegmentIds: routeSegmentIds
+                            routeSegmentIds: routeSegmentIds,
+                            isCustomerSplitter: relatedData.IsCustomerSplitter(terminalRef),
+                            isLineTermination: relatedData.IsLineTermination(terminalRef)
                         )
                     );
 
