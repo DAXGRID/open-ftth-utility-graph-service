@@ -161,6 +161,23 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             removeStructureResult.IsSuccess.Should().BeTrue();
 
+            // Try remove again, should fail
+            var terminalStructureToRemove2 = sutTerminalEquipment.TerminalStructures[0];
+
+            var removeStructure2 = new RemoveTerminalStructureFromTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.J_1,
+                terminalEquipmentId: sutTerminalEquipment.Id,
+                terminalStructureId: terminalStructureToRemove.Id
+            );
+
+            // Act
+            var removeStructureResult2 = await _commandDispatcher.HandleAsync<RemoveTerminalStructureFromTerminalEquipment, Result>(removeStructure2);
+
+            removeStructureResult2.IsSuccess.Should().BeFalse();
+
+
 
             // Remove the LISA equipment
             var removeCmd = new RemoveTerminalEquipment(Guid.NewGuid(), new UserContext("test", Guid.Empty), sutTerminalEquipment.Id);
@@ -188,9 +205,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Check that subrack mount is removed from node container
             nodeContainerAfterTerminalEquipmentRemoval.Racks.First().SubrackMounts.Any(s => s.TerminalEquipmentId == rackMountedEquipmentIdToBeRemoved);
         }
+      
 
-
-        [Fact, Order(4)]
+        [Fact, Order(5)]
         public async Task RemoveRackInJ1_ShouldSucceed()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();

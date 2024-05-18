@@ -180,7 +180,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             if (_terminalEquipment == null)
                 throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
 
-            if (!_terminalEquipment.TerminalStructures.Any(t => t.Id == terminalStructureId))
+            if (!_terminalEquipment.TerminalStructures.Any(t => t.Id == terminalStructureId && !t.Deleted))
             {
                 return Result.Fail(new TerminalEquipmentError(
                     TerminalEquipmentErrorCodes.TERMINAL_STRUCTURE_NOT_FOUND,
