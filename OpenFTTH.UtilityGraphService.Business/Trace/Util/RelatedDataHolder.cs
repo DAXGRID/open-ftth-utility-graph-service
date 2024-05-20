@@ -396,11 +396,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
         public bool IsCustomerSplitter(IUtilityGraphTerminalRef terminalRef)
         {
+            // Check if equipment is marked as customer spitter
             var terminalEquipment = terminalRef.TerminalEquipment(_utilityNetwork);
 
             var terminalEquipmentSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
 
-            return terminalEquipmentSpecification.IsCustomerSplitter;
+            if (terminalEquipmentSpecification.IsCustomerSplitter)
+                return true;
+
+
+            // Check if structure is marked as customer splitter
+            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
+
+            var terminalStructureSpec = _terminalStructureSpecifications[terminalStructure.SpecificationId];
+
+            if (terminalStructureSpec.IsCustomerSplitter)
+                return true;
+
+            return false;
         }
 
         public bool IsLineTermination(IUtilityGraphTerminalRef terminalRef)
