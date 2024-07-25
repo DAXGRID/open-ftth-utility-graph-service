@@ -254,6 +254,9 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             spanEquipmentAfterUpdate.SpanStructures.Length.Should().Be(13);
             spanEquipmentAfterUpdate.SpanStructures[0].SpecificationId.Should().Be(spanEquipmentSpecification.RootTemplate.SpanStructureSpecificationId);
 
+            // Check that name of span equipment did not change
+            Assert.True(spanEquipmentBeforeUpdate.NamingInfo.Name == spanEquipmentAfterUpdate.NamingInfo.Name);
+
             // Check that graph contain new segments
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[4].SpanSegments[0].Id, out var _).Should().BeTrue();
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphSegmentRef>(spanEquipmentAfterUpdate.SpanStructures[5].SpanSegments[0].Id, out var _).Should().BeTrue();
