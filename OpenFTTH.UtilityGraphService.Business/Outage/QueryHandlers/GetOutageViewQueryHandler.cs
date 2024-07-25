@@ -28,6 +28,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         private LookupCollection<SpanEquipmentSpecification> _spanEquipmentSpecifications;
         private LookupCollection<SpanStructureSpecification> _spanStructureSpecifications;
         private LookupCollection<TerminalEquipmentSpecification> _terminalEquipmentSpecifications;
+        private LookupCollection<TerminalStructureSpecification> _terminalStructureSpecifications;
 
 
         public GetOutageViewQueryHandler(IEventStore eventStore, IQueryDispatcher queryDispatcher)
@@ -47,7 +48,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
             if (networkInterestsResult.Value.IsNode)
             {
-                return Task.FromResult(Result.Ok(GetOutageViewForRouteNode(networkInterestsResult.Value)));
+                return Task.FromResult(Result.Ok(GetOutageViewForRouteNode(networkInterestsResult.Value, query.EquipmentId)));
             }
             else
             {
@@ -55,9 +56,82 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             }
         }
 
-        private OutageViewNode GetOutageViewForRouteNode(OutageProcessingState processingState)
+        private OutageViewNode GetOutageViewForRouteNode(OutageProcessingState processingState, Guid? equipmentId)
         {
+            if (equipmentId == null)
+                throw new ApplicationException($"EquipmentId is missing. Must be provided when doing outage queries inside route nodes");
+
+            if (processingState.NodeContainer == null)
+                throw new ApplicationException($"No node container found in route node with id: {processingState.RouteElementId} Must be present when doing outage queries inside route nodes");
+
+            if (processingState.NodeContainer.TerminalEquipmentReferences == null)
+                throw new ApplicationException($"Can't find any equipment with id: {equipmentId.Value} Node container contains no equipments");
+
+            if (!processingState.AnyEquipment(equipmentId.Value))
+                throw new ApplicationException($"Can't find any equipment with id: {equipmentId.Value}");
+
+            if (processingState.TerminalEquipments == null)
+                throw new ApplicationException($"No terminal equipments found in route node with id: {processingState.RouteElementId}");
+
+
             OutageViewNode rootNode = new OutageViewNode(Guid.NewGuid(), "{OutageViewRouteNode}");
+
+
+            _terminalEquipmentSpecifications = _eventStore.Projections.Get<TerminalEquipmentSpecificationsProjection>().Specifications;
+            _terminalStructureSpecifications = _eventStore.Projections.Get<TerminalStructureSpecificationsProjection>().Specifications;
+
+
+            if (processingState.NodeContainer == null)
+            {
+                rootNode.Description = "{OutageViewNoRelatedEquipmentsInRouteSegment}";
+                return rootNode;
+            }
+
+
+            var terminalEquipment = processingState.TerminalEquipments[equipmentId.Value];
+
+            var eqSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
+
+            var terminalEquipmentNode = new OutageViewNode(Guid.NewGuid(), GetTerminalEquipmentLabel(terminalEquipment, eqSpecification));
+
+            // Add each structure
+
+            for (int i = 0; i < terminalEquipment.TerminalStructures.Length; i++)
+            {
+                bool foundInstallations = false;
+
+                var terminalStructure = terminalEquipment.TerminalStructures[i];
+
+                var terminalStructureSpecification = _terminalStructureSpecifications[terminalStructure.SpecificationId];
+
+                var terminalStructureNode = new OutageViewNode(Guid.NewGuid(), terminalStructure.Name + " (" + terminalStructureSpecification.Name + ")");
+
+                foreach (var terminal in terminalStructure.Terminals.Where(t => (t.Direction == TerminalDirectionEnum.BI || t.Direction == TerminalDirectionEnum.OUT)))
+                {
+                    var installationEquipments = SearchForCustomerTerminationEquipmentInCircuit(terminal.Id);
+
+                    if (installationEquipments.Count > 0)
+                    {
+                        foundInstallations = true;
+
+                        // Now add all installations
+                        foreach (var installationTerminalEquipment in installationEquipments)
+                        {
+                            var installationNode = new OutageViewNode(Guid.NewGuid(), installationTerminalEquipment.Name == null ? "NA" : installationTerminalEquipment.Name) { Value = installationTerminalEquipment.Name };
+                            terminalStructureNode.AddNode(installationNode);
+                            processingState.InstallationNodes.Add((installationNode, installationTerminalEquipment));
+                        }
+                    }
+                }
+
+                if (foundInstallations)
+                    terminalEquipmentNode.AddNode(terminalStructureNode);
+            }
+
+            rootNode.AddNode(terminalEquipmentNode);
+
+
+            AddAddressInformationToInstallations(processingState);
 
             return rootNode;
         }
@@ -278,7 +352,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         {
             List<TerminalEquipment> result = new();
 
-           var traceResult = _utilityNetwork.Graph.AdvancedTrace(fiberNetworkGraphElementId);
+           var traceResult = _utilityNetwork.Graph.AdvancedTrace(fiberNetworkGraphElementId, true);
 
             if (traceResult != null && traceResult.All.Count > 0)
             {
@@ -326,6 +400,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             return label;
         }
 
+        private string GetTerminalEquipmentLabel(TerminalEquipment terminalEquipment, TerminalEquipmentSpecification terminalEquipmentSpecification)
+        {
+            var label = terminalEquipment.Name + " (" + terminalEquipmentSpecification.Name + ")";
+
+            return label;
+        }
+
         public Result<OutageProcessingState> GetRouteNetworkElementEquipmentOfInterest(Guid routeNetworkElementId)
         {
             // Query all interests related to route network element
@@ -339,7 +420,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             if (interestsQueryResult.IsFailed)
                 return Result.Fail(interestsQueryResult.Errors.First());
 
-            OutageProcessingState result = new OutageProcessingState(interestsQueryResult.Value.RouteNetworkElements[routeNetworkElementId].Kind == RouteNetworkElementKindEnum.RouteNode);
+            OutageProcessingState result = new OutageProcessingState(routeNetworkElementId, interestsQueryResult.Value.RouteNetworkElements[routeNetworkElementId].Kind == RouteNetworkElementKindEnum.RouteNode);
 
             if (interestsQueryResult.Value.Interests == null)
                 return Result.Ok(result);
@@ -370,6 +451,43 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             if (equipmentQueryResult.Value.NodeContainers != null && equipmentQueryResult.Value.NodeContainers.Count == 1)
             {
                 result.NodeContainer = equipmentQueryResult.Value.NodeContainers.First();
+
+                // Get all terminal equipments within node
+                if (result.NodeContainer.TerminalEquipmentReferences != null)
+                {
+                    var equipmentIdList = new EquipmentIdList();
+                    equipmentIdList.AddRange(result.NodeContainer.TerminalEquipmentReferences);
+
+
+                    // Add equipments in racks as well
+                    if (result.NodeContainer.Racks != null)
+                    {
+                        foreach (var rack in result.NodeContainer.Racks)
+                        {
+                            foreach (var subRack in rack.SubrackMounts)
+                            {
+                                equipmentIdList.Add(subRack.TerminalEquipmentId);
+                            }
+                        }
+                    }
+
+                    equipmentQueryResult = _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                         new GetEquipmentDetails(equipmentIdList)
+                         {
+                             EquipmentDetailsFilter = new EquipmentDetailsFilterOptions() { IncludeRouteNetworkTrace = false }
+                         }
+                     ).Result;
+
+                    if (equipmentQueryResult.IsFailed)
+                        return Result.Fail(equipmentQueryResult.Errors.First());
+
+
+                    if (equipmentQueryResult.Value.TerminalEquipment != null)
+                    {
+                        result.TerminalEquipments = equipmentQueryResult.Value.TerminalEquipment;
+                    }
+                }
+
             }
 
 
@@ -378,18 +496,27 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
         public class OutageProcessingState
         {
+            public Guid RouteElementId { get; }
             public bool IsNode { get; }
             public NodeContainer? NodeContainer { get; set; }
             public LookupCollection<SpanEquipmentWithRelatedInfo> SpanEquipments { get; set; }
+
+            public LookupCollection<TerminalEquipment> TerminalEquipments { get; set; }
 
             public HashSet<Guid> CableProcessed = new();
 
             public List<(OutageViewNode,TerminalEquipment)> InstallationNodes = new();
 
-            public OutageProcessingState(bool isNode)
+            public OutageProcessingState(Guid routeElementId, bool isNode)
             {
+                RouteElementId = routeElementId;
                 IsNode = isNode;
                 SpanEquipments = new LookupCollection<SpanEquipmentWithRelatedInfo>();
+            }
+
+            public bool AnyEquipment(Guid terminalEquipmentId)
+            {
+                return TerminalEquipments.ContainsKey(terminalEquipmentId);
             }
         }
 

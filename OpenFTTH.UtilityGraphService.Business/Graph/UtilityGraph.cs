@@ -109,9 +109,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return new UtilityGraphTraceResult(id, null, Array.Empty<IGraphObject>(), Array.Empty<IGraphObject>());
         }
 
-        private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
+        private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version, bool traceThroughSplitters = false)
         {
-            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
             var downstreamTrace = connectedSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
@@ -140,9 +140,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
         }
 
-        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version)
+        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version, bool traceThroughSplitters = false)
         {
-            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
             var lastSegment = terminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).Last();
 
@@ -204,9 +204,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
         }
 
-        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version)
+        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version, bool traceThroughSplitters = false)
         {
-            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
             var firstSegment = terminal.NeighborElements(version).Where(n => n.GetType() != typeof(UtilityGraphInternalEquipmentConnectivityLink)).First();
 
@@ -241,16 +241,18 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         {
             private readonly UtilityNetworkProjection _utilityNetworkProjection;
             private readonly long _version;
+            private readonly bool _traceThroughSplitters;
             private bool _upstreamTrace;
 
             HashSet<UtilityGraphConnectedTerminal> visited = new();
 
             public IGraphNode LastVisit = null;
 
-            public SimpleTraceHelper(UtilityNetworkProjection utilityNetworkProjection, long version)
+            public SimpleTraceHelper(UtilityNetworkProjection utilityNetworkProjection, long version, bool traceThroughSplitters = false)
             {
                 _utilityNetworkProjection = utilityNetworkProjection;
                 _version = version;
+                _traceThroughSplitters = traceThroughSplitters;
             }
 
             public bool Add(IGraphNode node)
@@ -275,6 +277,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     return true;
 
                 if (edgeType == typeof(UtilityGraphTerminalToTerminalConnectivityLink))
+                    return true;
+
+                // If trace through splitters enabled always return true
+                if (_traceThroughSplitters)
                     return true;
 
                 if (edgeType == typeof(UtilityGraphInternalEquipmentConnectivityLink))
@@ -338,7 +344,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
         #endregion
 
         #region Advanced Trace
-        public UtilityGraphTraceResult AdvancedTrace(Guid id)
+        public UtilityGraphTraceResult AdvancedTrace(Guid id, bool traceThroughSplitters = false)
         {
 
             if (_graphElementsById.TryGetValue(id, out var utilityGraphElement))
@@ -354,7 +360,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     var version = _objectManager.GetLatestCommitedVersion();
 
                     var upstream = UpstreamSegmentTrace(connectedSegment, version).ToArray();
-                    var downstream = DownstreamSegmentTrace(connectedSegment, version).ToArray();
+                    var downstream = DownstreamSegmentTrace(connectedSegment, version, traceThroughSplitters).ToArray();
 
                     return new UtilityGraphTraceResult(id, connectedSegment, downstream, upstream);
                 }
@@ -372,13 +378,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                         if (nTerminalNeigbours == 1)
                         {
-                            var upstream = UpstreamTerminalTrace(terminal, version).ToArray();
+                            var upstream = UpstreamTerminalTrace(terminal, version, traceThroughSplitters).ToArray();
                             return new UtilityGraphTraceResult(id, terminal, Array.Empty<IGraphObject>(), upstream);
                         }
                         else if (nTerminalNeigbours == 2)
                         {
-                            var upstream = UpstreamTerminalTrace(terminal, version).ToArray();
-                            var downstream = DownstreamTerminalTrace(terminal, version).ToArray();
+                            var upstream = UpstreamTerminalTrace(terminal, version, traceThroughSplitters).ToArray();
+                            var downstream = DownstreamTerminalTrace(terminal, version, traceThroughSplitters).ToArray();
 
                             return new UtilityGraphTraceResult(id, terminal, downstream, upstream);
                         }

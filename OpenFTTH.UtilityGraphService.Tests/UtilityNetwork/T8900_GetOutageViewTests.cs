@@ -40,13 +40,14 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             _conduitTestUtilityNetwork = new ConduitTestUtilityNetwork(_eventStore, _commandDispatcher, _queryDispatcher).Run();
         }
 
-        [Fact, Order(1)]
+
+        [Fact, Order(2)]
         public async Task GetOutageViewOnS2()
         {
             var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
 
             var sutRouteNetworkElementId = TestRouteNetwork.S2;
-         
+
             var getOutageViewQuery = new GetOutageView(sutRouteNetworkElementId);
 
             var getOutageViewResult = await _queryDispatcher.HandleAsync<GetOutageView, Result<OutageViewNode>>(getOutageViewQuery);
@@ -60,6 +61,60 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
         }
+
+        [Fact, Order(1)]
+        public async Task GetOutageViewOn1_2Splitter_in_CO_1()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get 1:2 splitter that sit in pos 100
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 100).TerminalEquipmentId, out var split1_2);
+
+            var getOutageViewQuery = new GetOutageView(sutRouteNetworkElementId, split1_2.Id);
+
+            var getOutageViewResult = await _queryDispatcher.HandleAsync<GetOutageView, Result<OutageViewNode>>(getOutageViewQuery);
+
+
+            getOutageViewResult.IsSuccess.Should().BeTrue();
+
+            getOutageViewResult.Value.Should().NotBeNull();
+
+            getOutageViewResult.Value.Nodes.Should().NotBeNull();
+
+        }
+
+        [Fact, Order(3)]
+        public async Task GetOutageViewOnLisaInCO_1()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get first lisa tray in rack
+            var firstLisaEqId = nodeContainer.Racks[0].SubrackMounts.First().TerminalEquipmentId;
+
+            var getOutageViewQuery = new GetOutageView(sutRouteNetworkElementId, firstLisaEqId);
+
+            var getOutageViewResult = await _queryDispatcher.HandleAsync<GetOutageView, Result<OutageViewNode>>(getOutageViewQuery);
+
+
+            getOutageViewResult.IsSuccess.Should().BeTrue();
+
+            getOutageViewResult.Value.Should().NotBeNull();
+
+            getOutageViewResult.Value.Nodes.Should().NotBeNull();
+        }
+
 
 
     }
