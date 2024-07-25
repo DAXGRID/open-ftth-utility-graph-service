@@ -173,9 +173,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
         }
 
-        private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version)
+        private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version, bool traceThroughSplitters = false)
         {
-            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version);
+            SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
             var upstreamTrace = connectedSegment.UndirectionalDFS<GraphNode, GraphEdge>(
                 version,
@@ -359,7 +359,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     var version = _objectManager.GetLatestCommitedVersion();
 
-                    var upstream = UpstreamSegmentTrace(connectedSegment, version).ToArray();
+                    var upstream = UpstreamSegmentTrace(connectedSegment, version, traceThroughSplitters).ToArray();
                     var downstream = DownstreamSegmentTrace(connectedSegment, version, traceThroughSplitters).ToArray();
 
                     return new UtilityGraphTraceResult(id, connectedSegment, downstream, upstream);
