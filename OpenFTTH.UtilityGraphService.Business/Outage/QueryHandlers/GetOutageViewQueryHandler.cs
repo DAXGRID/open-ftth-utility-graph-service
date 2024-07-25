@@ -99,12 +99,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             for (int i = 0; i < terminalEquipment.TerminalStructures.Length; i++)
             {
                 bool foundInstallations = false;
+                int nInstallationsFound = 0; 
 
                 var terminalStructure = terminalEquipment.TerminalStructures[i];
 
                 var terminalStructureSpecification = _terminalStructureSpecifications[terminalStructure.SpecificationId];
 
                 var terminalStructureNode = new OutageViewNode(Guid.NewGuid(), terminalStructure.Name + " (" + terminalStructureSpecification.Name + ")");
+                terminalStructureNode.Expanded = false;
+
 
                 foreach (var terminal in terminalStructure.Terminals.Where(t => (t.Direction == TerminalDirectionEnum.BI || t.Direction == TerminalDirectionEnum.OUT)))
                 {
@@ -113,6 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     if (installationEquipments.Count > 0)
                     {
                         foundInstallations = true;
+                        nInstallationsFound++;
 
                         // Now add all installations
                         foreach (var installationTerminalEquipment in installationEquipments)
@@ -125,7 +129,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 }
 
                 if (foundInstallations)
+                {
+                    terminalStructureNode.Description = $"{nInstallationsFound} installation(s) found";
                     terminalEquipmentNode.AddNode(terminalStructureNode);
+                }
             }
 
             rootNode.AddNode(terminalEquipmentNode);
@@ -322,6 +329,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         private void AddCable(OutageProcessingState processingState, OutageViewNode parentNode, SpanEquipment cable, SpanEquipmentSpecification cableSpecification)
         {
             var cableNode = new OutageViewNode(Guid.NewGuid(), GetCableLabel(cable, cableSpecification));
+            cableNode.Expanded = false;
+
             parentNode.AddNode(cableNode);
 
             // Trace all fibers to find eventually customers
