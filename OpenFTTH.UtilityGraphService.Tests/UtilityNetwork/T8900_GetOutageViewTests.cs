@@ -87,6 +87,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             getOutageViewResult.Value.Nodes.Should().NotBeNull();
 
+            getOutageViewResult.Value.Nodes[0].Nodes[0].Nodes[0].Label.Should().Be("C12345678");
+
         }
 
         [Fact, Order(3)]

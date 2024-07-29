@@ -272,6 +272,21 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             public bool ContinueTrace(GraphEdge e)
             {
                 var edgeType = e.GetType();
+            
+                // If trace through splitters disallow tracing upstream a splitter
+                if (_traceThroughSplitters)
+                {
+                    if (edgeType == typeof(UtilityGraphInternalEquipmentConnectivityLink) && LastVisit != null && LastVisit is UtilityGraphConnectedTerminal && !((UtilityGraphConnectedTerminal)LastVisit).IsSimpleTerminal)
+                    {
+                        var lastTerminal = ((UtilityGraphConnectedTerminal)LastVisit).Terminal(_utilityNetworkProjection);
+
+                        // if we're comming from an out to an internal link, we're tracing upstream which we don't allow in splitter trace
+                        if (lastTerminal.Direction == TerminalDirectionEnum.OUT)
+                            return false;
+                    }
+
+                    return true;
+                }
 
                 if (edgeType == typeof(UtilityGraphConnectedSegment))
                     return true;
@@ -279,9 +294,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 if (edgeType == typeof(UtilityGraphTerminalToTerminalConnectivityLink))
                     return true;
 
-                // If trace through splitters enabled always return true
-                if (_traceThroughSplitters)
-                    return true;
 
                 if (edgeType == typeof(UtilityGraphInternalEquipmentConnectivityLink))
                 {

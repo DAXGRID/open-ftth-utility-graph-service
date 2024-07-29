@@ -64,9 +64,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             if (processingState.NodeContainer == null)
                 throw new ApplicationException($"No node container found in route node with id: {processingState.RouteElementId} Must be present when doing outage queries inside route nodes");
 
-            if (processingState.NodeContainer.TerminalEquipmentReferences == null)
-                throw new ApplicationException($"Can't find any equipment with id: {equipmentId.Value} Node container contains no equipments");
-
             if (!processingState.AnyEquipment(equipmentId.Value))
                 throw new ApplicationException($"Can't find any equipment with id: {equipmentId.Value}");
 
