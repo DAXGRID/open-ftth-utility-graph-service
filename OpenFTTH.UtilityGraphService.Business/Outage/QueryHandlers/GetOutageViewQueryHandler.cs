@@ -116,7 +116,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     if (installationEquipments.Count > 0)
                     {
                         foundInstallations = true;
-                        nInstallationsFound++;
+                        nInstallationsFound += installationEquipments.Count;
 
                         // Now add all installations
                         foreach (var installationTerminalEquipment in installationEquipments)
@@ -457,48 +457,49 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 result.SpanEquipments = equipmentQueryResult.Value.SpanEquipment;
             }
 
+
+            var equipmentIdList = new EquipmentIdList();
+
+            // Get all terminal equipments within node
             if (equipmentQueryResult.Value.NodeContainers != null && equipmentQueryResult.Value.NodeContainers.Count == 1)
             {
                 result.NodeContainer = equipmentQueryResult.Value.NodeContainers.First();
-
-                // Get all terminal equipments within node
+                
                 if (result.NodeContainer.TerminalEquipmentReferences != null)
                 {
-                    var equipmentIdList = new EquipmentIdList();
                     equipmentIdList.AddRange(result.NodeContainer.TerminalEquipmentReferences);
-
-
-                    // Add equipments in racks as well
-                    if (result.NodeContainer.Racks != null)
-                    {
-                        foreach (var rack in result.NodeContainer.Racks)
-                        {
-                            foreach (var subRack in rack.SubrackMounts)
-                            {
-                                equipmentIdList.Add(subRack.TerminalEquipmentId);
-                            }
-                        }
-                    }
-
-                    equipmentQueryResult = _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
-                         new GetEquipmentDetails(equipmentIdList)
-                         {
-                             EquipmentDetailsFilter = new EquipmentDetailsFilterOptions() { IncludeRouteNetworkTrace = false }
-                         }
-                     ).Result;
-
-                    if (equipmentQueryResult.IsFailed)
-                        return Result.Fail(equipmentQueryResult.Errors.First());
-
-
-                    if (equipmentQueryResult.Value.TerminalEquipment != null)
-                    {
-                        result.TerminalEquipments = equipmentQueryResult.Value.TerminalEquipment;
-                    }
                 }
-
             }
 
+            // Add equipments in racks as well
+            if (result.NodeContainer != null && result.NodeContainer.Racks != null)
+            {
+                foreach (var rack in result.NodeContainer.Racks)
+                {
+                    foreach (var subRack in rack.SubrackMounts)
+                    {
+                        equipmentIdList.Add(subRack.TerminalEquipmentId);
+                    }
+                }
+            }
+
+            if (equipmentIdList.Count > 0)
+            {
+                equipmentQueryResult = _queryDispatcher.HandleAsync<GetEquipmentDetails, Result<GetEquipmentDetailsResult>>(
+                     new GetEquipmentDetails(equipmentIdList)
+                     {
+                         EquipmentDetailsFilter = new EquipmentDetailsFilterOptions() { IncludeRouteNetworkTrace = false }
+                     }
+                 ).Result;
+
+                if (equipmentQueryResult.IsFailed)
+                    return Result.Fail(equipmentQueryResult.Errors.First());
+
+                if (equipmentQueryResult.Value.TerminalEquipment != null)
+                {
+                    result.TerminalEquipments = equipmentQueryResult.Value.TerminalEquipment;
+                }
+            }
 
             return Result.Ok(result);
         }
