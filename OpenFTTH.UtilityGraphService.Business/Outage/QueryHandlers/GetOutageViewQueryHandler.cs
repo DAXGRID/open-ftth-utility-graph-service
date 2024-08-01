@@ -93,10 +93,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
             // Add each structure
 
+            int nInstallationsFoundEquipmentLevel = 0;
+
             for (int i = 0; i < terminalEquipment.TerminalStructures.Length; i++)
             {
                 bool foundInstallations = false;
-                int nInstallationsFound = 0; 
+                int nInstallationsFoundStructureLevel = 0; 
 
                 var terminalStructure = terminalEquipment.TerminalStructures[i];
 
@@ -113,27 +115,36 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     if (installationEquipments.Count > 0)
                     {
                         foundInstallations = true;
-                        nInstallationsFound += installationEquipments.Count;
+
+                        int nInstallationsFoundTerminalLevel = installationEquipments.Count;
+
+                        nInstallationsFoundStructureLevel += nInstallationsFoundTerminalLevel;
+
+                        // Add terminal node
+                        var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{nInstallationsFoundTerminalLevel} {{OutageInstallationsFound}}");
+                        terminalStructureNode.AddNode(terminalNode);
 
                         // Now add all installations
                         foreach (var installationTerminalEquipment in installationEquipments)
                         {
                             var installationNode = new OutageViewNode(Guid.NewGuid(), installationTerminalEquipment.Name == null ? "NA" : installationTerminalEquipment.Name) { Value = installationTerminalEquipment.Name };
-                            terminalStructureNode.AddNode(installationNode);
+                            terminalNode.AddNode(installationNode);
                             processingState.InstallationNodes.Add((installationNode, installationTerminalEquipment));
                         }
                     }
                 }
 
+                nInstallationsFoundEquipmentLevel += nInstallationsFoundStructureLevel;
+
                 if (foundInstallations)
                 {
-                    terminalStructureNode.Description = $"{nInstallationsFound} installation(s) found";
+                    terminalStructureNode.Description = $"{nInstallationsFoundStructureLevel} {{OutageInstallationsFound}}";
                     terminalEquipmentNode.AddNode(terminalStructureNode);
                 }
             }
 
             rootNode.AddNode(terminalEquipmentNode);
-
+            terminalEquipmentNode.Description = $"{nInstallationsFoundEquipmentLevel} {{OutageInstallationsFound}}";
 
             AddAddressInformationToInstallations(processingState);
 
