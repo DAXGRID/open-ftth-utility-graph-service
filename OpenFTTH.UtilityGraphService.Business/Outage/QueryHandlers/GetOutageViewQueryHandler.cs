@@ -122,6 +122,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
                         // Add terminal node
                         var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{nInstallationsFoundTerminalLevel} {{OutageInstallationsFound}}");
+                        terminalNode.Expanded = false;
                         terminalStructureNode.AddNode(terminalNode);
 
                         // Now add all installations
