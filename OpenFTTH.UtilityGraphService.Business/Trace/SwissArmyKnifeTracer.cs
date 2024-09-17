@@ -97,7 +97,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
 
                         string? fromNodeName = routeNetworkInformation.RouteNetworkElements[fromNodeId].NamingInfo?.Name;
 
-                        if (fromNodeName == null)
+                        if (String.IsNullOrEmpty(fromNodeName))
                         {
                             fromNodeName = GetAddressInfoForHop(addressInformation, firstHop);
                         }
@@ -110,7 +110,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace
 
                         string? toNodeName = routeNetworkInformation.RouteNetworkElements[toNodeId].NamingInfo?.Name;
 
-                        if (toNodeName == null)
+                        if (String.IsNullOrEmpty(toNodeName))
                         {
                             toNodeName = GetAddressInfoForHop(addressInformation, lastHop);
                         }
