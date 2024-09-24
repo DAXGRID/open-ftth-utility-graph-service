@@ -116,6 +116,31 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             getOutageViewResult.Value.Nodes.Should().NotBeNull();
         }
 
+        [Fact, Order(4)]
+        public async Task GetOutageViewOnRack_in_CO_1()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutRouteNetworkElementId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            var getOutageViewQuery = new GetOutageView(sutRouteNetworkElementId, (nodeContainer.Racks[0].Id));
+
+            var getOutageViewResult = await _queryDispatcher.HandleAsync<GetOutageView, Result<OutageViewNode>>(getOutageViewQuery);
+
+            getOutageViewResult.IsSuccess.Should().BeTrue();
+
+            getOutageViewResult.Value.Should().NotBeNull();
+
+            getOutageViewResult.Value.Nodes.Should().NotBeNull();
+
+            getOutageViewResult.Value.Nodes.Count.Should().BeGreaterThan(50);
+
+            getOutageViewResult.Value.Nodes[0].Nodes[0].Nodes[0].Nodes[0].Label.Should().Be("C12345678");
+        }
 
 
     }

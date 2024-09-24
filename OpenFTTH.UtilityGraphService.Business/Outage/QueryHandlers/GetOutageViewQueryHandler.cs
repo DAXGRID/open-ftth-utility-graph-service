@@ -1,4 +1,5 @@
-﻿using FluentResults;
+﻿using Baseline.ImTools;
+using FluentResults;
 using OpenFTTH.Address.API.Model;
 using OpenFTTH.Address.API.Queries;
 using OpenFTTH.CQRS;
@@ -65,7 +66,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 throw new ApplicationException($"No node container found in route node with id: {processingState.RouteElementId} Must be present when doing outage queries inside route nodes");
 
             if (!processingState.AnyEquipment(equipmentId.Value))
-                throw new ApplicationException($"Can't find any equipment with id: {equipmentId.Value}");
+                throw new ApplicationException($"Can't find any terminal equipment or rack with id: {equipmentId.Value} in node: {processingState.RouteElementId}");
 
             if (processingState.TerminalEquipments == null)
                 throw new ApplicationException($"No terminal equipments found in route node with id: {processingState.RouteElementId}");
@@ -84,7 +85,25 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 return rootNode;
             }
 
+            if (processingState.IsTerminalEquipment(equipmentId.Value))
+            {
+                AddTerminalEquipmentToOutageList(processingState, equipmentId, rootNode);
+            }
+            else if (processingState.IsRackEquipment(equipmentId.Value))
+            {
+                foreach (var subRack in processingState.NodeContainer.Racks.FindFirst(r => r.Id == equipmentId.Value).SubrackMounts)
+                {
+                    AddTerminalEquipmentToOutageList(processingState, subRack.TerminalEquipmentId, rootNode);
+                }
+            }
 
+            AddAddressInformationToInstallations(processingState);
+
+            return rootNode;
+        }
+
+        private void AddTerminalEquipmentToOutageList(OutageProcessingState processingState, Guid? equipmentId, OutageViewNode rootNode)
+        {
             var terminalEquipment = processingState.TerminalEquipments[equipmentId.Value];
 
             var eqSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
@@ -98,7 +117,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             for (int i = 0; i < terminalEquipment.TerminalStructures.Length; i++)
             {
                 bool foundInstallations = false;
-                int nInstallationsFoundStructureLevel = 0; 
+                int nInstallationsFoundStructureLevel = 0;
 
                 var terminalStructure = terminalEquipment.TerminalStructures[i];
 
@@ -146,10 +165,6 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
             rootNode.AddNode(terminalEquipmentNode);
             terminalEquipmentNode.Description = $"{nInstallationsFoundEquipmentLevel} {{OutageInstallationsFound}}";
-
-            AddAddressInformationToInstallations(processingState);
-
-            return rootNode;
         }
 
         private OutageViewNode GetOutageViewForRouteSegment(OutageProcessingState processingState)
@@ -533,9 +548,27 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 SpanEquipments = new LookupCollection<SpanEquipmentWithRelatedInfo>();
             }
 
-            public bool AnyEquipment(Guid terminalEquipmentId)
+            public bool AnyEquipment(Guid equipmentId)
             {
-                return TerminalEquipments.ContainsKey(terminalEquipmentId);
+                if (IsRackEquipment(equipmentId) || IsTerminalEquipment(equipmentId)) 
+                    return true;
+
+                return false;
+            }
+
+            public bool IsRackEquipment(Guid equipmentId)
+            {
+                if (NodeContainer != null && NodeContainer.Racks != null && NodeContainer.Racks.Any(r => r.Id == equipmentId))
+                    return true;
+
+                return false;
+            }
+            public bool IsTerminalEquipment(Guid equipmentId)
+            {
+                if (TerminalEquipments.ContainsKey(equipmentId))
+                    return true;
+
+                return false;
             }
         }
 
