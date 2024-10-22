@@ -216,6 +216,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                         nInstallationsOnOuterConduitLevel += nInstallationsOnCables;
                     }
                 }
+                else
+                {
+                    var nInstallationsOnCables = AddRelatedCables(processingState, outerConduitNode, outerConduit.SpanStructures[0]);
+                    nInstallationsOnOuterConduitLevel += nInstallationsOnCables;
+                }
 
                 outerConduitNode.Description = $"{nInstallationsOnOuterConduitLevel} {{OutageInstallationsFound}}";
 
@@ -370,7 +375,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         {
             int nInstallations = 0;
 
-            // Find related cables
+            // Find related cables places in inner conduits
             foreach (var spanSegment in innerConduit.SpanSegments)
             {
                 if (_utilityNetwork.RelatedCablesByConduitSegmentId.ContainsKey(spanSegment.Id))
@@ -388,7 +393,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                                 {
                                     var nInstallationsOnCable = AddCable(processingState, innerConduitNode, cable, cableSpecification);
 
-                                    nInstallations += nInstallations;
+                                    nInstallations += nInstallationsOnCable;
                                     processingState.CableProcessed.Add(cable.Id);
                                 }
                             }

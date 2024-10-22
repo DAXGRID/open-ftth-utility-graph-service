@@ -55,6 +55,8 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             getOutageViewResult.IsSuccess.Should().BeTrue();
 
+            getOutageViewResult.Value.Nodes.Where(n => n.Description.Contains("1 {OutageInstallationsFound}")).Count().Should().Be(1);
+
             getOutageViewResult.Value.Should().NotBeNull();
 
             getOutageViewResult.Value.Nodes.Should().NotBeNull();
