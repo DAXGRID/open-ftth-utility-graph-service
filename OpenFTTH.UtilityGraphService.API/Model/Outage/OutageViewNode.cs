@@ -6,7 +6,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.Outage
     public class OutageViewNode
     {
         public Guid Id { get; }
-        public string Label { get; }
+        public string Label { get; set; }
         public string? Description { get; set; }
         public string? Value { get; set; }
         public bool? Expanded { get; set; }
