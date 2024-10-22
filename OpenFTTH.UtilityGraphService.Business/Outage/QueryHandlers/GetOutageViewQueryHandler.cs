@@ -91,7 +91,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             }
             else if (processingState.IsRackEquipment(equipmentId.Value))
             {
-                foreach (var subRack in processingState.NodeContainer.Racks.FindFirst(r => r.Id == equipmentId.Value).SubrackMounts)
+                foreach (var subRack in processingState.NodeContainer.Racks.FindFirst(r => r.Id == equipmentId.Value).SubrackMounts.OrderBy(s => s.Position))
                 {
                     AddTerminalEquipmentToOutageList(processingState, subRack.TerminalEquipmentId, rootNode);
                 }
@@ -190,6 +190,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 var conduitSpecification = _spanEquipmentSpecifications[outerConduit.SpecificationId];
 
                 var outerConduitNode = new OutageViewNode(Guid.NewGuid(), GetOuterConduitLabel(outerConduit, conduitSpecification));
+                outerConduitNode.Expanded = false;
+
+                var nInstallationsOnOuterConduitLevel = 0;
 
                 // If conduit is a multi conduit, then add each sub conduit
                 if (conduitSpecification.IsMultiLevel)
@@ -201,13 +204,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                         var innerConduitSpecification = _spanStructureSpecifications[innerConduit.SpecificationId];
 
                         var innerConduitNode = new OutageViewNode(Guid.NewGuid(), GetInnerConduitLabel(innerConduit, innerConduitSpecification));
+                        innerConduitNode.Expanded = false;
 
                         outerConduitNode.AddNode(innerConduitNode);
 
-                        AddRelatedCables(processingState, innerConduitNode, innerConduit);
+                        var nInstallationsOnCables = AddRelatedCables(processingState, innerConduitNode, innerConduit);
 
+                        innerConduitNode.Description = $"{nInstallationsOnCables} {{OutageInstallationsFound}}";
+
+
+                        nInstallationsOnOuterConduitLevel += nInstallationsOnCables;
                     }
                 }
+
+                outerConduitNode.Description = $"{nInstallationsOnOuterConduitLevel} {{OutageInstallationsFound}}";
 
 
                 rootNode.AddNode(outerConduitNode);
@@ -227,10 +237,44 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 }
             }
 
-
             AddAddressInformationToInstallations(processingState);
 
+            AddNodeNamesToCables(processingState);
+
             return rootNode;
+        }
+
+        private void AddNodeNamesToCables(OutageProcessingState processingState)
+        {
+            if (processingState.CableNodes.Any()) {
+                List<Guid> wois = new List<Guid>();
+
+                foreach (var cable in processingState.CableNodes)
+                {
+                    wois.Add(cable.InterestId.Value);
+                }
+
+                var routeNetworkInfo = GatherRouteNetworkInformation(_queryDispatcher, wois);
+                
+                
+                foreach (var cable in processingState.CableNodes)
+                {
+                    var cableWalk = routeNetworkInfo.Interests[cable.InterestId.Value];
+
+                    var fromNode = routeNetworkInfo.RouteNetworkElements[cableWalk.RouteNetworkElementRefs.First()];
+                    var toNode = routeNetworkInfo.RouteNetworkElements[cableWalk.RouteNetworkElementRefs.Last()];
+
+                    if (fromNode.NamingInfo != null)
+                    {
+                        cable.Description += fromNode.NamingInfo.Name + " <-> ";
+                    }
+
+                    if (toNode.NamingInfo != null)
+                    {
+                        cable.Description += toNode.NamingInfo.Name;
+                    }
+                }
+            }
         }
 
         private void AddAddressInformationToInstallations(OutageProcessingState processingState)
@@ -322,8 +366,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         }
 
 
-        private void AddRelatedCables(OutageProcessingState processingState, OutageViewNode innerConduitNode, SpanStructure innerConduit)
+        private int AddRelatedCables(OutageProcessingState processingState, OutageViewNode innerConduitNode, SpanStructure innerConduit)
         {
+            int nInstallations = 0;
+
             // Find related cables
             foreach (var spanSegment in innerConduit.SpanSegments)
             {
@@ -340,7 +386,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                             {
                                 if (!processingState.CableProcessed.Contains(cable.Id))
                                 {
-                                    AddCable(processingState, innerConduitNode, cable, cableSpecification);
+                                    var nInstallationsOnCable = AddCable(processingState, innerConduitNode, cable, cableSpecification);
+
+                                    nInstallations += nInstallations;
                                     processingState.CableProcessed.Add(cable.Id);
                                 }
                             }
@@ -348,14 +396,22 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     }
                 }
             }
+
+            return nInstallations;
         }
 
-        private void AddCable(OutageProcessingState processingState, OutageViewNode parentNode, SpanEquipment cable, SpanEquipmentSpecification cableSpecification)
+        private int AddCable(OutageProcessingState processingState, OutageViewNode parentNode, SpanEquipment cable, SpanEquipmentSpecification cableSpecification)
         {
-            var cableNode = new OutageViewNode(Guid.NewGuid(), GetCableLabel(cable, cableSpecification));
+            var cableNode = new OutageViewNode(cable.Id, GetCableLabel(cable, cableSpecification));
+            cableNode.InterestId = cable.WalkOfInterestId;
+
             cableNode.Expanded = false;
 
+            processingState.CableNodes.Add(cableNode);
+
             parentNode.AddNode(cableNode);
+
+            HashSet<Guid> nInstallations = new();
 
             // Trace all fibers to find eventually customers
             for (int fiberNumber = 1; fiberNumber < cable.SpanStructures.Count(); fiberNumber++)
@@ -373,12 +429,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     // Now add all installations
                     foreach (var installationTerminalEquipment in installationEquipments)
                     {
+                        nInstallations.Add(installationTerminalEquipment.Id);
+
                         var installationNode = new OutageViewNode(Guid.NewGuid(), installationTerminalEquipment.Name == null ? "NA" : installationTerminalEquipment.Name) { Value = installationTerminalEquipment.Name };
                         fiberNode.AddNode(installationNode);
                         processingState.InstallationNodes.Add((installationNode, installationTerminalEquipment));
                     }
                 }
             }
+
+            return nInstallations.Count();
         }
 
         private List<TerminalEquipment> SearchForCustomerTerminationEquipmentInCircuit(Guid fiberNetworkGraphElementId)
@@ -528,6 +588,24 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             return Result.Ok(result);
         }
 
+        private static GetRouteNetworkDetailsResult GatherRouteNetworkInformation(IQueryDispatcher queryDispatcher, IEnumerable<Guid> walkOfInterestIds)
+        {
+            InterestIdList interestIdList = new();
+            interestIdList.AddRange(walkOfInterestIds);
+
+            var interestQueryResult = queryDispatcher.HandleAsync<GetRouteNetworkDetails, Result<GetRouteNetworkDetailsResult>>(
+                new GetRouteNetworkDetails(interestIdList)
+                {
+                    RouteNetworkElementFilter = new RouteNetworkElementFilterOptions() { IncludeNamingInfo = true, IncludeCoordinates = false }
+                }
+            ).Result;
+
+            if (interestQueryResult.IsFailed)
+                throw new ApplicationException("Failed to query route network information. Got error: " + interestQueryResult.Errors.First().Message);
+
+            return interestQueryResult.Value;
+        }
+
         public class OutageProcessingState
         {
             public Guid RouteElementId { get; }
@@ -540,6 +618,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             public HashSet<Guid> CableProcessed = new();
 
             public List<(OutageViewNode,TerminalEquipment)> InstallationNodes = new();
+
+            public List<OutageViewNode> CableNodes = new();
 
             public OutageProcessingState(Guid routeElementId, bool isNode)
             {

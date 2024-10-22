@@ -12,6 +12,8 @@ namespace OpenFTTH.UtilityGraphService.API.Model.Outage
         public bool? Expanded { get; set; }
         public List<OutageViewNode>? Nodes { get; set; }
 
+        public Guid? InterestId { get; set; }
+
         public OutageViewNode(Guid id, string label, string? description = null, string? value = null, List<OutageViewNode>? nodes = null)
         {
             Id = id;
