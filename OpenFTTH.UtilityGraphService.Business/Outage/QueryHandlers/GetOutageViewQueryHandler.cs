@@ -112,17 +112,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
             var terminalEquipmentNode = new OutageViewNode(Guid.NewGuid(), GetTerminalEquipmentLabel(terminalEquipment, eqSpecification));
 
-            // Add each structure
+            // Add each terminal structure (card/tray/module)
 
             int nInstallationsFoundEquipmentLevel = 0;
 
-            for (int i = 0; i < terminalEquipment.TerminalStructures.Length; i++)
+            foreach (var terminalStructure in terminalEquipment.TerminalStructures.OrderBy(ts => ts.Position))
             {
                 bool foundInstallations = false;
                 int nInstallationsFoundStructureLevel = 0;
-
-                var terminalStructure = terminalEquipment.TerminalStructures[i];
-
+                             
                 var terminalStructureSpecification = _terminalStructureSpecifications[terminalStructure.SpecificationId];
 
                 var terminalStructureNode = new OutageViewNode(Guid.NewGuid(), terminalStructure.Name + " (" + terminalStructureSpecification.Name + ")");
