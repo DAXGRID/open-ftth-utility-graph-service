@@ -111,15 +111,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
             var eqSpecification = _terminalEquipmentSpecifications[terminalEquipment.SpecificationId];
 
             var terminalEquipmentNode = new OutageViewNode(Guid.NewGuid(), GetTerminalEquipmentLabel(terminalEquipment, eqSpecification));
+            terminalEquipmentNode.Expanded = false;
 
             // Add each terminal structure (card/tray/module)
 
-            int nInstallationsFoundEquipmentLevel = 0;
+            HashSet<string> nInstallationsFoundEquipmentLevel = new HashSet<string>();
 
             foreach (var terminalStructure in terminalEquipment.TerminalStructures.OrderBy(ts => ts.Position))
             {
                 bool foundInstallations = false;
-                int nInstallationsFoundStructureLevel = 0;
+                HashSet<string> nInstallationsFoundStructureLevel =  new HashSet<string>();
                              
                 var terminalStructureSpecification = _terminalStructureSpecifications[terminalStructure.SpecificationId];
 
@@ -135,9 +136,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     {
                         foundInstallations = true;
 
-                        int nInstallationsFoundTerminalLevel = installationEquipments.Count;
+                        int nInstallationsFoundTerminalLevel = CountUniqueInstallationNames(installationEquipments);
 
-                        nInstallationsFoundStructureLevel += nInstallationsFoundTerminalLevel;
+                        foreach (var inst in installationEquipments)
+                            nInstallationsFoundStructureLevel.Add(inst.Name);
 
                         // Add terminal node
                         var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{nInstallationsFoundTerminalLevel} {{OutageInstallationsFound}}");
@@ -154,17 +156,29 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     }
                 }
 
-                nInstallationsFoundEquipmentLevel += nInstallationsFoundStructureLevel;
+                foreach (var structureLevelInst in nInstallationsFoundStructureLevel)
+                nInstallationsFoundEquipmentLevel.Add(structureLevelInst);
 
                 if (foundInstallations)
                 {
-                    terminalStructureNode.Description = $"{nInstallationsFoundStructureLevel} {{OutageInstallationsFound}}";
+                    terminalStructureNode.Description = $"{nInstallationsFoundStructureLevel.Count} {{OutageInstallationsFound}}";
                     terminalEquipmentNode.AddNode(terminalStructureNode);
                 }
             }
 
             rootNode.AddNode(terminalEquipmentNode);
-            terminalEquipmentNode.Description = $"{nInstallationsFoundEquipmentLevel} {{OutageInstallationsFound}}";
+            terminalEquipmentNode.Description = $"{nInstallationsFoundEquipmentLevel.Count} {{OutageInstallationsFound}}";
+        }
+
+        private static int CountUniqueInstallationNames(List<TerminalEquipment> installationEquipments)
+        {
+            HashSet<string> instByName = new HashSet<string>();
+
+            foreach (var inst in installationEquipments)
+                instByName.Add(inst.Name);
+
+            int nInstallationsFoundTerminalLevel = instByName.Count;
+            return nInstallationsFoundTerminalLevel;
         }
 
         private OutageViewNode GetOutageViewForRouteSegment(OutageProcessingState processingState)
