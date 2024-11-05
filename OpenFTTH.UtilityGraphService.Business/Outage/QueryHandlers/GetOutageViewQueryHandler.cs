@@ -190,7 +190,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 var conduitSpecification = _spanEquipmentSpecifications[outerConduit.SpecificationId];
 
                 var outerConduitNode = new OutageViewNode(Guid.NewGuid(), GetOuterConduitLabel(outerConduit, conduitSpecification));
-                outerConduitNode.Expanded = false;
+                outerConduitNode.Expanded = true;
                 outerConduitNode.InterestId = outerConduit.WalkOfInterestId;
                 
                 processingState.OuterConduitNodes.Add(outerConduitNode);
