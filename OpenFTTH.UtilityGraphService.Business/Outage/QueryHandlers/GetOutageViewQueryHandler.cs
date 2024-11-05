@@ -190,7 +190,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 var conduitSpecification = _spanEquipmentSpecifications[outerConduit.SpecificationId];
 
                 var outerConduitNode = new OutageViewNode(Guid.NewGuid(), GetOuterConduitLabel(outerConduit, conduitSpecification));
-                outerConduitNode.Expanded = true;
+                outerConduitNode.Expanded = false;
                 outerConduitNode.InterestId = outerConduit.WalkOfInterestId;
                 
                 processingState.OuterConduitNodes.Add(outerConduitNode);
@@ -207,7 +207,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                         var innerConduitSpecification = _spanStructureSpecifications[innerConduit.SpecificationId];
 
                         var innerConduitNode = new OutageViewNode(Guid.NewGuid(), GetInnerConduitLabel(innerConduit, innerConduitSpecification));
-                        innerConduitNode.Expanded = false;
+                        innerConduitNode.Expanded = true;
 
                         outerConduitNode.AddNode(innerConduitNode);
 
