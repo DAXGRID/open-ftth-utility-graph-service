@@ -14,15 +14,18 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public string SpecName { get; init; }
         public string? Info { get; init; }
 
+        public bool IsLineTermination { get; init; }
+
         public TerminalEquipmentAZConnectivityViewTerminalStructureInfo[] TerminalStructures { get; init; }
 
-        public TerminalEquipmentAZConnectivityViewEquipmentInfo(Guid id, string category, string name, string specName, TerminalEquipmentAZConnectivityViewTerminalStructureInfo[] terminalStructures)
+        public TerminalEquipmentAZConnectivityViewEquipmentInfo(Guid id, string category, string name, string specName, TerminalEquipmentAZConnectivityViewTerminalStructureInfo[] terminalStructures, bool isLineTermination)
         {
             Id = id;
             Category = category;
             Name = name;
             SpecName = specName;
             TerminalStructures = terminalStructures;
+            isLineTermination = isLineTermination;
         }
     }
 }
