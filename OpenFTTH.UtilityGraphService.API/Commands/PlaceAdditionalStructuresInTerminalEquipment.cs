@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using OpenFTTH.CQRS;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
 using System;
 
 namespace OpenFTTH.UtilityGraphService.API.Commands
@@ -11,6 +12,7 @@ namespace OpenFTTH.UtilityGraphService.API.Commands
         public Guid StructureSpecificationId { get;  }
         public int Position { get; }
         public int NumberOfStructures { get; }
+        public InterfaceInfo? InterfaceInfo { get; set; }
 
         public PlaceAdditionalStructuresInTerminalEquipment(Guid correlationId, UserContext userContext, Guid routeNodeId, Guid terminalEquipmentId, Guid structureSpecificationId, int position, int numberOfStructures) : base(correlationId, userContext)
         {

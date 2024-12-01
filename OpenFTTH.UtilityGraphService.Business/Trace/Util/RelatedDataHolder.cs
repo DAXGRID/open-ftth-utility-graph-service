@@ -349,18 +349,46 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
             var rackName = GetRackName(terminalRef.RouteNodeId, terminalEquipment.Id);
 
-            string? terminalStructurePosition = null;
-
-            // Show card position on all patch equipment and splice equipment with more than one card
-            if (!terminal.IsSplice || (terminalEquipment.TerminalStructures.Length > 1))
+            if (terminalStructure.interfaceInfo == null)
             {
-                terminalStructurePosition = $"-{terminalStructure.Position}";
-            }
+                string? terminalStructurePosition = null;
 
-            if (rackName != null)
-                return $"{rackName}-{terminalEquipment.Name}{terminalStructurePosition}-{terminal.Name}";
+                // Show card position on all patch equipment and splice equipment with more than one card
+                if (!terminal.IsSplice || (terminalEquipment.TerminalStructures.Length > 1))
+                {
+                    terminalStructurePosition = $"-{terminalStructure.Position}";
+                }
+
+                if (rackName != null)
+                    return $"{rackName}-{terminalEquipment.Name}{terminalStructurePosition}-{terminal.Name}";
+                else
+                    return $"{terminalEquipment.Name}{terminalStructurePosition}-{terminal.Name}";
+            }
             else
-                return $"{terminalEquipment.Name}{terminalStructurePosition}-{terminal.Name}";
+            {
+                string interfaceName = GetInterfaceName(terminalStructure);
+
+                if (rackName != null)
+                    return $"{rackName}-{terminalEquipment.Name}-{terminal.Name}-{interfaceName}";
+                else
+                    return $"{terminalEquipment.Name}-{terminal.Name}-{interfaceName}";
+
+            }
+        }
+
+        private static string GetInterfaceName(TerminalStructure terminalStructure)
+        {
+            string interfaceName = terminalStructure.interfaceInfo.InterfaceType + "-" + terminalStructure.interfaceInfo.SlotNumber;
+
+            if (terminalStructure.interfaceInfo.SubSlotNumber > 0)
+                interfaceName += ("/" + terminalStructure.interfaceInfo.SubSlotNumber);
+
+            interfaceName += ("/" + terminalStructure.interfaceInfo.PortNumber);
+
+            if (terminalStructure.interfaceInfo.CircuitName != null)
+                interfaceName += (" (" + terminalStructure.interfaceInfo.CircuitName + ")");
+
+            return interfaceName;
         }
 
         public string GetEquipmentStructureInfoString(IUtilityGraphTerminalRef terminalRef)
@@ -388,9 +416,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             }
             else
             {
-                string slotType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Bakke" : "Kort";
+                if (terminalStructure.interfaceInfo == null)
+                {
+                    string slotType = terminalStructureSpec.Category.ToLower().Contains("splice") ? "Bakke" : "Kort";
 
-                return $"{slotType} {terminalStructure.Position}";
+                    return $"{slotType} {terminalStructure.Position}";
+                }
+                else
+                {
+                    return GetInterfaceName(terminalStructure);
+                }
             }
         }
 

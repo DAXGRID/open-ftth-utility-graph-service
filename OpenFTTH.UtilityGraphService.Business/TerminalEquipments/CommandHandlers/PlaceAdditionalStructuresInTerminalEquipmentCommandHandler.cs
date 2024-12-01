@@ -47,11 +47,23 @@ namespace OpenFTTH.UtilityGraphService.Business.SpanEquipments.CommandHandlers
             // Place terminal equipment structures
             var terminalEquipmentAR = _eventStore.Aggregates.Load<TerminalEquipmentAR>(command.TerminalEquipmentId);
 
-            var addStructuresResult = terminalEquipmentAR.AddAdditionalStructures(commandContext, terminalStructureSpecification, command.Position, command.NumberOfStructures);
-
-            if (addStructuresResult.IsFailed)
+            if (command.InterfaceInfo != null)
             {
-                return Task.FromResult(addStructuresResult);
+                var addStructuresResult = terminalEquipmentAR.AddInterface(commandContext, terminalStructureSpecification, command.InterfaceInfo);
+
+                if (addStructuresResult.IsFailed)
+                {
+                    return Task.FromResult(addStructuresResult);
+                }
+            }
+            else
+            {
+                var addStructuresResult = terminalEquipmentAR.AddAdditionalStructures(commandContext, terminalStructureSpecification, command.Position, command.NumberOfStructures);
+
+                if (addStructuresResult.IsFailed)
+                {
+                    return Task.FromResult(addStructuresResult);
+                }
             }
 
             _eventStore.Aggregates.Store(terminalEquipmentAR);

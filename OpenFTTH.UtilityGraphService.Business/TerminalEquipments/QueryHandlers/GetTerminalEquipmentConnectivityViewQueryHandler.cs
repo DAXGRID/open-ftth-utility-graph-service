@@ -482,11 +482,6 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 {
                     TraceInfo traceInfo = new TraceInfo();
 
-                    if (terminal.Name == "ind")
-                    {
-
-                    }
-
                     var terminalTraceResult = _utilityNetwork.Graph.SimpleTrace(terminal.Id);
 
                     if (_utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphTerminalRef>(terminal.Id, out var terminalRef))

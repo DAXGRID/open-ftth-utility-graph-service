@@ -164,6 +164,34 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             return Result.Ok();
         }
 
+        public Result AddInterface(CommandContext cmdContext, TerminalStructureSpecification terminalStructureSpecification, InterfaceInfo interfaceInfo)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that span equipment has never been placed. Please check command handler logic.");
+
+            List<TerminalStructure> additionalStructures = new();
+
+            // Find next avaiable postion
+            int nextUnusedPosition = 1;
+
+            if (_terminalEquipment.TerminalStructures.Count() > 0)
+                nextUnusedPosition = _terminalEquipment.TerminalStructures.Max(s => s.Position) + 1;
+        
+            additionalStructures.Add(CreateTerminalStructureFromSpecification(terminalStructureSpecification, nextUnusedPosition, interfaceInfo));
+
+            var terminalEquipmentAdditionalStructuresAddedEvent = new AdditionalStructuresAddedToTerminalEquipment(this.Id, additionalStructures.ToArray())
+            {
+                CorrelationId = cmdContext.CorrelationId,
+                IncitingCmdId = cmdContext.CmdId,
+                UserName = cmdContext.UserContext?.UserName,
+                WorkTaskId = cmdContext.UserContext?.WorkTaskId
+            };
+
+            RaiseEvent(terminalEquipmentAdditionalStructuresAddedEvent);
+
+            return Result.Ok();
+        }
+
         private void Apply(AdditionalStructuresAddedToTerminalEquipment @event)
         {
             if (_terminalEquipment == null)
@@ -406,7 +434,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             return terminalStructures.ToArray();
         }
 
-        private TerminalStructure CreateTerminalStructureFromSpecification(TerminalStructureSpecification terminalStructureSpecification, int position)
+        private TerminalStructure CreateTerminalStructureFromSpecification(TerminalStructureSpecification terminalStructureSpecification, int position, InterfaceInfo? interfaceInfo = null)
         {
             if (_terminalEquipment != null && _terminalEquipment.TerminalStructures.Any(s => s.Position == position && !s.Deleted))
                 throw new ApplicationException($"A structure already exists at position: {position} in terminal equipment: {_terminalEquipment.Id}");
@@ -438,7 +466,10 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
                 );
             }
 
-            return new TerminalStructure(Guid.NewGuid(), terminalStructureSpecification.Id, (ushort)position, terminals.ToArray());
+            return new TerminalStructure(Guid.NewGuid(), terminalStructureSpecification.Id, (ushort)position, terminals.ToArray())
+            { 
+                interfaceInfo = interfaceInfo
+            };
         }
 
         private NamingInfo CalculateName(NamingInfo? namingInfo, int sequenceNumber, TerminalEquipmentNamingMethodEnum namingMethod)

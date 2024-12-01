@@ -16,6 +16,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public string Name => Position.ToString();
         public string? Description => null;
         public bool Deleted { get; init; }
+        public InterfaceInfo? interfaceInfo { get; init; }
 
         public TerminalStructure(Guid id, Guid specificationId, ushort position, Terminal[] terminals)
         {
