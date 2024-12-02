@@ -25,7 +25,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
             Name = name;
             SpecName = specName;
             TerminalStructures = terminalStructures;
-            isLineTermination = isLineTermination;
+            IsLineTermination = isLineTermination;
         }
     }
 }
