@@ -128,7 +128,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
 
             List<TerminalEquipmentAZConnectivityViewTerminalStructureInfo> terminalStructureInfos = new();
 
-            foreach (var terminalStructure in terminalEquipment.TerminalStructures.Where(t => !t.Deleted).OrderBy(o => o.Position))
+            foreach (var terminalStructure in GetOrderedTerminalStructures(terminalEquipment))
             {
                 if (!_terminalStructureSpecifications.TryGetValue(terminalStructure.SpecificationId, out var terminalStructureSpecification))
                     throw new ApplicationException($"Invalid/corrupted terminal equipment specification: {terminalEquipment.SpecificationId} has reference to non-existing terminal structure specification with id: {terminalStructure.SpecificationId}");
@@ -177,7 +177,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                     new TerminalEquipmentAZConnectivityViewTerminalStructureInfo(
                         id: terminalStructure.Id,
                         category: terminalStructureSpecification.Category,
-                        name: terminalStructure.Name,
+                        name: GetTerminalStructureHeaderName(terminalStructure),
                         specName: terminalStructureSpecification.Name,
                         lines: CompactLines(lineInfos).ToArray()
                     )
@@ -193,10 +193,49 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                        terminalStructures: terminalStructureInfos.ToArray(),
                        isLineTermination: terminalEquipmentSpecification.IsLineTermination
                    )
-                { 
+                {
                     ParentNodeStructureId = parentStructureId
                 }
             );
+        }
+
+        private static IEnumerable<TerminalStructure> GetOrderedTerminalStructures(TerminalEquipment terminalEquipment)
+        {
+            if (terminalEquipment.TerminalStructures.Any(t => t.interfaceInfo != null))
+            {
+                var interfaces = terminalEquipment.TerminalStructures.Where(t => !t.Deleted).Where(t => t.interfaceInfo != null).OrderBy(t => t.interfaceInfo.SlotNumber).ThenBy(t => t.interfaceInfo.SubSlotNumber).ThenBy(t => t.interfaceInfo.PortNumber);
+
+                var nonInterfaces = terminalEquipment.TerminalStructures.Where(t => !t.Deleted).Where(t => t.interfaceInfo != null).OrderBy(t => t.interfaceInfo.SlotNumber).ThenBy(t => t.interfaceInfo.SubSlotNumber).ThenBy(t => t.interfaceInfo.PortNumber);
+
+                return interfaces.Concat(nonInterfaces);
+            }
+            else
+            {
+                return terminalEquipment.TerminalStructures.Where(t => !t.Deleted).OrderBy(o => o.Position);
+            }
+        }
+
+        private static string GetTerminalStructureHeaderName(TerminalStructure terminalStructure)
+        {
+            if (terminalStructure.interfaceInfo != null)
+                return GetInterfaceName(terminalStructure);
+            else                
+                return terminalStructure.Name;
+        }
+
+        private static string GetInterfaceName(TerminalStructure terminalStructure)
+        {
+            string interfaceName = terminalStructure.interfaceInfo.InterfaceType + "-" + terminalStructure.interfaceInfo.SlotNumber;
+
+            if (terminalStructure.interfaceInfo.SubSlotNumber > 0)
+                interfaceName += ("/" + terminalStructure.interfaceInfo.SubSlotNumber);
+
+            interfaceName += ("/" + terminalStructure.interfaceInfo.PortNumber);
+
+            if (terminalStructure.interfaceInfo.CircuitName != null)
+                interfaceName += (" (" + terminalStructure.interfaceInfo.CircuitName + ")");
+
+            return interfaceName;
         }
 
         private List<TerminalEquipmentAZConnectivityViewLineInfo> CompactLines(List<TerminalEquipmentAZConnectivityViewLineInfo> lineInfos)
@@ -649,6 +688,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             {
             }
         }
+
+
 
         private record TraceInfo
         {
