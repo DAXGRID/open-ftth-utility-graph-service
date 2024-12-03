@@ -205,7 +205,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
             {
                 var interfaces = terminalEquipment.TerminalStructures.Where(t => !t.Deleted).Where(t => t.interfaceInfo != null).OrderBy(t => t.interfaceInfo.SlotNumber).ThenBy(t => t.interfaceInfo.SubSlotNumber).ThenBy(t => t.interfaceInfo.PortNumber);
 
-                var nonInterfaces = terminalEquipment.TerminalStructures.Where(t => !t.Deleted).Where(t => t.interfaceInfo != null).OrderBy(t => t.interfaceInfo.SlotNumber).ThenBy(t => t.interfaceInfo.SubSlotNumber).ThenBy(t => t.interfaceInfo.PortNumber);
+                var nonInterfaces = terminalEquipment.TerminalStructures.Where(t => !t.Deleted).Where(t => t.interfaceInfo == null).OrderBy(o => o.Position);
 
                 return interfaces.Concat(nonInterfaces);
             }
