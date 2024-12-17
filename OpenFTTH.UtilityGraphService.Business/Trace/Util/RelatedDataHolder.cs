@@ -376,7 +376,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
             }
         }
 
-        private static string GetInterfaceName(TerminalStructure terminalStructure)
+        public static string GetInterfaceName(TerminalStructure terminalStructure)
         {
             string interfaceName = terminalStructure.interfaceInfo.InterfaceType + "-" + terminalStructure.interfaceInfo.SlotNumber;
 
@@ -427,6 +427,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
                     return GetInterfaceName(terminalStructure);
                 }
             }
+        }
+
+        public string GetCircuitName(IUtilityGraphTerminalRef terminalRef)
+        {
+            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
+
+            if (terminalStructure.interfaceInfo != null && terminalStructure.interfaceInfo.CircuitName != null)
+                return terminalStructure.interfaceInfo.CircuitName;
+
+            return null;
         }
 
         public bool IsCustomerSplitter(IUtilityGraphTerminalRef terminalRef)

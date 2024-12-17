@@ -15,6 +15,7 @@ using OpenFTTH.UtilityGraphService.Business.Graph.Trace;
 using OpenFTTH.UtilityGraphService.Business.NodeContainers.Projections;
 using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using OpenFTTH.UtilityGraphService.Business.TerminalEquipments.Projections;
+using OpenFTTH.UtilityGraphService.Business.Trace.Util;
 using OpenFTTH.UtilityGraphService.Business.Util;
 using System;
 using System.Collections.Generic;
@@ -168,13 +169,21 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                 rackInfo = GetRackName(relatedData, terminalEquipment.Id) + " - ";
             }
 
-            if (terminalStructureSpecification.Category == "Splitters")
+            if (terminalStructure.interfaceInfo == null)
             {
-                return rackInfo + "Splitter " + terminalStructure.Name + " (" + terminalStructureSpecification.ShortName + ") - " + terminal.Name;
+
+                if (terminalStructureSpecification.Category == "Splitters")
+                {
+                    return rackInfo + "Splitter " + terminalStructure.Name + " (" + terminalStructureSpecification.ShortName + ") - " + terminal.Name;
+                }
+                else
+                {
+                    return rackInfo + "Tray " + terminalStructure.Name + " - Søm " + terminal.Name + " (" + terminalEquipmentSpecification.ShortName + ")";
+                }
             }
             else
             {
-                return rackInfo + "Tray " + terminalStructure.Name + " - Søm " + terminal.Name + " (" + terminalEquipmentSpecification.ShortName + ")"; 
+                return rackInfo + RelatedDataHolder.GetInterfaceName(terminalStructure);
             }
         }
 

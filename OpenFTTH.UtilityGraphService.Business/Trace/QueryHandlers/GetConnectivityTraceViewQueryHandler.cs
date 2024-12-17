@@ -78,6 +78,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
             List<ConnectivityTraceViewHopInfo> hops = new();
 
+
+            List<string> circuitsFound = new();
+
             int hopSeqNo = 1;
 
             double totalLength = 0;
@@ -119,12 +122,26 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                         )
                     );
 
+                    // Add circuit names to list
+                    var circuitName = relatedData.GetCircuitName(terminalRef);
+
+                    if (circuitName != null)
+                    {
+                        circuitsFound.Add(circuitName);
+                    }
+
                     hopSeqNo++;
                 }
             }
 
-            return Result.Ok(new ConnectivityTraceView("FK000000", hops.ToArray()));
+            string circuitInfo = "";
 
+            if (circuitsFound.Count == 1)
+                circuitInfo = circuitsFound.First();
+            else if (circuitsFound.Count > 1)
+                circuitInfo = String.Join("-", circuitsFound);
+
+            return Result.Ok(new ConnectivityTraceView(circuitInfo, hops.ToArray()));
         }
 
         private double GetTerminalToTerminalLength(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
