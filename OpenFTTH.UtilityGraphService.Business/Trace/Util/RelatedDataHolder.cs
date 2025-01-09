@@ -528,8 +528,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
 
         private bool IsTerminalEquipmentRackTray(TerminalEquipment terminalEquipment, TerminalEquipmentSpecification terminalEquipmentSpecification)
         {
-            // If rack equipment where type is not put into name
+            // This is a hack to support LISA equipment modelled with only rack and tray level. Normally there will be rack, subrack, and tray level
+
+            // If equipment name is numeric, treat the subrack as a tray
             if (terminalEquipmentSpecification.IsRackEquipment && int.TryParse(terminalEquipment.Name, out _))
+                return true;
+            // If the first word in equipment name is numeric, treat the subrack as a tray
+            else if (terminalEquipmentSpecification.IsRackEquipment && terminalEquipment.Name != null && terminalEquipment.Name.Split(" ").Count() > 1 && int.TryParse(terminalEquipment.Name.Split(" ")[0], out _))
                 return true;
             else
                 return false;
