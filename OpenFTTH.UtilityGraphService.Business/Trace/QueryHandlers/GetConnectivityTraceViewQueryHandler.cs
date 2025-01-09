@@ -125,7 +125,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
                     // Add circuit names to list
                     var circuitName = relatedData.GetCircuitName(terminalRef);
 
-                    if (circuitName != null)
+                    if (circuitName != null && !circuitsFound.Contains(circuitName))
                     {
                         circuitsFound.Add(circuitName);
                     }
