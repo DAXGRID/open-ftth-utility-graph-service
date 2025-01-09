@@ -144,6 +144,88 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
             return Result.Ok(new ConnectivityTraceView(circuitInfo, hops.ToArray()));
         }
 
+        private Result<ConnectivityTraceView> BuildTraceViewFromSegment(Guid spanSegmentId, IUtilityGraphSegmentRef utilityGraphSegmentRef)
+        {
+            var traceResult = _utilityNetwork.Graph.SimpleTrace(spanSegmentId);
+
+            List<IGraphObject> traceElements = traceResult.All;
+
+            var addressIds = GetAddressIdsFromTraceResult(traceResult);
+            var routeSegmentInterestIds = traceElements.OfType<IUtilityGraphSegmentRef>().Select(s => s.SpanEquipment(_utilityNetwork).WalkOfInterestId).ToArray();
+
+
+            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds, routeSegmentInterestIds);
+
+            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElementById);
+
+            List<ConnectivityTraceViewHopInfo> hops = new();
+
+            List<string> circuitsFound = new();
+
+            int hopSeqNo = 1;
+
+            double totalLength = 0;
+
+            for (int graphElementIndex = 0; graphElementIndex < traceElements.Count; graphElementIndex++)
+            {
+                var currentGraphElement = traceElements[graphElementIndex];
+
+                if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
+                {
+                    string connectionInfo = GetConnectionInfo(relatedData, traceElements, graphElementIndex);
+
+                    var routeSegmentGeometries = GetSegmentGeometries(relatedData, traceElements, graphElementIndex);
+
+                    var routeSegmentIds = GetRouteSegmentIds(relatedData, traceElements, graphElementIndex);
+
+                    var hopLength = GetLineStringsLength(routeSegmentGeometries);
+
+                    hopLength += GetTerminalToTerminalLength(relatedData, traceElements, graphElementIndex);
+
+                    totalLength += hopLength;
+
+                    hops.Add(
+                        new ConnectivityTraceViewHopInfo(
+                            hopSeqNo,
+                            level: 0,
+                            isSplitter: false,
+                            isTraceSource: false,
+                            node: terminalRef.IsDummyEnd ? relatedData.GetNodeName(terminalRef.RouteNodeId) : relatedData.GetNodeOrEquipmentName(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
+                            equipment: terminalRef.IsDummyEnd ? "løs ende" : relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
+                            terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
+                            terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
+                            connectionInfo: connectionInfo,
+                            totalLength: totalLength,
+                            routeSegmentGeometries: routeSegmentGeometries,
+                            routeSegmentIds: routeSegmentIds,
+                            isCustomerSplitter: relatedData.IsCustomerSplitter(terminalRef),
+                            isLineTermination: relatedData.IsLineTermination(terminalRef)
+                        )
+                    );
+
+                    // Add circuit names to list
+                    var circuitName = relatedData.GetCircuitName(terminalRef);
+
+                    if (circuitName != null && !circuitsFound.Contains(circuitName))
+                    {
+                        circuitsFound.Add(circuitName);
+                    }
+
+                    hopSeqNo++;
+                }
+            }
+
+            string circuitInfo = "";
+
+            if (circuitsFound.Count == 1)
+                circuitInfo = circuitsFound.First();
+            else if (circuitsFound.Count > 1)
+                circuitInfo = String.Join("-", circuitsFound);
+
+            return Result.Ok(new ConnectivityTraceView(circuitInfo, hops.ToArray()));
+
+        }
+
         private double GetTerminalToTerminalLength(RelatedDataHolder relatedData, List<IGraphObject> traceElements, int graphElementIndex)
         {
             double result = 0;
@@ -263,70 +345,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.QueryHandling
 
 
 
-        private Result<ConnectivityTraceView> BuildTraceViewFromSegment(Guid spanSegmentId, IUtilityGraphSegmentRef utilityGraphSegmentRef)
-        {
-            var traceResult = _utilityNetwork.Graph.SimpleTrace(spanSegmentId);
-
-            List<IGraphObject> traceElements = traceResult.All;
-
-            var addressIds = GetAddressIdsFromTraceResult(traceResult);
-            var routeSegmentInterestIds = traceElements.OfType<IUtilityGraphSegmentRef>().Select(s => s.SpanEquipment(_utilityNetwork).WalkOfInterestId).ToArray();
-
-
-            var relatedData = new RelatedDataHolder(_eventStore, _utilityNetwork, _queryDispatcher, traceElements.OfType<IUtilityGraphTerminalRef>().Select(t => t.RouteNodeId).ToArray(), addressIds, routeSegmentInterestIds);
-
-            ReverseIfNeeded(traceElements, relatedData.RouteNetworkElementById);
-
-            List<ConnectivityTraceViewHopInfo> hops = new();
-
-            int hopSeqNo = 1;
-
-            double totalLength = 0;
-
-            for (int graphElementIndex = 0; graphElementIndex < traceElements.Count; graphElementIndex++)
-            {
-                var currentGraphElement = traceElements[graphElementIndex];
-
-                if (currentGraphElement is IUtilityGraphTerminalRef terminalRef)
-                {
-                    string connectionInfo = GetConnectionInfo(relatedData, traceElements, graphElementIndex);
-
-                    var routeSegmentGeometries = GetSegmentGeometries(relatedData, traceElements, graphElementIndex);
-
-                    var routeSegmentIds = GetRouteSegmentIds(relatedData, traceElements, graphElementIndex);
-
-                    var hopLength = GetLineStringsLength(routeSegmentGeometries);
-
-                    hopLength += GetTerminalToTerminalLength(relatedData, traceElements, graphElementIndex);
-
-                    totalLength += hopLength;
-
-                    hops.Add(
-                        new ConnectivityTraceViewHopInfo(
-                            hopSeqNo,
-                            level: 0,
-                            isSplitter: false,
-                            isTraceSource: false,
-                            node: terminalRef.IsDummyEnd ? relatedData.GetNodeName(terminalRef.RouteNodeId) : relatedData.GetNodeOrEquipmentName(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
-                            equipment: terminalRef.IsDummyEnd ? "løs ende" : relatedData.GetCompactEquipmentWithTypeInfoString(terminalRef.RouteNodeId, terminalRef.TerminalEquipment(_utilityNetwork)),
-                            terminalStructure: relatedData.GetEquipmentStructureInfoString(terminalRef),
-                            terminal: relatedData.GetEquipmentTerminalInfoString(terminalRef),
-                            connectionInfo: connectionInfo,
-                            totalLength: totalLength,
-                            routeSegmentGeometries: routeSegmentGeometries,
-                            routeSegmentIds: routeSegmentIds,
-                            isCustomerSplitter: relatedData.IsCustomerSplitter(terminalRef),
-                            isLineTermination: relatedData.IsLineTermination(terminalRef)
-                        )
-                    );
-
-                    hopSeqNo++;
-                }
-            }
-
-            return Result.Ok(new ConnectivityTraceView("FK000000", hops.ToArray()));
-
-        }
+      
 
       
 
