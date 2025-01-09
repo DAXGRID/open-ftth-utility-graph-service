@@ -380,8 +380,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Trace.Util
         {
             string interfaceName = terminalStructure.interfaceInfo.InterfaceType + "-" + terminalStructure.interfaceInfo.SlotNumber;
 
-            if (terminalStructure.interfaceInfo.SubSlotNumber > 0)
-                interfaceName += ("/" + terminalStructure.interfaceInfo.SubSlotNumber);
+            interfaceName += ("/" + terminalStructure.interfaceInfo.SubSlotNumber);
 
             interfaceName += ("/" + terminalStructure.interfaceInfo.PortNumber);
 
