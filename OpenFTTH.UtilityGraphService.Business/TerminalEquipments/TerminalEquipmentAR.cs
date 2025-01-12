@@ -30,6 +30,7 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             Register<TerminalEquipmentSpecificationChanged>(Apply);
             Register<AdditionalStructuresAddedToTerminalEquipment>(Apply);
             Register<TerminalStructureRemoved>(Apply);
+            Register<TerminalStructureInterfaceInfoChanged>(Apply);
         }
 
         #region Place equipment
@@ -410,6 +411,52 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
 
         #endregion
 
+        #region Change Interface Info
+
+        public Result ChangeInterfaceInfo(CommandContext cmdContext, Guid terminalStructureId, InterfaceInfo? interfaceInfo)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that terminal equipment has never been placed. Please check command handler logic.");
+
+            if (!_terminalEquipment.TerminalStructures.Any(t => t.Id == terminalStructureId))
+                throw new ApplicationException($"Cannot find terminal structure with id: {terminalStructureId} in terminal equipment with id: {this.Id}");
+
+            var terminalStructure = _terminalEquipment.TerminalStructures.First(t => t.Id == terminalStructureId);
+
+            if ((interfaceInfo == null && terminalStructure.interfaceInfo != null) ||
+                (interfaceInfo != null && terminalStructure.interfaceInfo == null) ||
+                (interfaceInfo != null && terminalStructure.interfaceInfo != null && !interfaceInfo.EqualTo(terminalStructure.interfaceInfo))
+            )
+            {
+                var @event = new TerminalStructureInterfaceInfoChanged(
+                     terminalEquipmentId: this.Id,
+                     terminalStructureId: terminalStructure.Id,
+                     interfaceInfo: interfaceInfo
+                   )
+                        {
+                            CorrelationId = cmdContext.CorrelationId,
+                            IncitingCmdId = cmdContext.CmdId,
+                            UserName = cmdContext.UserContext?.UserName,
+                            WorkTaskId = cmdContext.UserContext?.WorkTaskId
+                        };
+
+                RaiseEvent(@event);
+
+                return Result.Ok();
+            }
+
+            return Result.Ok();
+        }
+
+        private void Apply(TerminalStructureInterfaceInfoChanged @event)
+        {
+            if (_terminalEquipment == null)
+                throw new ApplicationException($"Invalid internal state. Terminal equipment property cannot be null. Seems that terminal equipment has never been placed. Please check command handler logic.");
+
+            _terminalEquipment = TerminalEquipmentProjectionFunctions.Apply(_terminalEquipment, @event);
+        }
+
+        #endregion
 
         #region Helper functions
 
@@ -526,8 +573,13 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments
             return false;
         }
 
+      
+
 
         #endregion
 
+
     }
+
+  
 }

@@ -78,6 +78,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             ProjectEventAsync<TerminalEquipmentRemoved>(ProjectAsync);
             ProjectEventAsync<AdditionalStructuresAddedToTerminalEquipment>(ProjectAsync);
             ProjectEventAsync<TerminalStructureRemoved>(ProjectAsync);
+            ProjectEventAsync<TerminalStructureInterfaceInfoChanged>(ProjectAsync);
 
             // Node container
             ProjectEventAsync<NodeContainerPlacedInRouteNetwork>(ProjectAsync);
@@ -302,6 +303,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     ProcessTerminalEquipmentStructureRemoval(@event);
                     break;
 
+                case (TerminalStructureInterfaceInfoChanged @event):
+                    TryUpdate(TerminalEquipmentProjectionFunctions.Apply(_terminalEquipmentByEquipmentId[@event.TerminalEquipmentId], @event));
+                    break;
 
 
                 // Node container events

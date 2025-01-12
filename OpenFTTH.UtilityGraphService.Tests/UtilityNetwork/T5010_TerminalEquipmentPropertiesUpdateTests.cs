@@ -5,14 +5,10 @@ using OpenFTTH.CQRS;
 using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.Events.UtilityNetwork;
 using OpenFTTH.EventSourcing;
-using OpenFTTH.RouteNetwork.API.Model;
-using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
-using OpenFTTH.UtilityGraphService.Business.SpanEquipments.Projections;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -129,6 +125,109 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             // Assert
             updateResult.IsSuccess.Should().BeTrue();
             terminalEquipmentAfterUpdate.AddressInfo.Should().BeEquivalentTo(updateCmd.AddressInfo);
+        }
+
+        [Fact, Order(4)]
+        public async Task UpdateInterfaceInfo_SetInfo_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipmentBeforeUpdate);
+
+            // Get first terminal structure
+            var terminalStructureBeforeUpdate = terminalEquipmentBeforeUpdate.TerminalStructures[0];
+
+            var interfaceInfo = new InterfaceInfo("ge", 1, 1, 1, "mycircuitname");
+
+            var updateCmd = new UpdateTerminalStructureProperties(Guid.NewGuid(), new UserContext("test", Guid.Empty), terminalEquipmentId: terminalEquipmentBeforeUpdate.Id, terminalStructureId: terminalStructureBeforeUpdate.Id)
+            {
+                StructureSpecificationId = terminalStructureBeforeUpdate.SpecificationId,
+                Position = terminalStructureBeforeUpdate.Position,
+                InterfaceInfo = interfaceInfo
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateTerminalStructureProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(terminalEquipmentBeforeUpdate.Id, out var terminalEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            terminalEquipmentAfterUpdate.TerminalStructures[0].interfaceInfo.Should().BeEquivalentTo(interfaceInfo);
+        }
+
+        [Fact, Order(5)]
+        public async Task UpdateInterfaceInfo_ModifyInfo_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipmentBeforeUpdate);
+
+            // Get first terminal structure
+            var terminalStructureBeforeUpdate = terminalEquipmentBeforeUpdate.TerminalStructures[0];
+
+            var interfaceInfo = new InterfaceInfo("ge", 2, 1, 1, "mycircuitname2");
+
+            var updateCmd = new UpdateTerminalStructureProperties(Guid.NewGuid(), new UserContext("test", Guid.Empty), terminalEquipmentId: terminalEquipmentBeforeUpdate.Id, terminalStructureId: terminalStructureBeforeUpdate.Id)
+            {
+                StructureSpecificationId = terminalStructureBeforeUpdate.SpecificationId,
+                Position = terminalStructureBeforeUpdate.Position,
+                InterfaceInfo = interfaceInfo
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateTerminalStructureProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(terminalEquipmentBeforeUpdate.Id, out var terminalEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            terminalEquipmentAfterUpdate.TerminalStructures[0].interfaceInfo.Should().BeEquivalentTo(interfaceInfo);
+        }
+
+        [Fact, Order(6)]
+        public async Task UpdateInterfaceInfo_ResetInfo_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CC_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CC_1;
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get equipment
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.TerminalEquipmentReferences.First(), out var terminalEquipmentBeforeUpdate);
+
+            // Get first terminal structure
+            var terminalStructureBeforeUpdate = terminalEquipmentBeforeUpdate.TerminalStructures[0];
+         
+            var updateCmd = new UpdateTerminalStructureProperties(Guid.NewGuid(), new UserContext("test", Guid.Empty), terminalEquipmentId: terminalEquipmentBeforeUpdate.Id, terminalStructureId: terminalStructureBeforeUpdate.Id)
+            {
+                StructureSpecificationId = terminalStructureBeforeUpdate.SpecificationId,
+                Position = terminalStructureBeforeUpdate.Position,
+                InterfaceInfo = null
+            };
+
+            var updateResult = await _commandDispatcher.HandleAsync<UpdateTerminalStructureProperties, Result>(updateCmd);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(terminalEquipmentBeforeUpdate.Id, out var terminalEquipmentAfterUpdate);
+
+            // Assert
+            updateResult.IsSuccess.Should().BeTrue();
+            terminalEquipmentAfterUpdate.TerminalStructures[0].interfaceInfo.Should().BeNull();
         }
 
 

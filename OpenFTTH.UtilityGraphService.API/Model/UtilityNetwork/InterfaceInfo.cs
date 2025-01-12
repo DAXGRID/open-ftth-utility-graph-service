@@ -18,5 +18,21 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
             PortNumber = portNumber;
             CircuitName = circuitName;
         }
+
+        public bool EqualTo(InterfaceInfo? otherInterfaceInfo)
+        {
+            if (otherInterfaceInfo is null)
+                return false;
+
+            if (this.InterfaceType == otherInterfaceInfo.InterfaceType &&
+                this.SlotNumber == otherInterfaceInfo.SlotNumber &&
+                this.SubSlotNumber == otherInterfaceInfo.SubSlotNumber &&
+                this.PortNumber == otherInterfaceInfo.PortNumber &&
+                this.CircuitName == otherInterfaceInfo.CircuitName
+                )
+                return true;
+
+            return false;
+        }
     }
 }
