@@ -1,4 +1,5 @@
-﻿using Baseline.ImTools;
+﻿using Baseline;
+using Baseline.ImTools;
 using FluentResults;
 using Marten;
 using OpenFTTH.Address.API.Model;
@@ -117,11 +118,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
             HashSet<string> nInstallationsFoundEquipmentLevel = new HashSet<string>();
 
+            HashSet<string> nCircuitsFoundEquipmentLevel = new HashSet<string>();
+
             foreach (var terminalStructure in terminalEquipment.TerminalStructures.OrderBy(ts => ts.Position))
             {
-                bool foundInstallations = false;
+                bool foundInstallationsOrCircuits = false;
+
                 HashSet<string> nInstallationsFoundStructureLevel =  new HashSet<string>();
-                             
+                HashSet<string> nCircuitsFoundStructureLevel = new HashSet<string>();
+
                 var terminalStructureSpecification = _terminalStructureSpecifications[terminalStructure.SpecificationId];
 
                 var terminalStructureNode = new OutageViewNode(Guid.NewGuid(), terminalStructure.Name + " (" + terminalStructureSpecification.Name + ")");
@@ -130,44 +135,55 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
                 foreach (var terminal in terminalStructure.Terminals.Where(t => (t.Direction == TerminalDirectionEnum.BI || t.Direction == TerminalDirectionEnum.OUT)))
                 {
-                    var installationEquipments = SearchForCustomerTerminationEquipmentInCircuit(terminal.Id);
+                    var analyzeResult = AnalyzeEquipmenCircuit(terminal.Id);
 
-                    if (installationEquipments.Count > 0)
+                    if (analyzeResult.terminationEquipments.Count > 0 || analyzeResult.uniqueCircuitNamesFound.Count > 0)
                     {
-                        foundInstallations = true;
+                        foundInstallationsOrCircuits = true;
 
-                        int nInstallationsFoundTerminalLevel = CountUniqueInstallationNames(installationEquipments);
+                        int nInstallationsFoundTerminalLevel = CountUniqueInstallationNames(analyzeResult.terminationEquipments);
 
-                        foreach (var inst in installationEquipments)
+                        foreach (var inst in analyzeResult.terminationEquipments)
                             nInstallationsFoundStructureLevel.Add(inst.Name);
 
+                        nCircuitsFoundStructureLevel.UnionWith(analyzeResult.uniqueCircuitNamesFound);
+
                         // Add terminal node
-                        var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{nInstallationsFoundTerminalLevel} {{OutageInstallationsFound}}");
+                        var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{nInstallationsFoundTerminalLevel} {{OutageInstallationsFound}} {analyzeResult.uniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}");
                         terminalNode.Expanded = false;
                         terminalStructureNode.AddNode(terminalNode);
 
                         // Now add all installations
-                        foreach (var installationTerminalEquipment in installationEquipments)
+                        foreach (var installationTerminalEquipment in analyzeResult.terminationEquipments)
                         {
                             var installationNode = new OutageViewNode(Guid.NewGuid(), installationTerminalEquipment.Name == null ? "NA" : installationTerminalEquipment.Name) { Value = installationTerminalEquipment.Name };
                             terminalNode.AddNode(installationNode);
                             processingState.InstallationNodes.Add((installationNode, installationTerminalEquipment));
                         }
+
+                        // Now add all circuits
+                        foreach (var circuitName in analyzeResult.uniqueCircuitNamesFound)
+                        {
+                            var circuitNode = new OutageViewNode(Guid.NewGuid(), circuitName == null ? "NA" : circuitName);
+                            terminalNode.AddNode(circuitNode);
+                        }
                     }
+
                 }
 
-                foreach (var structureLevelInst in nInstallationsFoundStructureLevel)
-                nInstallationsFoundEquipmentLevel.Add(structureLevelInst);
+                nInstallationsFoundEquipmentLevel.UnionWith(nInstallationsFoundStructureLevel);
 
-                if (foundInstallations)
+                nCircuitsFoundEquipmentLevel.UnionWith(nCircuitsFoundStructureLevel);
+
+                if (foundInstallationsOrCircuits)
                 {
-                    terminalStructureNode.Description = $"{nInstallationsFoundStructureLevel.Count} {{OutageInstallationsFound}}";
+                    terminalStructureNode.Description = $"{nInstallationsFoundStructureLevel.Count} {{OutageInstallationsFound}} {nCircuitsFoundStructureLevel.Count} {{OutageCircuitsFound}}";
                     terminalEquipmentNode.AddNode(terminalStructureNode);
                 }
             }
 
             rootNode.AddNode(terminalEquipmentNode);
-            terminalEquipmentNode.Description = $"{nInstallationsFoundEquipmentLevel.Count} {{OutageInstallationsFound}}";
+            terminalEquipmentNode.Description = $"{nInstallationsFoundEquipmentLevel.Count} {{OutageInstallationsFound}} {nCircuitsFoundEquipmentLevel.Count} {{OutageCircuitsFound}}";
         }
 
         private static int CountUniqueInstallationNames(List<TerminalEquipment> installationEquipments)
@@ -209,7 +225,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 
                 processingState.OuterConduitNodes.Add(outerConduitNode);
 
-                var nInstallationsOnOuterConduitLevel = 0;
+                OutageSearchResult conduitLevelResult = new OutageSearchResult();
 
                 // If conduit is a multi conduit, then add each sub conduit
                 if (conduitSpecification.IsMultiLevel)
@@ -225,21 +241,20 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
                         outerConduitNode.AddNode(innerConduitNode);
 
-                        var nInstallationsOnCables = AddRelatedCables(processingState, innerConduitNode, innerConduit);
+                        var subConduitLevelResult = AddRelatedCables(processingState, innerConduitNode, innerConduit);
 
-                        innerConduitNode.Description = $"{nInstallationsOnCables} {{OutageInstallationsFound}}";
+                        innerConduitNode.Description = $"{subConduitLevelResult.terminationEquipments.Count} {{OutageInstallationsFound}} {subConduitLevelResult.uniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
 
-
-                        nInstallationsOnOuterConduitLevel += nInstallationsOnCables;
+                        conduitLevelResult.UnionWith(subConduitLevelResult);
                     }
                 }
                 else
                 {
-                    var nInstallationsOnCables = AddRelatedCables(processingState, outerConduitNode, outerConduit.SpanStructures[0]);
-                    nInstallationsOnOuterConduitLevel += nInstallationsOnCables;
+                    var subConduitLevelResult = AddRelatedCables(processingState, outerConduitNode, outerConduit.SpanStructures[0]);
+                    conduitLevelResult.UnionWith(subConduitLevelResult);
                 }
 
-                outerConduitNode.Description = $"{nInstallationsOnOuterConduitLevel} {{OutageInstallationsFound}}";
+                outerConduitNode.Description = $"{conduitLevelResult.terminationEquipments.Count} {{OutageInstallationsFound}} {conduitLevelResult.uniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
 
 
                 rootNode.AddNode(outerConduitNode);
@@ -411,9 +426,9 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         }
 
 
-        private int AddRelatedCables(OutageProcessingState processingState, OutageViewNode innerConduitNode, SpanStructure innerConduit)
+        private OutageSearchResult AddRelatedCables(OutageProcessingState processingState, OutageViewNode innerConduitNode, SpanStructure innerConduit)
         {
-            int nInstallations = 0;
+            OutageSearchResult cableParentResult = new OutageSearchResult();
 
             // Find related cables places in inner conduits
             foreach (var spanSegment in innerConduit.SpanSegments)
@@ -431,9 +446,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                             {
                                 if (!processingState.CableProcessed.Contains(cable.Id))
                                 {
-                                    var nInstallationsOnCable = AddCable(processingState, innerConduitNode, cable, cableSpecification);
+                                    var cableLevelResult = AddCable(processingState, innerConduitNode, cable, cableSpecification);
 
-                                    nInstallations += nInstallationsOnCable;
+                                    cableParentResult.UnionWith(cableLevelResult);
+
                                     processingState.CableProcessed.Add(cable.Id);
                                 }
                             }
@@ -442,10 +458,10 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                 }
             }
 
-            return nInstallations;
+            return cableParentResult;
         }
 
-        private int AddCable(OutageProcessingState processingState, OutageViewNode parentNode, SpanEquipment cable, SpanEquipmentSpecification cableSpecification)
+        private OutageSearchResult AddCable(OutageProcessingState processingState, OutageViewNode parentNode, SpanEquipment cable, SpanEquipmentSpecification cableSpecification)
         {
             var cableNode = new OutageViewNode(cable.Id, GetCableLabel(cable, cableSpecification));
             cableNode.InterestId = cable.WalkOfInterestId;
@@ -458,21 +474,23 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
             HashSet<Guid> nInstallations = new();
 
+            OutageSearchResult cableLevelOutageResult = new OutageSearchResult();
+
             // Trace all fibers to find eventually customers
             for (int fiberNumber = 1; fiberNumber < cable.SpanStructures.Count(); fiberNumber++)
             {
                 var fiberStructure = cable.SpanStructures[fiberNumber];
 
-                var installationEquipments = SearchForCustomerTerminationEquipmentInCircuit(fiberStructure.SpanSegments.First().Id);
+                var fiberLevelResult = AnalyzeEquipmenCircuit(fiberStructure.SpanSegments.First().Id);
 
-                if (installationEquipments.Count > 0)
+                if (fiberLevelResult.InstallationOrCircuitsFound())
                 {
                     // First add fiber node
                     var fiberNode = new OutageViewNode(Guid.NewGuid(), $"{{FiberNumber}}" + fiberNumber);
                     cableNode.AddNode(fiberNode);
 
                     // Now add all installations
-                    foreach (var installationTerminalEquipment in installationEquipments)
+                    foreach (var installationTerminalEquipment in fiberLevelResult.terminationEquipments)
                     {
                         nInstallations.Add(installationTerminalEquipment.Id);
 
@@ -480,17 +498,27 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                         fiberNode.AddNode(installationNode);
                         processingState.InstallationNodes.Add((installationNode, installationTerminalEquipment));
                     }
+
+                    // Now add all circuits
+                    foreach (var circuitName in fiberLevelResult.uniqueCircuitNamesFound)
+                    {
+                        var circuitNode = new OutageViewNode(Guid.NewGuid(), circuitName == null ? "NA" : circuitName);
+                        fiberNode.AddNode(circuitNode);
+                    }
                 }
+
+
+                cableLevelOutageResult.UnionWith(fiberLevelResult);
             }
 
-            return nInstallations.Count();
+            return cableLevelOutageResult;
         }
 
-        private List<TerminalEquipment> SearchForCustomerTerminationEquipmentInCircuit(Guid fiberNetworkGraphElementId)
+        private OutageSearchResult AnalyzeEquipmenCircuit(Guid fiberNetworkGraphElementId)
         {
-            List<TerminalEquipment> result = new();
+            OutageSearchResult result = new();
 
-           var traceResult = _utilityNetwork.Graph.AdvancedTrace(fiberNetworkGraphElementId, true);
+            var traceResult = _utilityNetwork.Graph.AdvancedTrace(fiberNetworkGraphElementId, true);
 
             if (traceResult != null && traceResult.All.Count > 0)
             {
@@ -508,7 +536,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
                             if (terminalEquipmentSpecification.IsCustomerTermination)
                             {
-                                result.Add(terminalEquipment);
+                                result.terminationEquipments.Add(terminalEquipment);
+                            }
+
+                            foreach (var structure in terminalEquipment.TerminalStructures)
+                            {
+                                if (structure.interfaceInfo != null) {
+                                    result.interfaces.Add(structure.interfaceInfo);
+
+                                    result.uniqueCircuitNamesFound.Add(structure.interfaceInfo.CircuitName ?? Guid.NewGuid().ToString());
+                                }
                             }
                         }
                     }
@@ -703,5 +740,37 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         {
 
         }
+
+        public class OutageSearchResult
+        {
+            public List<TerminalEquipment> terminationEquipments { get; set; }
+
+            public List<InterfaceInfo> interfaces { get; set; }
+
+            public HashSet<string> uniqueCircuitNamesFound { get; set; }
+
+            public OutageSearchResult()
+            {
+                terminationEquipments = new List<TerminalEquipment>();
+                interfaces = new List<InterfaceInfo>();
+                uniqueCircuitNamesFound = new HashSet<string>();
+            }
+
+            public void UnionWith(OutageSearchResult other)
+            {
+                this.terminationEquipments.AddRange(other.terminationEquipments);
+                this.interfaces.AddRange(other.interfaces);
+                this.uniqueCircuitNamesFound.UnionWith(other.uniqueCircuitNamesFound);
+            }
+
+            public bool InstallationOrCircuitsFound()
+            {
+                if (!terminationEquipments.Any() || uniqueCircuitNamesFound.Any())
+                    return true;
+                else
+                    return false;
+            }
+        }
+
     }
 }
