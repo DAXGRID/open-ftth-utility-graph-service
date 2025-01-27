@@ -609,7 +609,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             );
 
             connectivityViewResult.IsSuccess.Should().BeTrue();
-            var oltTerminal1line = connectivityViewResult.Value.TerminalEquipments.First().TerminalStructures.First().Lines.First();
+            var oltTerminal1line = connectivityViewResult.Value.TerminalEquipments.First().TerminalStructures.First(t => t.Name == "1").Lines.First();
 
             oltTerminal1line.Z.ConnectedTo.Should().BeNull();
 

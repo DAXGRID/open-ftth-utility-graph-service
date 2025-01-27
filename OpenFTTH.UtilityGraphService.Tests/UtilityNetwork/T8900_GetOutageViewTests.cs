@@ -141,7 +141,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             getOutageViewResult.Value.Nodes.Count.Should().BeGreaterThan(50);
 
-            getOutageViewResult.Value.Nodes[0].Nodes[0].Nodes[0].Nodes[0].Label.Should().Be("C12345678");
+            getOutageViewResult.Value.Nodes[2].Nodes[0].Nodes[0].Nodes[0].Label.Should().Be("FK123456");
         }
 
 

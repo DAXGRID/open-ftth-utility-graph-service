@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Transactions;
 
 namespace OpenFTTH.UtilityGraphService.Business.Graph
 {
@@ -233,6 +234,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                     throw new ApplicationException($"Last element in upstream trace was a UtilityGraphConnectedSegment with id: {lastUpstreamSegment.Id}, not a terminal. However, the segment seems to have to have an upstream terminal connection. Something wrong!");
                 }
             }
+
+            terminalTracker.UpstreamTrace = true;
             
             return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
         }
@@ -247,6 +250,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             HashSet<UtilityGraphConnectedTerminal> visited = new();
 
             public IGraphNode LastVisit = null;
+
+            public bool UpstreamTrace {
+                get { return _upstreamTrace; }
+
+                set { _upstreamTrace = value; }
+            }
 
             public SimpleTraceHelper(UtilityNetworkProjection utilityNetworkProjection, long version, bool traceThroughSplitters = false)
             {

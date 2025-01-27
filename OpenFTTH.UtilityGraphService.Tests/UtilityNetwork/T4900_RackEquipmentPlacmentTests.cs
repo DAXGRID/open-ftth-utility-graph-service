@@ -9,8 +9,10 @@ using OpenFTTH.RouteNetwork.API.Model;
 using OpenFTTH.TestData;
 using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
+using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
+using OpenFTTH.UtilityGraphService.Business.NodeContainers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -622,6 +624,64 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             utilityNetwork.Graph.TryGetGraphElement<IUtilityGraphElement>(terminalEquipmentAfterUpdate.TerminalStructures.First().Terminals.First().Id, out var firstTerminalInGraph);
 
             firstTerminalInGraph.Should().NotBeNull();
+        }
+
+        [Fact, Order(60)]
+        public async Task PlaceLineCardWithInterfaceInOltInDataRackInCO1_ShouldSucceed()
+        {
+            // Setup
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainer = TestUtilityNetwork.NodeContainer_CO_1;
+
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainer, out var nodeContainerBeforeCommand);
+
+            // Get olt
+            var olt = nodeContainerBeforeCommand.Racks[1].SubrackMounts.First(s => s.Position == 30);
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(olt.TerminalEquipmentId, out var terminalEquipmentBeforeUpdate);
+
+            var placeEquipmentCmd = new PlaceAdditionalStructuresInTerminalEquipment(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: TestRouteNetwork.CO_1,
+                terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+                structureSpecificationId: TestSpecifications.OLT_LineCard16Port,
+                position: 10,
+                numberOfStructures: 1
+            )
+            {
+                InterfaceInfo = new InterfaceInfo("xe", 5, 5, 5, "FK123456")
+            };
+
+            // Act
+            var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
+            placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
+
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(olt.TerminalEquipmentId, out var oltEquipment);
+
+            var oltCard1Port1 = oltEquipment.TerminalStructures.First(t => t.interfaceInfo != null).Terminals[0].Id;
+
+            // Get lisa tray 80
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainerBeforeCommand.Racks[0].SubrackMounts.First(s => s.Position == 79).TerminalEquipmentId, out var lisaTray80);
+
+            // Connect olt card with lisa tray 80 pin 1
+            var connectCmd = new ConnectTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                fromTerminalId: oltCard1Port1,
+                toTerminalId: lisaTray80.TerminalStructures[0].Terminals[0].Id,
+                fiberCoordLength: 100.0
+            );
+
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+
+
         }
 
 
