@@ -17,6 +17,7 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork
         public string? Description { get; init; }
         public Guid[]? ManufacturerRefs { get; init; }
         public bool IsCustomerSplitter { get; init; }
+        public bool IsInterfaceModule { get; init; }
 
         public TerminalStructureSpecification(Guid id, string category, string name, string shortName, TerminalTemplate[] terminalTemplates)
         {
