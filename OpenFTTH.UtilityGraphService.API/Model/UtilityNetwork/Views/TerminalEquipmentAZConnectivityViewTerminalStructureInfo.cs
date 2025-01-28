@@ -13,15 +13,17 @@ namespace OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views
         public string Name { get; init; }
         public string SpecName { get; init; }
         public string? Info { get; init; }
+        public bool IsInterfaceModule { get; init; }
 
         public TerminalEquipmentAZConnectivityViewLineInfo[] Lines { get; init; }
 
-        public TerminalEquipmentAZConnectivityViewTerminalStructureInfo(Guid id, string category, string name, string specName, TerminalEquipmentAZConnectivityViewLineInfo[] lines)
+        public TerminalEquipmentAZConnectivityViewTerminalStructureInfo(Guid id, string category, string name, string specName, bool isInterfaceModule, TerminalEquipmentAZConnectivityViewLineInfo[] lines)
         {
             Id = id;
             Category = category;
             Name = name;
             SpecName = specName;
+            IsInterfaceModule = isInterfaceModule;
             Lines = lines;
         }
     }

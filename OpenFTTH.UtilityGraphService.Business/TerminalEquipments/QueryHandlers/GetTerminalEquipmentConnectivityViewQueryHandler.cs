@@ -179,7 +179,8 @@ namespace OpenFTTH.UtilityGraphService.Business.TerminalEquipments.QueryHandling
                         category: terminalStructureSpecification.Category,
                         name: GetTerminalStructureHeaderName(terminalStructure),
                         specName: terminalStructureSpecification.Name,
-                        lines: CompactLines(lineInfos).ToArray()
+                        lines: CompactLines(lineInfos).ToArray(),
+                        isInterfaceModule: terminalStructureSpecification.IsInterfaceModule
                     )
                 );
             }
