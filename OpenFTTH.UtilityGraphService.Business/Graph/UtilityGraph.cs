@@ -235,7 +235,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            terminalTracker.UpstreamTrace = true;
+            if (traceThroughSplitters)
+                terminalTracker.UpstreamTrace = true;
             
             return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
         }
