@@ -135,7 +135,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                         structureLevelResult.UnionWith(terminalLevelResult);
 
                         // Add terminal node
-                        var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{terminalLevelResult.UniqueInstallationNamesFound} {{OutageInstallationsFound}} {terminalLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}");
+                        var terminalNode = new OutageViewNode(Guid.NewGuid(), terminal.Name, $"{terminalLevelResult.UniqueInstallationNamesFound} {{OutageInstallationsFound}} {{And}} {terminalLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}");
                         terminalNode.Expanded = false;
                         terminalStructureNode.AddNode(terminalNode);
 
@@ -160,14 +160,14 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
           
                 if (structureLevelResult.InstallationOrCircuitsFound)
                 {
-                    terminalStructureNode.Description = $"{structureLevelResult.UniqueInstallationNamesFound} {{OutageInstallationsFound}} {structureLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
+                    terminalStructureNode.Description = $"{structureLevelResult.UniqueInstallationNamesFound} {{OutageInstallationsFound}} {{And}} {structureLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
                     terminalEquipmentNode.AddNode(terminalStructureNode);
                 }
             }
 
             rootNode.AddNode(terminalEquipmentNode);
 
-            terminalEquipmentNode.Description = $"{equipmentLevelResult.UniqueInstallationNamesFound} {{OutageInstallationsFound}} {equipmentLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
+            terminalEquipmentNode.Description = $"{equipmentLevelResult.UniqueInstallationNamesFound} {{OutageInstallationsFound}} {{And}} {equipmentLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
         }
 
         private static int CountUniqueInstallationNames(List<TerminalEquipment> installationEquipments)
@@ -227,7 +227,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
 
                         var subConduitLevelResult = AddRelatedCables(processingState, innerConduitNode, innerConduit);
 
-                        innerConduitNode.Description = $"{subConduitLevelResult.CustomerTerminationsFound.Count} {{OutageInstallationsFound}} {subConduitLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
+                        innerConduitNode.Description = $"{subConduitLevelResult.CustomerTerminationsFound.Count} {{OutageInstallationsFound}} {{And}} {subConduitLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
 
                         conduitLevelResult.UnionWith(subConduitLevelResult);
                     }
@@ -238,7 +238,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                     conduitLevelResult.UnionWith(subConduitLevelResult);
                 }
 
-                outerConduitNode.Description = $"{conduitLevelResult.CustomerTerminationsFound.Count} {{OutageInstallationsFound}} {conduitLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
+                outerConduitNode.Description = $"{conduitLevelResult.CustomerTerminationsFound.Count} {{OutageInstallationsFound}} {{And}} {conduitLevelResult.UniqueCircuitNamesFound.Count} {{OutageCircuitsFound}}";
 
 
                 rootNode.AddNode(outerConduitNode);
