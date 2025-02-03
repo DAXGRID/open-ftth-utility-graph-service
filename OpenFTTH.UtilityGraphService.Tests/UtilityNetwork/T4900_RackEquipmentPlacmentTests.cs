@@ -647,7 +647,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: TestRouteNetwork.CO_1,
                 terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
-                structureSpecificationId: TestSpecifications.OLT_LineCard16Port,
+                structureSpecificationId: TestSpecifications.OLT_InterfaceModule,
                 position: 10,
                 numberOfStructures: 1
             )
@@ -659,19 +659,38 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             var placeEquipmentCmdResult = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd);
             placeEquipmentCmdResult.IsSuccess.Should().BeTrue();
 
+            var placeEquipmentCmd2 = new PlaceAdditionalStructuresInTerminalEquipment(
+              correlationId: Guid.NewGuid(),
+              userContext: new UserContext("test", Guid.Empty),
+              routeNodeId: TestRouteNetwork.CO_1,
+              terminalEquipmentId: terminalEquipmentBeforeUpdate.Id,
+              structureSpecificationId: TestSpecifications.OLT_InterfaceModule,
+              position: 10,
+              numberOfStructures: 1
+          )
+            {
+                InterfaceInfo = new InterfaceInfo("xe", 5, 5, 6, "FK2222222")
+            };
+
+            // Act
+            var placeEquipmentCmdResult2 = await _commandDispatcher.HandleAsync<PlaceAdditionalStructuresInTerminalEquipment, Result>(placeEquipmentCmd2);
+            placeEquipmentCmdResult2.IsSuccess.Should().BeTrue();
+
+
+
             utilityNetwork.TryGetEquipment<TerminalEquipment>(olt.TerminalEquipmentId, out var oltEquipment);
 
-            var oltCard1Port1 = oltEquipment.TerminalStructures.First(t => t.interfaceInfo != null).Terminals[0].Id;
+            var firstInterface = oltEquipment.TerminalStructures.First(t => t.interfaceInfo != null).Terminals[0].Id;
 
             // Get lisa tray 80
             utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainerBeforeCommand.Racks[0].SubrackMounts.First(s => s.Position == 79).TerminalEquipmentId, out var lisaTray80);
 
-            // Connect olt card with lisa tray 80 pin 1
+            // Connect olt interface with lisa tray 80 pin 1
             var connectCmd = new ConnectTerminalsAtRouteNode(
                 correlationId: Guid.NewGuid(),
                 userContext: new UserContext("test", Guid.Empty),
                 routeNodeId: sutNodeId,
-                fromTerminalId: oltCard1Port1,
+                fromTerminalId: firstInterface,
                 toTerminalId: lisaTray80.TerminalStructures[0].Terminals[0].Id,
                 fiberCoordLength: 100.0
             );

@@ -1140,6 +1140,56 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
             connectivityTraceView.TerminalEquipments.First().TerminalStructures.First().Lines.Count(l => (l.A != null && l.A.FaceKind == FaceKindEnum.PatchSide) || (l.Z != null && l.Z.FaceKind == FaceKindEnum.PatchSide)).Should().Be(0);
         }
 
+        [Fact, Order(2000)]
+        public async Task ConnecLisaTray80InODFRackInCO1WithFiberCable_ShouldSucceed()
+        {
+            var utilityNetwork = _eventStore.Projections.Get<UtilityNetworkProjection>();
+
+            var sutNodeId = TestRouteNetwork.CO_1;
+            var sutNodeContainerId = TestUtilityNetwork.NodeContainer_CO_1;
+            var sutCableName = "K69373563";
+
+            // Get node container
+            utilityNetwork.TryGetEquipment<NodeContainer>(sutNodeContainerId, out var nodeContainer);
+
+            // Get lisa tray
+            utilityNetwork.TryGetEquipment<TerminalEquipment>(nodeContainer.Racks[0].SubrackMounts.First(s => s.Position == 79).TerminalEquipmentId, out var lisaTray80);
+
+            // Get cable
+            var connectivityQuery = new GetConnectivityFaces(nodeContainer.RouteNodeId);
+
+            var connectivityQueryResult = await _queryDispatcher.HandleAsync<GetConnectivityFaces, Result<List<ConnectivityFace>>>(
+                connectivityQuery
+            );
+
+            connectivityQueryResult.IsSuccess.Should().BeTrue();
+
+            var viewModel = connectivityQueryResult.Value;
+
+            var cableId = viewModel.First(m => m.EquipmentName.StartsWith(sutCableName)).EquipmentId;
+
+            utilityNetwork.TryGetEquipment<SpanEquipment>(cableId, out var cableSpanEquipment);
+
+
+            // ACT (do the connect between cable and equipment)
+            var connectCmd = new ConnectSpanSegmentsWithTerminalsAtRouteNode(
+                correlationId: Guid.NewGuid(),
+                userContext: new UserContext("test", Guid.Empty),
+                routeNodeId: sutNodeId,
+                connects: new ConnectSpanSegmentToTerminalOperation[]
+                {
+                    // Fiber 12 -> lisa Tray 80 Pin 1
+                    new ConnectSpanSegmentToTerminalOperation(cableSpanEquipment.SpanStructures[13].SpanSegments[0].Id, lisaTray80.TerminalStructures[0].Terminals[0].Id)
+                }
+            );
+            var connectCmdResult = await _commandDispatcher.HandleAsync<ConnectSpanSegmentsWithTerminalsAtRouteNode, Result>(connectCmd);
+
+            // Assert
+            connectCmdResult.IsSuccess.Should().BeTrue();
+
+        }
+
+
 
         private SpanEquipment? FindSpanEquipmentRelatedToRouteNetworkElementByName(Guid routeNetworkElementId, string spanEquipmentName)
         {

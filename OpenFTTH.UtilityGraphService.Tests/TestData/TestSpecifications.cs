@@ -179,6 +179,8 @@ namespace OpenFTTH.TestData
 
         public static Guid OLT_LineCard8Port = Guid.Parse("79e5653e-a06a-4921-8b43-2dbec1e0e914");
         public static Guid OLT_LineCard16Port = Guid.Parse("2238245d-8a85-4a49-8499-cd9c4045cd00");
+        public static Guid OLT_InterfaceModule = Guid.Parse("5530de70-2a4c-4131-8e40-5617bcbfd3f5");
+
 
         public static Guid LGX_WDMType1 = Guid.Parse("5602395b-f3f0-4e99-adb1-77901f4c711b");
         public static Guid LGX_WDMType2 = Guid.Parse("fe781a46-4402-4d7b-9518-48dcd36e9128");
@@ -1280,6 +1282,18 @@ namespace OpenFTTH.TestData
                     new TerminalTemplate("16", TerminalDirectionEnum.OUT, false, false) { ConnectorType = "SC/UPC", InternalConnectivityNode = "data" }
                 }
             ));
+
+            // Interface module
+            AddSpecification(new TerminalStructureSpecification(OLT_InterfaceModule, "Interface", "Interface test module", "Interface test module",
+                new TerminalTemplate[]
+                {
+                    new TerminalTemplate("1", TerminalDirectionEnum.OUT, false, false) { ConnectorType = "SC/UPC", InternalConnectivityNode = "data" },
+                }
+            )
+            {  
+                IsInterfaceModule = true,
+            }
+            );
 
 
             // WDM Type 1

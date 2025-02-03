@@ -523,14 +523,15 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
                                 result.CustomerTerminationsFound.Add(terminalEquipment);
                             }
 
-                            foreach (var structure in terminalEquipment.TerminalStructures)
-                            {
-                                if (structure.interfaceInfo != null) {
-                                    result.CircuitsFound.Add(structure.interfaceInfo);
+                            var terminalStructure = terminalRef.TerminalStructure(_utilityNetwork);
 
-                                    result.UniqueCircuitNamesFound.Add(structure.interfaceInfo.CircuitName ?? Guid.NewGuid().ToString());
-                                }
+                            if (terminalStructure.interfaceInfo != null)
+                            {
+                                result.CircuitsFound.Add(terminalStructure.interfaceInfo);
+
+                                result.UniqueCircuitNamesFound.Add(terminalStructure.interfaceInfo.CircuitName ?? Guid.NewGuid().ToString());
                             }
+
                         }
                     }
                 }

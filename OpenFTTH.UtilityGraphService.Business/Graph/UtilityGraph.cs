@@ -282,7 +282,16 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             public bool ContinueTrace(GraphEdge e)
             {
                 var edgeType = e.GetType();
-            
+
+                if (LastVisit != null && LastVisit is UtilityGraphConnectedTerminal && !((UtilityGraphConnectedTerminal)LastVisit).IsSimpleTerminal)
+                {
+                    var lastTerminal = ((UtilityGraphConnectedTerminal)LastVisit).Terminal(_utilityNetworkProjection);
+
+                    var lastEq = ((UtilityGraphConnectedTerminal)LastVisit).TerminalEquipment(_utilityNetworkProjection);
+
+                    System.Diagnostics.Debug.WriteLine("TRACE STEP: " + lastEq.Name + " - " + lastTerminal.Name);
+                }
+
                 // If trace through splitters disallow tracing upstream a splitter
                 if (_traceThroughSplitters)
                 {
