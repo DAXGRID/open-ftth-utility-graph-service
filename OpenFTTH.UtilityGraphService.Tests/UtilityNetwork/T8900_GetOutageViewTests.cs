@@ -1,20 +1,12 @@
 ﻿using FluentAssertions;
 using FluentResults;
 using OpenFTTH.CQRS;
-using OpenFTTH.Events.Core.Infos;
 using OpenFTTH.EventSourcing;
-using OpenFTTH.RouteNetwork.API.Model;
-using OpenFTTH.RouteNetwork.API.Queries;
 using OpenFTTH.TestData;
-using OpenFTTH.Util;
-using OpenFTTH.UtilityGraphService.API.Commands;
 using OpenFTTH.UtilityGraphService.API.Model.Outage;
 using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork;
-using OpenFTTH.UtilityGraphService.API.Model.UtilityNetwork.Views;
 using OpenFTTH.UtilityGraphService.API.Queries;
 using OpenFTTH.UtilityGraphService.Business.Graph;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -143,7 +135,5 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
             getOutageViewResult.Value.Nodes[2].Nodes[0].Nodes[0].Nodes[0].Label.Should().Be("FK123456");
         }
-
-
     }
 }

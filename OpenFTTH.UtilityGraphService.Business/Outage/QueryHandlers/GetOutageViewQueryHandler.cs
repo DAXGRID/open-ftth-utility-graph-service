@@ -502,7 +502,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Outage.QueryHandlers
         {
             OutageSearchResult result = new();
 
-            var traceResult = _utilityNetwork.Graph.AdvancedTrace(fiberNetworkGraphElementId, true);
+            var traceResult = _utilityNetwork.Graph.OutageViewTrace(fiberNetworkGraphElementId);
 
             if (traceResult != null && traceResult.All.Count > 0)
             {

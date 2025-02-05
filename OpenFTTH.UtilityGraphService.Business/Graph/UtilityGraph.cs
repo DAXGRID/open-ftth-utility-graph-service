@@ -110,7 +110,7 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             return new UtilityGraphTraceResult(id, null, Array.Empty<IGraphObject>(), Array.Empty<IGraphObject>());
         }
 
-        private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version, bool traceThroughSplitters = false)
+        private List<IGraphObject> DownstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version, bool traceThroughSplitters = false, bool filterOutput = true)
         {
             SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
@@ -138,10 +138,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
+            if (filterOutput)
+                return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
+            else
+                return downstreamTrace;
         }
 
-        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version, bool traceThroughSplitters = false)
+        private List<IGraphObject> DownstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version, bool traceThroughSplitters = false, bool filterOutput = true)
         {
             SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
@@ -171,10 +174,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
                 }
             }
 
-            return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
+            if (filterOutput)
+                return terminalTracker.FilterUnrelevantElementsAway(downstreamTrace);
+            else
+                return downstreamTrace;
         }
 
-        private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version, bool traceThroughSplitters = false)
+        private List<IGraphObject> UpstreamSegmentTrace(UtilityGraphConnectedSegment connectedSegment, long version, bool traceThroughSplitters = false, bool filterOutput = true)
         {
             SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
@@ -205,10 +211,13 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
             if (traceThroughSplitters)
                 terminalTracker.UpstreamTrace = true;
 
-            return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
+            if (filterOutput)
+                return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
+            else
+                return upstreamTrace;
         }
 
-        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version, bool traceThroughSplitters = false)
+        private List<IGraphObject> UpstreamTerminalTrace(UtilityGraphConnectedTerminal terminal, long version, bool traceThroughSplitters = false, bool filterOutput = true)
         {
             SimpleTraceHelper terminalTracker = new(_utilityNetworkProjection, version, traceThroughSplitters);
 
@@ -240,8 +249,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
             if (traceThroughSplitters)
                 terminalTracker.UpstreamTrace = true;
-            
-            return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
+
+            if (filterOutput)
+                return terminalTracker.FilterUnrelevantElementsAway(upstreamTrace);
+            else
+                return upstreamTrace;
         }
 
         private class SimpleTraceHelper
@@ -377,9 +389,11 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
         #endregion
 
-        #region Advanced Trace
-        public UtilityGraphTraceResult AdvancedTrace(Guid id, bool traceThroughSplitters = false)
+        #region Trace used in outage view
+        public UtilityGraphTraceResult OutageViewTrace(Guid id)
         {
+            bool traceThroughSplitters = true;
+            bool filterOutput = false;
 
             if (_graphElementsById.TryGetValue(id, out var utilityGraphElement))
             {
@@ -393,8 +407,8 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                     var version = _objectManager.GetLatestCommitedVersion();
 
-                    var upstream = UpstreamSegmentTrace(connectedSegment, version, traceThroughSplitters).ToArray();
-                    var downstream = DownstreamSegmentTrace(connectedSegment, version, traceThroughSplitters).ToArray();
+                    var upstream = UpstreamSegmentTrace(connectedSegment, version, traceThroughSplitters, filterOutput).ToArray();
+                    var downstream = DownstreamSegmentTrace(connectedSegment, version, traceThroughSplitters, filterOutput).ToArray();
 
                     return new UtilityGraphTraceResult(id, connectedSegment, downstream, upstream);
                 }
@@ -412,12 +426,12 @@ namespace OpenFTTH.UtilityGraphService.Business.Graph
 
                         if (nTerminalNeigbours == 1)
                         {
-                            var upstream = UpstreamTerminalTrace(terminal, version, traceThroughSplitters).ToArray();
+                            var upstream = UpstreamTerminalTrace(terminal, version, traceThroughSplitters, filterOutput).ToArray();
                             return new UtilityGraphTraceResult(id, terminal, Array.Empty<IGraphObject>(), upstream);
                         }
                         else if (nTerminalNeigbours == 2)
                         {
-                            var upstream = UpstreamTerminalTrace(terminal, version, traceThroughSplitters).ToArray();
+                            var upstream = UpstreamTerminalTrace(terminal, version, traceThroughSplitters, filterOutput).ToArray();
                             var downstream = DownstreamTerminalTrace(terminal, version, traceThroughSplitters).ToArray();
 
                             return new UtilityGraphTraceResult(id, terminal, downstream, upstream);

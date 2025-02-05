@@ -250,7 +250,7 @@ namespace OpenFTTH.UtilityGraphService.Tests.UtilityNetwork
 
 
             // Try advanced trace of splitter 1 terminal 1 (in port) - should return the two output terminals downstream
-            var splitter1terminal1advancedTraceResult = utilityNetwork.Graph.AdvancedTrace(sutEquipment.TerminalStructures.First().Terminals.First().Id);
+            var splitter1terminal1advancedTraceResult = utilityNetwork.Graph.OutageViewTrace(sutEquipment.TerminalStructures.First().Terminals.First().Id);
             //splitter1terminal1advancedTraceResult.Upstream.Length.Should().Be(0);
             //splitter1terminal1advancedTraceResult.Downstream.Length.Should().Be(4);
         }
